@@ -1,7 +1,7 @@
 import axios from "axios"
 import {getCookie} from 'cookies-next';
 
-axios.defaults.baseURL = 'http://localhost:3000/api';
+axios.defaults.baseURL = process.env.NEXT_PUBLIC_BASE_URL_API
 
 // Add a request interceptor
 axios.interceptors.request.use(function (config) {

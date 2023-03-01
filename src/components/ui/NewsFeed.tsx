@@ -4,19 +4,8 @@ import CreatePostBox from "../post/CreatePostBox";
 import PostContainer from "../container/PostContainer";
 
 import Story from "./story";
-import { IStory } from "../../pages/api/stories";
-import { IPost } from "../../pages/api/post";
-interface IPages {
-  posts: IPost[];
-  time: string;
-}
-interface IProps {
-  storiesData: IStory[];
-  postsData: {
-    pages: IPages[];
-    pageParams:string
-  };
-}
+
+import { IProps } from "../../types/post";
 
 const NewsFeed: React.FC<IProps> = (props) => {
   const { storiesData, postsData } = props;
@@ -28,12 +17,10 @@ const NewsFeed: React.FC<IProps> = (props) => {
           className="w-28 h-48 relative rounded-xl shadow "
           style={{
             backgroundImage: `url('https://random.imagecdn.app/500/400')`,
-          }}
-        >
+          }}>
           <div
             className="w-full absolute flex justify-center"
-            style={{ bottom: "13%" }}
-          >
+            style={{ bottom: "13%" }}>
             <button className="focus:outline-none z-40 w-10 h-10 bg-primary rounded-full border-4 border-white">
               <i className="text-white fas fa-plus"></i>
             </button>
@@ -46,7 +33,7 @@ const NewsFeed: React.FC<IProps> = (props) => {
           ? storiesData.map((story, idx) => <Story key={idx} story={story} />)
           : null}
       </div>
-      {/* Create Post       */}
+      {/* Create Post */}
       <CreatePostBox />
       {/* All posts */}
       <PostContainer postsData={postsData} postsView={"listView"} />

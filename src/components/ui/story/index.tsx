@@ -1,5 +1,5 @@
 import React from "react";
-import { IStory } from "../../../pages/api/stories";
+import { IStory } from "../../../types/stories";
 import Image from "next/image";
 interface IProps {
   story: IStory;

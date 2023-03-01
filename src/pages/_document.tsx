@@ -23,7 +23,7 @@ class MyDocument extends Document {
     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
     })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
-    ga('create', '', 'auto');
+    ga('create', '${process.env.NEXT_PUBLIC_ANALYTICS_ID}', 'auto');
     ga('send', 'pageview');
     `;
     return (

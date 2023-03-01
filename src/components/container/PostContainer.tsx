@@ -1,21 +1,9 @@
 import React, { Fragment } from "react";
 
-import { TPostView, IPost } from "../../pages/api/post";
+import { IPropsPostContainer } from "../../types/post";
 import Post from "../post";
-interface IPages {
-  posts: IPost[];
-  time: string;
-}
-interface IProps {
-  postsView?: TPostView;
-  // postsData: IPost[];
-  postsData: {
-    pages: IPages[];
-    pageParams:string
-  };
-}
 
-const PostContainer: React.FC<IProps> = (props) => {
+const PostContainer: React.FC<IPropsPostContainer> = (props) => {
   const { postsView, postsData } = props;
   return (
     <div className="mt-4 w-full h-full">

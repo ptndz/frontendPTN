@@ -1,37 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-export interface IUser {
-    fullname: string;
-    username: string;
-    email: string;
-    password: string;
-    bio: string;
-    dp: string;
-    cover: string;
-    hometown: string;
-    currentCity: string;
-    relationship: string;
-    phone?: string;
-    //   work: [IWork];
-    //   education: [IEducation];
-    //   website: [IWebsite];
-    //   social: [ISocial];
-    //   gender: IGender;
-    //   interest: IInterest;
-    //   religion: IReligion;
-  }
+import {IStory} from "../../types/stories"
+
   
-  export interface IStory {
-    _id: string;
-    image: string;
-    user: {
-      _id: string;
-      fullname: string;
-      dp: string;
-    };
-    createdAt: Date;
-  }
-
-
 export default function handler(
     req: NextApiRequest,
     res: NextApiResponse<IStory[]>

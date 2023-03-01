@@ -1,16 +1,51 @@
-import React, { useState } from "react";
-import { TPostView, IPost } from "../api/post";
+import React, { useEffect, useRef, useState } from "react";
+import { TPostView, IPost, IPostsData } from "../../types/post";
 import PostContainer from "../../components/container/PostContainer";
 import CreatePostBox from "../../components/post/CreatePostBox";
 import ProfilePageLayout from "../../components/layouts/ProfilePageLayout";
 import Image from "next/image";
 import axios from "axios";
-interface IProps {
-  postsData: IPost[];
-}
-const ProfilePage: React.FC<IProps> = (props) => {
-  const { postsData } = props;
+import { useRouter } from "next/router";
+import { useInfiniteQuery } from "@tanstack/react-query";
+
+const ProfilePage: React.FC = () => {
   const [postsView, setPostsView] = useState<TPostView>("listView");
+  const getPost = async (pageParam: string) => {
+    const resPost = await axios.get("/post?time=" + pageParam);
+    return resPost.data;
+  };
+  const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =
+    useInfiniteQuery(
+      ["userPosts"],
+      ({ pageParam = "01-01-9999" }) => getPost(pageParam),
+      {
+        getNextPageParam: (lastPage, _allPages) => {
+          const time = lastPage.time;
+
+          return time;
+        },
+      }
+    );
+
+  const loadMoreRef = useRef() as React.RefObject<HTMLButtonElement>;
+  const router = useRouter();
+  useEffect(() => {
+    if (!hasNextPage) {
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) =>
+      entries.forEach((entry) => entry.isIntersecting && fetchNextPage())
+    );
+
+    const el = loadMoreRef && loadMoreRef.current;
+
+    if (!el) {
+      return;
+    }
+
+    observer.observe(el);
+  }, [hasNextPage, router, fetchNextPage]);
   return (
     <ProfilePageLayout>
       <div className="w-full h-full">
@@ -244,7 +279,26 @@ const ProfilePage: React.FC<IProps> = (props) => {
               </div>
 
               {/* user posts */}
-              <PostContainer postsData={postsData} postsView={postsView} />
+              <PostContainer
+                postsData={data as unknown as IPostsData}
+                postsView={postsView}
+              />
+              <div className="">
+                <button
+                  ref={loadMoreRef}
+                  onClick={() => fetchNextPage()}
+                  disabled={!hasNextPage || isFetchingNextPage}
+                >
+                  {isFetchingNextPage
+                    ? "Loading more..."
+                    : hasNextPage
+                    ? "Load More"
+                    : "Nothing more to load"}
+                </button>
+              </div>
+              <div>
+                {isFetching && !isFetchingNextPage ? "Fetching..." : null}
+              </div>
             </div>
           </div>
         </div>
@@ -254,11 +308,3 @@ const ProfilePage: React.FC<IProps> = (props) => {
 };
 
 export default ProfilePage;
-export const getStaticProps = async () => {
-  const resPost = await axios.get("/post");
-  return {
-    props: {
-      postsData: resPost.data as IPost[],
-    },
-  };
-};

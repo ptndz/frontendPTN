@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "next/image";
-import { IPost } from "../../pages/api/post";
+import { IPost } from "../../types/post";
 import moment from "moment";
 interface IProps {
   post: IPost;

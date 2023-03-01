@@ -2,44 +2,39 @@ import axios from "axios";
 import React, { useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { NextSeo } from "next-seo";
-import { IPost } from "./api/post";
-import { IStory } from "./api/stories";
+import { IProps, IPostsData } from "../types/post";
+import { IStory } from "../types/stories";
 import LeftSidebar from "../components/ui/sidebar/LeftSidebar";
 import NewsFeedScreen from "../components/ui/NewsFeed";
 import RightSidebar from "../components/ui/sidebar/RightSidebar";
 import HomePageLayout from "../components/layouts/HomePageLayout";
 import type { NextPageWithLayout } from "./_app";
 import { useInfiniteQuery } from "@tanstack/react-query";
-interface IPages {
-  posts: IPost[];
+interface PageParamType {
   time: string;
-}
-interface IProps {
-  postsData: {
-    pages: IPages[];
-    pageParams: string;
-  };
-  storiesData: IStory[];
-}
-interface IPostsData {
-  pages: IPages[];
-  pageParams: string;
+  start: number;
 }
 const Home: NextPageWithLayout<IProps> = (props) => {
   const { storiesData } = props;
-  const getPost = async (pageParam: string) => {
-    const resPost = await axios.get("/post?time=" + pageParam);
+  const getPost = async (pageParam: PageParamType) => {
+    const { time, start } = pageParam;
+    const resPost = await axios.get(`/post?time=${time}&start=${start}`);
     return resPost.data;
   };
   const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =
     useInfiniteQuery(
       ["posts"],
-      ({ pageParam = "01-01-9999" }) => getPost(pageParam),
+      ({
+        pageParam = {
+          time: "01/01/9999",
+          start: 0,
+        },
+      }) => getPost(pageParam),
       {
         getNextPageParam: (lastPage, _allPages) => {
-          const time = lastPage.time;
+          const { time, start } = lastPage;
 
-          return time;
+          return { time, start };
         },
       }
     );
@@ -65,10 +60,7 @@ const Home: NextPageWithLayout<IProps> = (props) => {
   }, [hasNextPage, router, fetchNextPage]);
   return (
     <>
-      <NextSeo
-        title="Simple Usage Example"
-        description="A short description goes here."
-      />
+      <NextSeo title="Simple Usage Example" />
       <HomePageLayout>
         <div className="w-full h-full grid grid-cols-7">
           <div className="col-span-2 flex justify-start ml-2">
@@ -83,8 +75,7 @@ const Home: NextPageWithLayout<IProps> = (props) => {
               <button
                 ref={loadMoreRef}
                 onClick={() => fetchNextPage()}
-                disabled={!hasNextPage || isFetchingNextPage}
-              >
+                disabled={!hasNextPage || isFetchingNextPage}>
                 {isFetchingNextPage
                   ? "Loading more..."
                   : hasNextPage
@@ -108,7 +99,6 @@ const Home: NextPageWithLayout<IProps> = (props) => {
 export default Home;
 export const getStaticProps = async () => {
   const resStories = await axios.get("/stories");
-
   return {
     props: {
       storiesData: resStories.data as IStory[],

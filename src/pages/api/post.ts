@@ -1,31 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-export type TPostView = "gridView" | "listView";
+import { IPost,IPages } from "../../types/post";
 
-export interface IPost {
-  _id: string;
-  user: {
-    _id: string;
-    fullname: string;
-    username: string;
-    dp: string;
-  };
-  caption?: string;
-  image?: string;
-  likes: number;
-  comments: number;
-  shares: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
+
 
 export default function handler(
   req: NextApiRequest,
-  res: NextApiResponse<{
-    posts: IPost[];
-    time: string;
-  }>
+  res: NextApiResponse<IPages>
 ) {
-  const time = req.query.time;
+  const {time,start} = req.query;
   const dataArray: IPost[] = [];
   var date = new Date();
 
@@ -52,5 +34,6 @@ export default function handler(
   res.status(200).json({
     posts: dataArray,
     time: time+newdate,
+    start: Number(start)+10
   });
 }
