@@ -6,15 +6,19 @@ import PostContainer from "../container/PostContainer";
 import Story from "./story";
 
 import { IProps } from "../../types/post";
+import { useStoreOpenModal } from "../../store/state";
 
 const NewsFeed: React.FC<IProps> = (props) => {
   const { storiesData, postsData } = props;
+  const { open } = useStoreOpenModal();
   return (
     <div className="mt-6 w-full h-full pb-5">
       {/* Story Section */}
       <div className="w-full h-50 flex items-center justify-center space-x-2 overflow-hidden cursor-pointer my-6">
         <div
-          className="w-28 h-48 relative rounded-xl shadow "
+          className={`w-28 h-48 relative rounded-xl shadow ${
+            open ? "hidden" : ""
+          }`}
           style={{
             backgroundImage: `url('https://random.imagecdn.app/500/400')`,
           }}>

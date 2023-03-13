@@ -1,7 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import {IStory} from "../../types/stories"
 
-  
 export default function handler(
     req: NextApiRequest,
     res: NextApiResponse<IStory[]>
@@ -14,7 +13,7 @@ export default function handler(
       user: {
         _id: String(index),
         fullname: 'Saiful Islam '+index,
-        dp: 'https://random.imagecdn.app/200/200',
+        avatar: 'https://random.imagecdn.app/200/200',
       },
       createdAt: new Date(),
     },)

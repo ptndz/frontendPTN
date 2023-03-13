@@ -19,7 +19,7 @@ export default function handler(
         _id: String(index),
         username: "shihab " + index,
         fullname: "Saiful Islam Shihab " + index,
-        dp: "https://random.imagecdn.app/500/200",
+        avatar: "https://random.imagecdn.app/500/200",
       },
       caption: "This is post caption "+time,
       image: "https://random.imagecdn.app/1920/1080",

@@ -11,11 +11,10 @@ const Story: React.FC<IProps> = (props) => {
   return (
     <div
       className="w-28 h-48 relative rounded-xl p-3 to-pink-500 shadow cursor-pointer"
-      style={{ backgroundImage: `url(${story.image})` }}
-    >
+      style={{ backgroundImage: `url(${story.image})` }}>
       <div className="absolute">
         <Image
-          src={user.dp}
+          src={user.avatar}
           className="w-10 h-10 rounded-full border-4 border-white"
           alt="story"
           width={"200"}

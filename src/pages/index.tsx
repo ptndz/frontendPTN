@@ -10,12 +10,16 @@ import RightSidebar from "../components/ui/sidebar/RightSidebar";
 import HomePageLayout from "../components/layouts/HomePageLayout";
 import type { NextPageWithLayout } from "./_app";
 import { useInfiniteQuery } from "@tanstack/react-query";
+
+import { useStoreOpenModal } from "../store/state";
+import CreatePostModal from "../components/post/CreatePostModal";
 interface PageParamType {
   time: string;
   start: number;
 }
 const Home: NextPageWithLayout<IProps> = (props) => {
   const { storiesData } = props;
+  const { open } = useStoreOpenModal();
   const getPost = async (pageParam: PageParamType) => {
     const { time, start } = pageParam;
     const resPost = await axios.get(`/post?time=${time}&start=${start}`);
@@ -42,6 +46,9 @@ const Home: NextPageWithLayout<IProps> = (props) => {
   const loadMoreRef = useRef() as React.RefObject<HTMLButtonElement>;
   const router = useRouter();
   useEffect(() => {
+    open
+      ? (document.body.className = "openModalBlockScroll")
+      : document.body.classList.remove("openModalBlockScroll");
     if (!hasNextPage) {
       return;
     }
@@ -57,10 +64,11 @@ const Home: NextPageWithLayout<IProps> = (props) => {
     }
 
     observer.observe(el);
-  }, [hasNextPage, router, fetchNextPage]);
+  }, [hasNextPage, router, fetchNextPage, open]);
   return (
     <>
       <NextSeo title="Simple Usage Example" />
+
       <HomePageLayout>
         <div className="w-full h-full grid grid-cols-7">
           <div className="col-span-2 flex justify-start ml-2">
@@ -92,6 +100,7 @@ const Home: NextPageWithLayout<IProps> = (props) => {
           </div>
         </div>
       </HomePageLayout>
+      {open ? <CreatePostModal /> : ""}
     </>
   );
 };

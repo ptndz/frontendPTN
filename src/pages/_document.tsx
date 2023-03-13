@@ -26,6 +26,7 @@ class MyDocument extends Document {
     ga('create', '${process.env.NEXT_PUBLIC_ANALYTICS_ID}', 'auto');
     ga('send', 'pageview');
     `;
+
     return (
       <Html lang="en">
         <Head>

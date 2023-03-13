@@ -14,7 +14,7 @@ const Post: React.FC<IProps> = (props) => {
       <div className="flex items-center space-x-2 p-2.5 px-4">
         <div className="w-10 h-10">
           <Image
-            src={user.dp}
+            src={user.avatar}
             className="w-full h-full rounded-full"
             alt="dp"
             width={"200"}

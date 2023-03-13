@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import create from "zustand";
+import {create} from "zustand";
 export interface IPost {
     _id: string;
     user: {

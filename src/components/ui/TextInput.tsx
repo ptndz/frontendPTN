@@ -11,7 +11,7 @@ const TextInput: React.FC<IProps> = (props) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   return (
-    <div className=" my-3 ">
+    <div className="my-3 ">
       <input
         ref={inputRef}
         {...props}

@@ -4,7 +4,7 @@ export interface IStory {
   user: {
     _id: string;
     fullname: string;
-    dp: string;
+    avatar: string;
   };
   createdAt: Date;
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { TPostView, IPost, IPostsData } from "../../types/post";
+import { TPostView, IPostsData } from "../../types/post";
 import PostContainer from "../../components/container/PostContainer";
 import CreatePostBox from "../../components/post/CreatePostBox";
 import ProfilePageLayout from "../../components/layouts/ProfilePageLayout";
@@ -7,9 +7,11 @@ import Image from "next/image";
 import axios from "axios";
 import { useRouter } from "next/router";
 import { useInfiniteQuery } from "@tanstack/react-query";
-
+import { useStoreOpenModal } from "../../store/state";
+import CreatePostModal from "../../components/post/CreatePostModal";
 const ProfilePage: React.FC = () => {
   const [postsView, setPostsView] = useState<TPostView>("listView");
+  const { open } = useStoreOpenModal();
   const getPost = async (pageParam: string) => {
     const resPost = await axios.get("/post?time=" + pageParam);
     return resPost.data;
@@ -30,6 +32,9 @@ const ProfilePage: React.FC = () => {
   const loadMoreRef = useRef() as React.RefObject<HTMLButtonElement>;
   const router = useRouter();
   useEffect(() => {
+    open
+      ? (document.body.className = "openModalBlockScroll")
+      : document.body.classList.remove("openModalBlockScroll");
     if (!hasNextPage) {
       return;
     }
@@ -45,7 +50,7 @@ const ProfilePage: React.FC = () => {
     }
 
     observer.observe(el);
-  }, [hasNextPage, router, fetchNextPage]);
+  }, [hasNextPage, router, fetchNextPage, open]);
   return (
     <ProfilePageLayout>
       <div className="w-full h-full">
@@ -58,12 +63,10 @@ const ProfilePage: React.FC = () => {
                 backgroundRepeat: "no-repeat",
                 backgroundSize: "cover",
                 backgroundPosition: "center",
-              }}
-            >
+              }}>
               <div
                 className="absolute  w-full flex items-center justify-center"
-                style={{ bottom: "-15px" }}
-              >
+                style={{ bottom: "-15px" }}>
                 <div className="w-44 h-44 rounded-full bg-gray-300 border-4 border-white">
                   <Image
                     className="w-full h-full rounded-full"
@@ -184,8 +187,7 @@ const ProfilePage: React.FC = () => {
                     <a
                       target="_blank"
                       rel="noopener noreferrer"
-                      href={"https://facebook.com/saifulshihab"}
-                    >
+                      href={"https://facebook.com/saifulshihab"}>
                       <p>saifulshihab</p>
                     </a>
                   </div>
@@ -196,8 +198,7 @@ const ProfilePage: React.FC = () => {
                     <a
                       target="_blank"
                       rel="noopener noreferrer"
-                      href={"https://instagram.com/_shiha6"}
-                    >
+                      href={"https://instagram.com/_shiha6"}>
                       <p>_shiha6</p>
                     </a>
                   </div>
@@ -208,8 +209,7 @@ const ProfilePage: React.FC = () => {
                     <a
                       target="_blank"
                       rel="noopener noreferrer"
-                      href={"https://twitter.com/ShihabSWE"}
-                    >
+                      href={"https://twitter.com/ShihabSWE"}>
                       <p>ShihabSWE</p>
                     </a>
                   </div>
@@ -220,8 +220,7 @@ const ProfilePage: React.FC = () => {
                     <a
                       target="_blank"
                       rel="noopener noreferrer"
-                      href={"https://github.com/saifulshihab"}
-                    >
+                      href={"https://github.com/saifulshihab"}>
                       <p>saifulshihab</p>
                     </a>
                   </div>
@@ -232,8 +231,7 @@ const ProfilePage: React.FC = () => {
                     <a
                       target="_blank"
                       rel="noopener noreferrer"
-                      href={"https://www.behance.net/saifulis1am"}
-                    >
+                      href={"https://www.behance.net/saifulis1am"}>
                       <p>saifulis1am</p>
                     </a>
                   </div>
@@ -263,16 +261,14 @@ const ProfilePage: React.FC = () => {
                     className={`font-semibold flex-1 h-8 focus:outline-none justify-center space-x-2 hover:bg-gray-100 rounded-md ${
                       postsView === "listView" ? "bg-gray-200" : undefined
                     }`}
-                    onClick={() => setPostsView("listView")}
-                  >
+                    onClick={() => setPostsView("listView")}>
                     <i className="fas fa-bars mr-2"></i>List View
                   </button>
                   <button
                     className={`font-semibold flex-1 h-8 focus:outline-none justify-center space-x-2 hover:bg-gray-100 rounded-md  ${
                       postsView === "gridView" ? "bg-gray-200" : undefined
                     }`}
-                    onClick={() => setPostsView("gridView")}
-                  >
+                    onClick={() => setPostsView("gridView")}>
                     <i className="fas fa-th-large mr-2"></i>Grid View
                   </button>
                 </div>
@@ -287,8 +283,7 @@ const ProfilePage: React.FC = () => {
                 <button
                   ref={loadMoreRef}
                   onClick={() => fetchNextPage()}
-                  disabled={!hasNextPage || isFetchingNextPage}
-                >
+                  disabled={!hasNextPage || isFetchingNextPage}>
                   {isFetchingNextPage
                     ? "Loading more..."
                     : hasNextPage
@@ -303,6 +298,7 @@ const ProfilePage: React.FC = () => {
           </div>
         </div>
       </div>
+      {open ? <CreatePostModal /> : ""}
     </ProfilePageLayout>
   );
 };

@@ -31,7 +31,7 @@ axios.interceptors.response.use(function (response) {
 });
 
 function alertError(e:any){
-    if (e.statusCode === 401){
-        window.location.href='http://localhost:3000/'
+    if (e.statusCode === 400){
+        window.location.href='http://localhost:8080'
     }
 }

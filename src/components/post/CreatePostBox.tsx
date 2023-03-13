@@ -1,11 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
-import CreatePostModal from "./CreatePostModal";
+import { useStoreOpenModal } from "../../store/state";
 const CreatePostBox: React.FC = () => {
-  const [openModal, setOpenModal] = useState<boolean>(false);
-  const onclickHideModal = () => {
-    setOpenModal(true);
-  };
+  const { open, setOpen } = useStoreOpenModal();
 
   return (
     <>
@@ -22,7 +19,9 @@ const CreatePostBox: React.FC = () => {
           </div>
 
           <button
-            onClick={onclickHideModal}
+            onClick={() => {
+              setOpen(true);
+            }}
             className="hover:bg-gray-200 focus:bg-gray-300 focus:outline-none flex-grow bg-gray-100 text-gray-500 text-left rounded-full h-10 pl-5">
             What&apos;s on your mind, Shias?
           </button>
@@ -53,7 +52,6 @@ const CreatePostBox: React.FC = () => {
             </div>
           </button>
         </div>
-        {openModal && <CreatePostModal setOpenModal={setOpenModal} />}
       </div>
     </>
   );

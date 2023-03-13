@@ -5,7 +5,7 @@ export interface IPost {
     _id: string;
     fullname: string;
     username: string;
-    dp: string;
+    avatar: string;
   };
   caption?: string;
   image?: string;

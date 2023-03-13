@@ -14,11 +14,13 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { DefaultSeo, LocalBusinessJsonLd, SocialProfileJsonLd } from "next-seo";
 import "../plugins/axios.plugin";
 import SEO from "../../next-seo.config";
+
 export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: ReactElement) => ReactNode;
 };
 
 const queryClient = new QueryClient();
+
 function MyApp({ Component, pageProps }: AppProps) {
   //const [queryClient] = React.useState(() => new QueryClient());
 
