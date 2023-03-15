@@ -7,7 +7,7 @@ import { graphql } from "../../gql";
 import Loading from "../../components/ui/Loading";
 import HideComponents from "../../components/ui/HideComponents";
 import { useRouter } from "next/router";
-import { getCookie } from "cookies-next";
+import { checkAuth } from "../../plugins/auth.plugin";
 
 const query = graphql(`
   mutation Register($registerUser: RegisterInput!) {
@@ -50,9 +50,9 @@ const RegisterPage: React.FC = () => {
   const [isAcceptTerms, setIsAcceptTerms] = useState<boolean>(true);
   const router = useRouter();
   useEffect(() => {
-    const token = getCookie("awt");
+    const isLogin = checkAuth();
 
-    if (token) {
+    if (!isLogin) {
       router.push("/");
     }
   });

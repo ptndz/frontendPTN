@@ -10,7 +10,7 @@ import RightSidebar from "../components/ui/sidebar/RightSidebar";
 import HomePageLayout from "../components/layouts/HomePageLayout";
 import type { NextPageWithLayout } from "./_app";
 import { useInfiniteQuery } from "@tanstack/react-query";
-
+import { checkAuth } from "../plugins/auth.plugin";
 import { useStoreOpenModal } from "../store/state";
 import CreatePostModal from "../components/post/CreatePostModal";
 interface PageParamType {
@@ -46,6 +46,11 @@ const Home: NextPageWithLayout<IProps> = (props) => {
   const loadMoreRef = useRef() as React.RefObject<HTMLButtonElement>;
   const router = useRouter();
   useEffect(() => {
+    const isLogin = checkAuth();
+    if (isLogin) {
+      router.push("/login");
+    }
+
     open
       ? (document.body.className = "openModalBlockScroll")
       : document.body.classList.remove("openModalBlockScroll");

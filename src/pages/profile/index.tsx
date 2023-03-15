@@ -9,6 +9,7 @@ import { useRouter } from "next/router";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useStoreOpenModal } from "../../store/state";
 import CreatePostModal from "../../components/post/CreatePostModal";
+import { checkAuth } from "../../plugins/auth.plugin";
 const ProfilePage: React.FC = () => {
   const [postsView, setPostsView] = useState<TPostView>("listView");
   const { open } = useStoreOpenModal();
@@ -32,6 +33,11 @@ const ProfilePage: React.FC = () => {
   const loadMoreRef = useRef() as React.RefObject<HTMLButtonElement>;
   const router = useRouter();
   useEffect(() => {
+    const isLogin = checkAuth();
+    if (isLogin) {
+      router.push("/login");
+    }
+
     open
       ? (document.body.className = "openModalBlockScroll")
       : document.body.classList.remove("openModalBlockScroll");

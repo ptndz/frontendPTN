@@ -7,7 +7,7 @@ import Loading from "../../components/ui/Loading";
 import { graphQLClient } from "../../plugins/graphql.plugin";
 import { graphql } from "../../gql";
 import { useRouter } from "next/router";
-import { getCookie } from "cookies-next";
+import { checkAuth } from "../../plugins/auth.plugin";
 const query = graphql(`
   mutation Login($loginInput: LoginInput!) {
     login(loginInput: $loginInput) {
@@ -39,9 +39,9 @@ const Index = () => {
   const [password, setPassword] = useState<string>("");
   const router = useRouter();
   useEffect(() => {
-    const token = getCookie("awt");
+    const isLogin = checkAuth();
 
-    if (token) {
+    if (!isLogin) {
       router.push("/");
     }
   });

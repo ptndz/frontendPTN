@@ -9,9 +9,14 @@ import {
 } from "graphql";
 import { useQuery } from "@tanstack/react-query";
 import { GraphQLClient } from "graphql-request";
+import { getCookie } from "cookies-next";
 const endpoint = process.env.NEXT_PUBLIC_URL_GRAPHQL as string;
+const token = getCookie("awt");
 const executor = buildHTTPExecutor({
   endpoint: endpoint,
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
 });
 
 const isOperationDefinition = (def: ASTNode): def is OperationDefinitionNode =>
@@ -22,7 +27,7 @@ export function useGraphQL<TResult, TVariables>(
   ...[variables]: TVariables extends Record<string, never> ? [] : [TVariables]
 ) {
   return useQuery(
-    [ 
+    [
       // This logic can be customized as desired
       document.definitions.find(isOperationDefinition)?.name,
       variables,
