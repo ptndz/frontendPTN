@@ -14,11 +14,10 @@ export default function handler(
   var newdate= date.getDate() + '/' + (date.getMonth() +1)+ '/' +  date.getFullYear();
   for (let index = 0; index < 5; index++) {
     dataArray.push({
-      _id: String(index),
+      uuid: String(index),
       user: {
-        _id: String(index),
         username: "shihab " + index,
-        fullname: "Saiful Islam Shihab " + index,
+        fullName: "Saiful Islam Shihab " + index,
         avatar: "https://random.imagecdn.app/500/200",
       },
       caption: "This is post caption "+time,

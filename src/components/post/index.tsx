@@ -22,7 +22,7 @@ const Post: React.FC<IProps> = (props) => {
           />
         </div>
         <div className="flex-grow flex flex-col">
-          <p className="font-semibold text-sm text-gray-700">{user.fullname}</p>
+          <p className="font-semibold text-sm text-gray-700">{user.fullName}</p>
           <span className="text-xs font-thin text-gray-400">
             {moment(post.createdAt).fromNow()}
           </span>

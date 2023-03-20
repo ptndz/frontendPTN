@@ -1,9 +1,8 @@
 import { IStory } from "./stories";
 export interface IPost {
-  _id: string;
+  uuid: string;
   user: {
-    _id: string;
-    fullname: string;
+    fullName: string;
     username: string;
     avatar: string;
   };
@@ -20,7 +19,7 @@ export type TPostView = "gridView" | "listView";
 export interface IPages {
   posts: IPost[];
   time: string;
-  start :number
+  start: number;
 }
 export interface IProps {
   postsData: {
@@ -34,11 +33,10 @@ export interface IPostsData {
   pageParams: string;
 }
 
-
 export interface IPropsPostContainer {
-    postsView?: TPostView;
-    postsData: {
-      pages: IPages[];
-      pageParams: string;
-    };
-  }
+  postsView?: TPostView;
+  postsData: {
+    pages: IPages[];
+    pageParams: string;
+  };
+}
