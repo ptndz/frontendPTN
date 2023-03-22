@@ -30,10 +30,6 @@ class MyDocument extends Document {
     return (
       <Html lang="en">
         <Head>
-          <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css"
-          />
           {/* <script dangerouslySetInnerHTML={{ __html: injectGA }}></script> */}
         </Head>
         <body>
