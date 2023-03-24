@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, Fragment } from "react";
 import PostSkeleton from "../Loaders/PostSkeleton";
 import CreatePost from "./CreatePost";
 import SinglePost from "./SinglePost";
@@ -9,6 +9,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { graphQLClient } from "../../plugins/graphql.plugin";
 import { graphql } from "../../gql";
+import { json } from "stream/consumers";
 
 const MiddleLeftBar = () => {
   const [bookmarkedPostsId, setBookmarkedPostsId] = useState([]);
@@ -20,17 +21,56 @@ const MiddleLeftBar = () => {
   const [newPost, setNewPost] = useState(false);
   const { user } = useStoreUser();
   const queryPost = graphql(`
-    query {
-      hello
+    query posts {
+      posts {
+        code
+        success
+        message
+        post {
+          uuid
+          content
+          createAt
+          updateAt
+          shares
+          images
+          user {
+            username
+            fullName
+          }
+          likes {
+            id
+            reactions
+          }
+          comments {
+            id
+          }
+        }
+        posts {
+          uuid
+          content
+          createAt
+          updateAt
+          shares
+          images
+          user {
+            username
+            fullName
+          }
+          likes {
+            id
+            reactions
+          }
+          comments {
+            id
+          }
+        }
+      }
     }
   `);
   const getPost = async (pageParam: string) => {
-    try {
-      const resPost = await graphQLClient.request(queryPost);
-      return "ss";
-    } catch (error) {
-      console.log(error);
-    }
+    const resPost = await graphQLClient.request(queryPost);
+
+    return resPost.posts;
   };
   const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =
     useInfiniteQuery(
@@ -48,7 +88,6 @@ const MiddleLeftBar = () => {
   const loadMoreRef = useRef() as React.RefObject<HTMLButtonElement>;
   const router = useRouter();
   useEffect(() => {
-    getPost("sssssss");
     if (!hasNextPage) {
       return;
     }
@@ -71,24 +110,44 @@ const MiddleLeftBar = () => {
     <div>
       <CreatePost user={userData} setNewPost={setNewPost} />
       {loading && Array(3).map((_, i) => <PostSkeleton key={i} />)}
-      {/* {posts
-        .map((post) => (
-          <SinglePost
-            loading={loading}
-            bookmarkedPostsId={bookmarkedPostsId}
-            key={post.id}
-            post={post}
-            isLike={isLike}
-            setIsLike={setIsLike}
-            deletePost={deletePost}
-            setDeletePost={setDeletePost}
-            userData={userData}
-            setController={undefined}
-            isBookmarkPage={undefined}
-            setRemovedBookmarked={undefined}
-          />
+
+      {data?.pages
+        .map((data, i) => (
+          <Fragment key={i}>
+            {data?.posts &&
+              data?.posts.map((post) => (
+                <SinglePost
+                  loading={loading}
+                  bookmarkedPostsId={bookmarkedPostsId}
+                  key={post.uuid}
+                  post={post}
+                  isLike={isLike}
+                  setIsLike={setIsLike}
+                  deletePost={deletePost}
+                  setDeletePost={setDeletePost}
+                  userData={userData}
+                  setController={undefined}
+                  isBookmarkPage={undefined}
+                  setRemovedBookmarked={undefined}
+                />
+              ))}
+          </Fragment>
         ))
-        .reverse()} */}
+        .reverse()}
+
+      <div>
+        <button
+          ref={loadMoreRef}
+          onClick={() => fetchNextPage()}
+          disabled={!hasNextPage || isFetchingNextPage}>
+          {isFetchingNextPage
+            ? "Loading more..."
+            : hasNextPage
+            ? "Load More"
+            : "Nothing more to load"}
+        </button>
+      </div>
+      <div>{isFetching && !isFetchingNextPage ? "Fetching..." : null}</div>
     </div>
   );
 };

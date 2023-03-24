@@ -6,7 +6,7 @@ export interface IPost {
     username: string;
     avatar: string;
   };
-  caption?: string;
+  content: string;
   image?: string;
   likes: number;
   comments: number;

@@ -1,15 +1,18 @@
-import type { CodegenConfig } from "@graphql-codegen/cli";
+/* eslint-disable import/no-extraneous-dependencies */
+import { CodegenConfig } from "@graphql-codegen/cli";
 
 const config: CodegenConfig = {
-  overwrite: true,
   schema: "http://localhost:8080/graphql",
-  ignoreNoDocuments: true,
-  documents: ["src/**/*.tsx", "src/**/**/*.tsx"],
+  documents: ["src/**/*.{ts,tsx}", "src/**/**/*.{ts,tsx}"],
   generates: {
     "./src/gql/": {
       preset: "client",
+      config: {
+        documentMode: "string",
+      },
     },
   },
+  hooks: { afterAllFileWrite: ["prettier --write"] },
 };
 
 export default config;
