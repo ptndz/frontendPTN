@@ -1,10 +1,14 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import PostSkeleton from "../Loaders/PostSkeleton";
 import CreatePost from "./CreatePost";
 import SinglePost from "./SinglePost";
 import { useStoreUser } from "../../store/user";
 import { Post, User } from "../../gql/graphql";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useRouter } from "next/router";
+import { graphQLClient } from "../../plugins/graphql.plugin";
+import { graphql } from "../../gql";
 
 const MiddleLeftBar = () => {
   const [bookmarkedPostsId, setBookmarkedPostsId] = useState([]);
@@ -15,47 +19,59 @@ const MiddleLeftBar = () => {
   const [deletePost, setDeletePost] = useState(false);
   const [newPost, setNewPost] = useState(false);
   const { user } = useStoreUser();
-
-  useEffect(() => {
-    axios.get(`/api/user?email=${user?.email}`).then(({ data }) => {
-      setUserData(data);
-      setBookmarkedPostsId(data?.bookmark);
-    });
-  }, [user.email, bookmarkedPostsId]);
-
-  useEffect(() => {
-    setLoading(true);
+  const queryPost = graphql(`
+    query {
+      hello
+    }
+  `);
+  const getPost = async (pageParam: string) => {
     try {
-      axios.get(`/api/post`).then((data) => {
-        setPosts(data?.data);
-        setDeletePost(false);
-        setNewPost(false);
-        setLoading(false);
-      });
+      const resPost = await graphQLClient.request(queryPost);
+      return "ss";
     } catch (error) {
-      setLoading(false);
+      console.log(error);
     }
-  }, [user?.email, isLike, deletePost, newPost]);
-
-  const shuffle = (array: any) => {
-    return array.sort(() => 0.5 - Math.random());
   };
+  const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =
+    useInfiniteQuery(
+      ["posts"],
+      ({ pageParam = "01-01-9999" }) => getPost(pageParam),
+      {
+        getNextPageParam: (lastPage, _allPages) => {
+          const time = lastPage;
 
-  const postShuffle = (array: any, first: any) => {
-    if (first) {
-      const newArray = shuffle(array).filter(
-        (element: any) => element !== first
-      );
-      return [first, ...newArray];
+          return time;
+        },
+      }
+    );
+
+  const loadMoreRef = useRef() as React.RefObject<HTMLButtonElement>;
+  const router = useRouter();
+  useEffect(() => {
+    getPost("sssssss");
+    if (!hasNextPage) {
+      return;
     }
-    return shuffle(array);
-  };
+
+    const observer = new IntersectionObserver((entries) =>
+      entries.forEach((entry) => entry.isIntersecting && fetchNextPage())
+    );
+
+    const el = loadMoreRef && loadMoreRef.current;
+
+    if (!el) {
+      return;
+    }
+
+    observer.observe(el);
+  }, [hasNextPage, router, fetchNextPage]);
+  console.log(data);
 
   return (
     <div>
       <CreatePost user={userData} setNewPost={setNewPost} />
       {loading && Array(3).map((_, i) => <PostSkeleton key={i} />)}
-      {posts
+      {/* {posts
         .map((post) => (
           <SinglePost
             loading={loading}
@@ -72,7 +88,7 @@ const MiddleLeftBar = () => {
             setRemovedBookmarked={undefined}
           />
         ))
-        .reverse()}
+        .reverse()} */}
     </div>
   );
 };

@@ -1,5 +1,4 @@
 /* eslint-disable */
-import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -16,9 +15,26 @@ export type Scalars = {
   DateTime: any;
 };
 
+export type Comment = {
+  __typename?: 'Comment';
+  content: Scalars['String'];
+  createAt: Scalars['DateTime'];
+  id: Scalars['ID'];
+};
+
+export type CommentResponse = IMutationResponse & {
+  __typename?: 'CommentResponse';
+  code: Scalars['Float'];
+  comment?: Maybe<IComment>;
+  comments?: Maybe<Array<IComment>>;
+  errors?: Maybe<Array<FieldError>>;
+  message?: Maybe<Scalars['String']>;
+  success: Scalars['Boolean'];
+};
+
 export type CreatePostInput = {
-  text: Scalars['String'];
-  title: Scalars['String'];
+  content: Scalars['String'];
+  images?: InputMaybe<Array<Scalars['String']>>;
 };
 
 export type FieldError = {
@@ -27,8 +43,78 @@ export type FieldError = {
   message: Scalars['String'];
 };
 
+export type IComment = {
+  __typename?: 'IComment';
+  comments?: Maybe<Array<IComment>>;
+  content: Scalars['String'];
+  id: Scalars['Float'];
+  likes?: Maybe<Array<ILike>>;
+  user: IUser;
+};
+
+export type ILike = {
+  __typename?: 'ILike';
+  id: Scalars['Float'];
+  reactions: Scalars['String'];
+  user: IUser;
+};
+
 export type IMutationResponse = {
   code: Scalars['Float'];
+  message?: Maybe<Scalars['String']>;
+  success: Scalars['Boolean'];
+};
+
+export type IPost = {
+  __typename?: 'IPost';
+  comments?: Maybe<Array<Comment>>;
+  content: Scalars['String'];
+  createAt: Scalars['DateTime'];
+  images?: Maybe<Array<Scalars['String']>>;
+  likes?: Maybe<Array<Like>>;
+  shares: Scalars['Float'];
+  updateAt: Scalars['DateTime'];
+  user: IUser;
+  uuid: Scalars['String'];
+};
+
+export type IUser = {
+  __typename?: 'IUser';
+  avatar: Scalars['String'];
+  fullName: Scalars['String'];
+  username: Scalars['String'];
+};
+
+export type ImageLink = {
+  __typename?: 'ImageLink';
+  alt: Scalars['String'];
+  link: Scalars['String'];
+};
+
+export type ImageResponse = IMutationResponse & {
+  __typename?: 'ImageResponse';
+  code: Scalars['Float'];
+  errors?: Maybe<Array<FieldError>>;
+  images?: Maybe<Array<ImageLink>>;
+  limit?: Maybe<Scalars['Float']>;
+  message?: Maybe<Scalars['String']>;
+  start?: Maybe<Scalars['Float']>;
+  success: Scalars['Boolean'];
+};
+
+export type Like = {
+  __typename?: 'Like';
+  createAt: Scalars['DateTime'];
+  id: Scalars['ID'];
+  reactions: Scalars['String'];
+};
+
+export type LikeResponse = IMutationResponse & {
+  __typename?: 'LikeResponse';
+  code: Scalars['Float'];
+  errors?: Maybe<Array<FieldError>>;
+  like?: Maybe<ILike>;
+  likes?: Maybe<Array<ILike>>;
   message?: Maybe<Scalars['String']>;
   success: Scalars['Boolean'];
 };
@@ -40,12 +126,28 @@ export type LoginInput = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  commentComment: CommentResponse;
+  commentPost: CommentResponse;
   createPost: PostMutationResponse;
   deletePost: PostMutationResponse;
+  likeComment: LikeResponse;
+  likePost: LikeResponse;
   login: UserMutationResponse;
   logout: Scalars['Boolean'];
   register: UserMutationResponse;
   updatePost: PostMutationResponse;
+};
+
+
+export type MutationCommentCommentArgs = {
+  commentId: Scalars['Float'];
+  content: Scalars['String'];
+};
+
+
+export type MutationCommentPostArgs = {
+  content: Scalars['String'];
+  postUuid: Scalars['String'];
 };
 
 
@@ -55,7 +157,19 @@ export type MutationCreatePostArgs = {
 
 
 export type MutationDeletePostArgs = {
-  id: Scalars['ID'];
+  uuid: Scalars['String'];
+};
+
+
+export type MutationLikeCommentArgs = {
+  commentId: Scalars['Float'];
+  typeReact: Scalars['String'];
+};
+
+
+export type MutationLikePostArgs = {
+  postUuid: Scalars['String'];
+  typeReact: Scalars['String'];
 };
 
 
@@ -75,11 +189,12 @@ export type MutationUpdatePostArgs = {
 
 export type Post = {
   __typename?: 'Post';
+  content: Scalars['String'];
   createAt: Scalars['DateTime'];
-  id: Scalars['ID'];
-  text: Scalars['String'];
-  title: Scalars['String'];
+  images: Array<Scalars['String']>;
+  shares: Scalars['Float'];
   updateAt: Scalars['DateTime'];
+  uuid: Scalars['String'];
 };
 
 export type PostMutationResponse = IMutationResponse & {
@@ -91,16 +206,71 @@ export type PostMutationResponse = IMutationResponse & {
   success: Scalars['Boolean'];
 };
 
+export type PostQueryResponse = IMutationResponse & {
+  __typename?: 'PostQueryResponse';
+  code: Scalars['Float'];
+  errors?: Maybe<Array<FieldError>>;
+  message?: Maybe<Scalars['String']>;
+  post?: Maybe<IPost>;
+  posts?: Maybe<Array<IPost>>;
+  success: Scalars['Boolean'];
+};
+
 export type Query = {
   __typename?: 'Query';
+  getCommentComment: CommentResponse;
+  getCommentPost: CommentResponse;
+  getLikeComment: LikeResponse;
+  getLikePost: LikeResponse;
+  getListImageUser: ImageResponse;
+  getPostsUserByUserName?: Maybe<PostQueryResponse>;
+  getUser: UserMutationResponse;
   hello: Scalars['String'];
-  post?: Maybe<Post>;
-  posts?: Maybe<Array<Post>>;
+  post?: Maybe<PostQueryResponse>;
+  posts?: Maybe<PostQueryResponse>;
+  user: UserMutationResponse;
+};
+
+
+export type QueryGetCommentCommentArgs = {
+  commentId: Scalars['Float'];
+};
+
+
+export type QueryGetCommentPostArgs = {
+  postUuid: Scalars['String'];
+};
+
+
+export type QueryGetLikeCommentArgs = {
+  commentId: Scalars['Float'];
+};
+
+
+export type QueryGetLikePostArgs = {
+  postUuid: Scalars['String'];
+};
+
+
+export type QueryGetListImageUserArgs = {
+  date: Scalars['String'];
+  limit: Scalars['Float'];
+  start: Scalars['Float'];
+};
+
+
+export type QueryGetPostsUserByUserNameArgs = {
+  username: Scalars['String'];
+};
+
+
+export type QueryGetUserArgs = {
+  username: Scalars['String'];
 };
 
 
 export type QueryPostArgs = {
-  id: Scalars['ID'];
+  uuid: Scalars['String'];
 };
 
 export type RegisterInput = {
@@ -117,9 +287,9 @@ export type RegisterInput = {
 };
 
 export type UpdatePostInput = {
-  id: Scalars['ID'];
-  text: Scalars['String'];
-  title: Scalars['String'];
+  content: Scalars['String'];
+  images?: InputMaybe<Array<Scalars['String']>>;
+  uuid: Scalars['String'];
 };
 
 export type User = {
@@ -140,33 +310,10 @@ export type User = {
 
 export type UserMutationResponse = IMutationResponse & {
   __typename?: 'UserMutationResponse';
+  accessToken?: Maybe<Scalars['String']>;
   code: Scalars['Float'];
   errors?: Maybe<Array<FieldError>>;
   message?: Maybe<Scalars['String']>;
   success: Scalars['Boolean'];
   user?: Maybe<User>;
 };
-
-export type LoginMutationVariables = Exact<{
-  loginInput: LoginInput;
-}>;
-
-
-export type LoginMutation = { __typename?: 'Mutation', login: { __typename?: 'UserMutationResponse', code: number, success: boolean, message?: string | null, user?: { __typename?: 'User', id: string, username: string, firstName: string, email: string, lastName: string, createAt: any } | null, errors?: Array<{ __typename?: 'FieldError', message: string, field: string }> | null } };
-
-export type HelloQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type HelloQuery = { __typename?: 'Query', hello: string };
-
-export type RegisterMutationVariables = Exact<{
-  registerUser: RegisterInput;
-}>;
-
-
-export type RegisterMutation = { __typename?: 'Mutation', register: { __typename?: 'UserMutationResponse', code: number, success: boolean, message?: string | null, user?: { __typename?: 'User', id: string, username: string, firstName: string, email: string, lastName: string, createAt: any } | null, errors?: Array<{ __typename?: 'FieldError', message: string, field: string }> | null } };
-
-
-export const LoginDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"Login"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"loginInput"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"LoginInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"login"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"loginInput"},"value":{"kind":"Variable","name":{"kind":"Name","value":"loginInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"createAt"}},{"kind":"Field","name":{"kind":"Name","value":"username"}}]}},{"kind":"Field","name":{"kind":"Name","value":"errors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"field"}}]}}]}}]}}]} as unknown as DocumentNode<LoginMutation, LoginMutationVariables>;
-export const HelloDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"hello"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hello"}}]}}]} as unknown as DocumentNode<HelloQuery, HelloQueryVariables>;
-export const RegisterDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"Register"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"registerUser"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RegisterInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"register"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"registerInput"},"value":{"kind":"Variable","name":{"kind":"Name","value":"registerUser"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"createAt"}},{"kind":"Field","name":{"kind":"Name","value":"username"}}]}},{"kind":"Field","name":{"kind":"Name","value":"errors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"field"}}]}}]}}]}}]} as unknown as DocumentNode<RegisterMutation, RegisterMutationVariables>;
