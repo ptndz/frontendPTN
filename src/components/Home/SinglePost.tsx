@@ -4,7 +4,7 @@ import moment from "moment";
 import { FaArrowUp } from "react-icons/fa";
 import { FiTrash } from "react-icons/fi";
 import { BiShare } from "react-icons/bi";
-import axios from "axios";
+
 import Comments from "./Comments";
 import Link from "next/link";
 import {
@@ -16,10 +16,10 @@ import {
   BsHeart,
 } from "react-icons/bs";
 import { toast } from "react-toastify";
-import { Post } from "../../gql/graphql";
+import { IPost } from "../../gql/graphql";
 
 interface IProps {
-  post: Post;
+  post: IPost;
   userData: any;
   setIsLike: any;
   setController: any;
@@ -46,7 +46,7 @@ const SinglePost: React.FC<IProps> = ({
   setRemovedBookmarked,
 }) => {
   const [alreadyBookmarked, setAlreadyBookmarked] = useState(
-    bookmarkedPostsId?.some((p: string) => p === post.id)
+    bookmarkedPostsId?.some((p: string) => p === post.uuid)
   );
   const [dbComments, setDbComments] = useState([]);
   const [comment, setComment] = useState("");
@@ -54,19 +54,6 @@ const SinglePost: React.FC<IProps> = ({
   const [status, setStatus] = useState("");
   const [menu, setMenu] = useState("hidden");
   const ref = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    axios.get(`/api/user?email=${post}`).then(({ data }) => {
-      setUserName(data.userName);
-      // setAlreadyBookmarked(data.bookmark.some((b) => b === post._id));
-    });
-  }, [post, post.id]);
-
-  useEffect(() => {
-    axios
-      .get(`/api/post/comment?id=${post.id}`)
-      .then(({ data }) => setDbComments(data));
-  }, [status, post.id]);
 
   const handleCommentChange = (e: any) => {
     setComment(e.target.value);
@@ -77,9 +64,7 @@ const SinglePost: React.FC<IProps> = ({
     let comments = {};
 
     const postComments = [...dbComments, comments];
-    await axios
-      .put(`/api/post/comment?id=${post.id}`, postComments)
-      .then((data) => setStatus(""));
+
     if (ref.current?.value) {
       ref.current.value = "";
     }
@@ -87,33 +72,11 @@ const SinglePost: React.FC<IProps> = ({
 
   const handleLike = async () => {
     const data = { userId: userData._id };
-    await axios.put(`/api/post/like?id=${post.id}`, data).then((data) => {
-      if (data.status === 200) {
-        setStatus("");
-        setIsLike(!isLike);
-      }
-    });
   };
-  const handleDelete = (id: any) => {
-    axios.delete(`api/post?id=${id}`).then((data) => {
-      if (data.status === 200) {
-        setDeletePost(!deletePost);
-      }
-    });
-  };
+  const handleDelete = (id: any) => {};
 
   const handleBookmark = async () => {
     try {
-      const { data } = await axios.patch(
-        `/api/user/bookmarkPost?userId=${userData.id}&postId=${post.id}`
-      );
-      if (data.success) {
-        toast.success(data.message);
-        setAlreadyBookmarked(true);
-      } else {
-        toast.error(data.message);
-        setAlreadyBookmarked(false);
-      }
     } catch (error) {
       toast.error("");
     }
@@ -121,18 +84,6 @@ const SinglePost: React.FC<IProps> = ({
 
   const handleBookmarkRemove = async () => {
     try {
-      const { data } = await axios.delete(
-        `/api/user/removeBookmark?userId=${userData._id}&postId=${post.id}`
-      );
-      if (data.success) {
-        setRemovedBookmarked(true);
-        toast.success(data.message);
-        setAlreadyBookmarked(false);
-        setController(true);
-      } else {
-        toast.error(data.message);
-        setAlreadyBookmarked(true);
-      }
     } catch (error) {
       toast.error("");
     }
@@ -142,15 +93,15 @@ const SinglePost: React.FC<IProps> = ({
     <div className="drop-shadow-sm bg-white dark:bg-black p-5 sm:rounded-xl my-4 ">
       <div className="flex justify-between relative">
         <div className=" flex">
-          <Link href={`/${userName}`} passHref>
+          <Link href={`/${post.user.username}`} passHref>
             <div className="relative">
               <Image
                 src={
-                  post.text ||
+                  post.user.avatar ||
                   "https://i.ibb.co/MVbC3v6/114-1149878-setting-user-avatar-in-specific-size-w.png"
                 }
                 className="rounded-full cursor-pointer"
-                alt=""
+                alt={post.user.fullName}
                 height={45}
                 width={45}
               />
@@ -158,12 +109,12 @@ const SinglePost: React.FC<IProps> = ({
             </div>
           </Link>
           <div className="ml-3">
-            <Link href={`/${userName}`} passHref>
+            <Link href={`/${post.user.username}`} passHref>
               <h4 className="text-md font-semibold cursor-pointer">
-                {post.text}
+                {post.user.fullName}
               </h4>
             </Link>
-            <span className="text-xs">{moment().fromNow()} </span>
+            <span className="text-xs">{moment(post.createAt).fromNow()} </span>
           </div>
         </div>
         <div onClick={() => setMenu(menu === "hidden" ? "block" : "hidden")}>
@@ -195,30 +146,34 @@ const SinglePost: React.FC<IProps> = ({
                 <BsBookmark className="mr-2" /> Bookmark post
               </li>
             )}
-            {userData.email && !isBookmarkPage && (
+            {/* {userData.email && !isBookmarkPage && (
               <li
                 className="py-1 flex items-center cursor-pointer hover:bg-white  dark:hover:bg-zinc-600 px-3"
                 onClick={() => {
-                  handleDelete(post.id);
+                  handleDelete(post.uuid);
                   setMenu("hidden");
                 }}>
                 <FiTrash className="mr-2" /> Delete posts
               </li>
-            )}
+            )} */}
           </ul>
         </div>
       </div>
       <div className="pt-3 mb-3">
         <p>
-          {/* {post.postContent} */}
+          {post.content}
           {/* <button className="text-blue-600 pl-2">see more</button> */}
         </p>
       </div>
-      {/* {post.img && (
-        <div className="pt-3 relative h-96 rounded-lg overflow-hidden w-full">
-          <Image src={post.img} layout="fill" objectFit="cover" alt="" />
-        </div>
-      )} */}
+      {post.images
+        ? post.images.map((image: string, index: number) => (
+            <div
+              key={index}
+              className="pt-3 relative h-96 rounded-lg overflow-hidden w-full">
+              <Image src={image} layout="fill" objectFit="cover" alt="" />
+            </div>
+          ))
+        : ""}
       <div className="flex justify-between items-center">
         <div className="pt-3 flex items-center">
           {/* <span className="p-1 pt-2 pb-0 px-1.5">

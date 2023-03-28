@@ -27,6 +27,6 @@ interface ITheme {
 }
 
 export const useStoreTheme = create<ITheme>((set) => ({
-  theme: "light",
+  theme: "",
   setTheme: (theme: string) => set((state) => ({ ...state, theme: theme })),
 }));

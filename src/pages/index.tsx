@@ -1,6 +1,5 @@
 import LeftSideBar from "../components/Home/LeftSideBar";
 import MiddleLeftBar from "../components/Home/MiddleLeftBar";
-import MiddleRightBar from "../components/Home/MiddleRightBar";
 import RightSideBar from "../components/Home/RightSideBar";
 import Navigation from "../components/Share/Navigation";
 
@@ -8,9 +7,6 @@ import Login from "./login";
 
 import { useStoreUser } from "../store/user";
 import { useStoreIsLoading } from "../store/state";
-import { useEffect } from "react";
-import { graphql } from "../gql";
-import { graphQLClient } from "../plugins/graphql.plugin";
 
 export default function Home() {
   const { user } = useStoreUser();

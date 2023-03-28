@@ -1,21 +1,19 @@
-import axios from "axios";
 import React, { useEffect, useRef, useState, Fragment } from "react";
 import PostSkeleton from "../Loaders/PostSkeleton";
 import CreatePost from "./CreatePost";
 import SinglePost from "./SinglePost";
 import { useStoreUser } from "../../store/user";
-import { Post, User } from "../../gql/graphql";
+import { User } from "../../gql/graphql";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { graphQLClient } from "../../plugins/graphql.plugin";
 import { graphql } from "../../gql";
-import { json } from "stream/consumers";
 
 const MiddleLeftBar = () => {
   const [bookmarkedPostsId, setBookmarkedPostsId] = useState([]);
   const [userData, setUserData] = useState<User>();
   const [loading, setLoading] = useState(false);
-  const [posts, setPosts] = useState<Post[]>([]);
+
   const [isLike, setIsLike] = useState(false);
   const [deletePost, setDeletePost] = useState(false);
   const [newPost, setNewPost] = useState(false);
@@ -26,25 +24,6 @@ const MiddleLeftBar = () => {
         code
         success
         message
-        post {
-          uuid
-          content
-          createAt
-          updateAt
-          shares
-          images
-          user {
-            username
-            fullName
-          }
-          likes {
-            id
-            reactions
-          }
-          comments {
-            id
-          }
-        }
         posts {
           uuid
           content
@@ -59,9 +38,18 @@ const MiddleLeftBar = () => {
           likes {
             id
             reactions
+            user {
+              username
+              fullName
+            }
           }
           comments {
             id
+            content
+            user {
+              username
+              fullName
+            }
           }
         }
       }

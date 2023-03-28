@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import NProgress from "nprogress";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -19,6 +19,8 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { DefaultSeo } from "next-seo";
 import "../plugins/axios.plugin";
 import SEO from "../../next-seo.config";
+import { useStoreTheme } from "../store/state";
+import { getThemeC, setThemeC } from "../plugins/theme";
 
 export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: ReactElement) => ReactNode;
@@ -30,7 +32,32 @@ Router.events.on("routeChangeComplete", () => NProgress.done());
 Router.events.on("routeChangeError", () => NProgress.done());
 
 function MyApp({ Component, pageProps }: AppProps) {
-  //const [queryClient] = React.useState(() => new QueryClient());
+  const { theme, setTheme } = useStoreTheme();
+
+  useEffect(() => {
+    if (document) {
+      const themeC = getThemeC();
+      const d = document.documentElement;
+
+      if (theme && themeC) {
+        d.classList.remove("dark", "light");
+        d.classList.add(theme);
+        setThemeC(theme);
+        return;
+      }
+
+      if (themeC && theme === "") {
+        d.classList.remove("dark", "light");
+        d.classList.add(themeC);
+        setTheme(themeC);
+        return;
+      }
+
+      setTheme("light");
+      setThemeC("light");
+      d.classList.add("light");
+    }
+  }, [setTheme, theme]);
 
   return (
     <QueryClientProvider client={queryClient}>

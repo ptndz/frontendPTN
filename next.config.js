@@ -7,6 +7,8 @@ const nextConfig = {
       "images.unsplash.com",
       "static.xx.fbcdn.net",
       "random.imagecdn.app",
+      "i.ibb.co",
+      "localhost",
     ],
   },
 };

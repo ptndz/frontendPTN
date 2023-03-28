@@ -22,7 +22,7 @@ import axios from "axios";
 import { useStoreUser } from "../../store/user";
 import { useStoreTheme } from "../../store/state";
 import { User } from "../../gql/graphql";
-// import RenderThemeChanger from '../../utils/RenderThemeChanger';
+
 
 const topCenterNavlinks = [
   {
@@ -111,14 +111,14 @@ const Navigation = () => {
                   width="150"
                   height="55"
                   alt="Socio Trend"
-                  src="/dark-logo.png"
+                  src="/android-chrome-192x192.png"
                 />
               ) : (
                 <Image
                   width="150"
                   height="55"
                   alt="Socio Trend"
-                  src="/logo.png"
+                  src="/android-chrome-192x192.png"
                 />
               )}
             </Link>
