@@ -7,7 +7,7 @@ axios.defaults.baseURL = process.env.NEXT_PUBLIC_BASE_URL_API;
 axios.interceptors.request.use(
   function (config) {
     if (config && config.headers) {
-      const token = getCookie("awt");
+      const token = getCookie("accessToken");
       if (token) {
         config.headers["Authorization"] = `Bearer ${token}`;
       }
@@ -38,6 +38,6 @@ axios.interceptors.response.use(
 
 function alertError(e: any) {
   if (e.statusCode === 400) {
-    window.location.href = "http://localhost:8080";
+    window.location.href = "http://localhost:3000";
   }
 }

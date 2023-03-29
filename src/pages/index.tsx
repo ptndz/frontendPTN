@@ -6,11 +6,63 @@ import Navigation from "../components/Share/Navigation";
 import Login from "./login";
 
 import { useStoreUser } from "../store/user";
-import { useStoreIsLoading } from "../store/state";
+import { useStoreIsLoading, useStoreTheme } from "../store/state";
+import { useEffect } from "react";
+import { graphql } from "../gql";
+import { graphQLClient } from "../plugins/graphql.plugin";
+import { Theme, toast } from "react-toastify";
 
 export default function Home() {
-  const { user } = useStoreUser();
+  const { user, setUser } = useStoreUser();
   const { isLoading } = useStoreIsLoading();
+  const { theme } = useStoreTheme();
+  const queryUser = graphql(`
+    query user {
+      user {
+        code
+        success
+        message
+        user {
+          id
+          fullName
+          lastName
+          firstName
+          username
+          email
+          avatar
+          phone
+          birthday
+          sex
+          createAt
+          updateAt
+        }
+        errors {
+          message
+          field
+        }
+      }
+    }
+  `);
+
+  useEffect(() => {
+    graphQLClient.request(queryUser).then((res) => {
+      if (res.user.code === 400) {
+        toast.error(res.user.message, {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          theme: theme ? (theme as Theme) : "light",
+        });
+      }
+      if (res.user.code === 200) {
+        if (res.user.user) {
+          setUser(res.user.user);
+        }
+      }
+    });
+  }, [queryUser, setUser, theme, user.username]);
 
   if (isLoading) {
     return (

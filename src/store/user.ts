@@ -1,30 +1,29 @@
 import { create } from "zustand";
-import { IUser } from "../types/user";
+import { User } from "../gql/graphql";
 
 interface UserState {
-  user: IUser;
-  setUser: (userValue: IUser) => void;
+  user: User;
+  setUser: (userValue: User) => void;
 }
 export const useStoreUser = create<UserState>((set) => ({
   user: {
+    id: "",
     fullName: "",
     firstName: "",
     lastName: "",
     username: "",
     email: "",
-
-    password: "",
-    avatar: "https://random.imagecdn.app/200/200",
+    avatar: "",
     phone: "",
     birthday: "",
     sex: false,
+    createAt: "",
+    updateAt: "",
   },
-  setUser: (userValue: IUser) => {
+  setUser: (userValue: User) => {
     set((state) => ({
-      user: {
-        ...state.user,
-        userValue,
-      },
+      ...state,
+      user: userValue,
     }));
   },
 }));

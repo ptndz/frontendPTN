@@ -7,54 +7,96 @@ import Image from "next/image";
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { User } from "../../gql/graphql";
+
+import { useStoreUser } from "../../store/user";
+import { graphql } from "../../gql";
+import { graphQLClient } from "../../plugins/graphql.plugin";
 
 interface IProps {
-  user?: User;
-  setNewPost: any;
+  setNewPost: (newPost: boolean) => void;
 }
 
-const CreatePost: React.FC<IProps> = ({ user, setNewPost }) => {
-  const [postImages, setPostImages] = useState<string | Blob>();
-  const [postImagePreview, setPostImagePreview] = useState([]);
+const CreatePost: React.FC<IProps> = ({ setNewPost }) => {
+  const [postImages, setPostImages] = useState<File[]>();
+  const [postImagePreview, setPostImagePreview] = useState<string[]>();
   const [postContents, setPostContents] = useState("");
 
-  const textareaRef = useRef<Element | ArrayLike<Element> | null>(null);
-  const filePickerRef = useRef(null);
-
+  const textareaRef = useRef<any>(null);
+  const filePickerRef = useRef<any>(null);
+  const { user } = useStoreUser();
   useEffect(() => {
-    // autosize(textareaRef.current);
-  }, []);
-
+    autosize(textareaRef.current);
+  }, [postContents]);
+  const queryPost = graphql(`
+    mutation createPost($content: String!, $images: [String!]!) {
+      createPost(createPostInput: { content: $content, images: $images }) {
+        code
+        success
+        message
+        post {
+          uuid
+          content
+          createAt
+          updateAt
+          images
+        }
+        errors {
+          field
+          message
+        }
+      }
+    }
+  `);
   const { register, handleSubmit } = useForm();
   const onSubmit = async (data: any) => {
-    toast("Posting....");
-
-    const formData = new FormData();
-    formData.append("upload_preset", "socio-trend");
-
-    if (postImages) {
-      formData.append("file", postImages);
-      await fetch(`https://api.cloudinary.com/v1_1/dtkl4ic8s/image/upload`, {
-        method: "POST",
-        body: formData,
-      })
-        .then((res) => res.json())
-        .then((result) => (data.img = result.url));
-    }
-
-    if (!data.img && !data.postContent) return;
-
-    const response = await axios.post(`/api/post`, {
-      data,
+    toast("🦄 Posting....", {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "light",
     });
-    console.log("response", response);
-    if (response.status === 200) {
-      setNewPost(true);
-      toast("Your Post has been successfully created");
-      setPostImages("");
-      setPostImagePreview([]);
+    const formData = new FormData();
+    let imagesData: string[] = [];
+    if (postImages) {
+      postImages.map((image: File) => {
+        formData.append("images", image);
+      });
+
+      const resImages = await axios.post("/image", formData);
+      if (resImages.data.code === 200) {
+        if (resImages.data.images) {
+          imagesData = resImages.data.images;
+        }
+      }
+    }
+    const resPost = await graphQLClient.request(queryPost, {
+      content: postContents,
+      images: imagesData ? imagesData : [],
+    });
+    if (resPost.createPost.code !== 200) {
+      toast(resPost.createPost.message);
+      return;
+    }
+    if (resPost.createPost.code === 200) {
+      toast.success(resPost.createPost.message, {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+      });
       setPostContents("");
+      setPostImages(undefined);
+      setPostImagePreview(undefined);
+
+      setNewPost(true);
     }
   };
 
@@ -84,6 +126,7 @@ const CreatePost: React.FC<IProps> = ({ user, setNewPost }) => {
               <textarea
                 {...register("postContent")}
                 id="postContent"
+                ref={textareaRef}
                 value={postContents}
                 onChange={(e) => setPostContents(e.target.value)}
                 placeholder="What's on your mind?"
@@ -93,35 +136,39 @@ const CreatePost: React.FC<IProps> = ({ user, setNewPost }) => {
           </div>
         </div>
         {/* image preview */}
-        {postImagePreview.length > 0 && (
+        {postImagePreview ? (
           <div className="relative w-full">
-            {/* <CreatePostImageGrid images={postImages} /> */}
-            <div className="sm:p-2">
-              <div className="relative h-72 w-full sm:rounded-lg overflow-hidden border border-gray-300 dark:border-zinc-600">
-                <Image
-                  src={postImagePreview[0]}
-                  alt="image01"
-                  layout="fill"
-                  objectFit="cover"
-                />
+            {postImagePreview.map((image, index: number) => (
+              <div className="sm:p-2" key={index}>
+                <div className="relative h-72 w-full sm:rounded-lg overflow-hidden border border-gray-300 dark:border-zinc-600">
+                  <Image
+                    src={image}
+                    alt="image01"
+                    layout="fill"
+                    objectFit="cover"
+                  />
+                </div>
               </div>
-            </div>
+            ))}
+
             <button
               className="absolute top-3 right-1 mr-2.5"
               type="button"
               onClick={() => {
-                setPostImagePreview([]);
-                setPostImages("");
+                setPostImagePreview(undefined);
+                setPostImages(undefined);
               }}>
               <BsX className="h-5 w-5 box-content p-2 rounded-full bg-white border dark:border-zinc-600 dark:bg-zinc-700" />
             </button>
           </div>
+        ) : (
+          ""
         )}
         {/* buttons */}
         <div className="border m-2 rounded-lg overflow-hidden border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-black grid divide-gray-200 dark:divide-zinc-700 grid-cols-2 divide-y-0 divide-x">
           <button
             type="button"
-            // onClick={() => filePickerRef.current.click()}
+            onClick={() => filePickerRef.current.click()}
             className="py-2.5 text-sm font-medium flex gap-2 items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-800">
             <MdOutlinePhotoSizeSelectActual className="text-green-400 w-7 h-7" />
             <span className="hidden sm:block text-gray-600 dark:text-zinc-200">
@@ -134,19 +181,37 @@ const CreatePost: React.FC<IProps> = ({ user, setNewPost }) => {
               name="file"
               id="file"
               onChange={(e) => {
-                // const files = e.target.files;
-                // const images = [];
-                // for (let i = 0; i < files.length; i++) {
-                //   images.push(URL.createObjectURL(files[i]));
-                // }
-                // setPostImagePreview([...postImages, ...images]);
-                // setPostImages(e.target.files[0]);
+                const files = e.target.files;
+                const images: any = [];
+                if (files) {
+                  for (let i = 0; i < files.length; i++) {
+                    images.push(URL.createObjectURL(files[i]));
+                  }
+
+                  if (postImagePreview === undefined) {
+                    setPostImagePreview([...images]);
+                  }
+                  if (postImagePreview) {
+                    setPostImagePreview((result: any) => [
+                      ...result,
+                      ...images,
+                    ]);
+                  }
+                  if (postImages === undefined) {
+                    setPostImages([files[0]]);
+                  }
+                  if (postImages) {
+                    setPostImages((result: any) => [...result, files[0]]);
+                  }
+                }
               }}
               className="hidden"
             />
           </button>
           <button
-            disabled={!postContents && !postImagePreview.length}
+            disabled={
+              !postContents && postImagePreview && postImagePreview.length > 0
+            }
             type="submit"
             className="py-2.5 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:dark:hover:bg-transparent text-sm font-medium flex gap-2 items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-800">
             <BiMessageSquareEdit className="text-red-500 w-7 h-7" />

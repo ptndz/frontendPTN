@@ -1,8 +1,7 @@
-import axios from 'axios';
-import Image from 'next/image';
-import { useEffect, useState } from 'react';
-import { RiUserSmileLine } from 'react-icons/ri';
-import { format } from 'timeago.js';
+import axios from "axios";
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import { RiUserSmileLine } from "react-icons/ri";
 
 const Chat = ({ message, own }) => {
   const [user, setUser] = useState({});

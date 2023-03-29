@@ -1,3 +1,10 @@
 {
-  "cSpell.words": ["inputsize", "tailwindcss", "tanstack", "zustand"]
+  "cSpell.words": [
+    "autosize",
+    "inputsize",
+    "tailwindcss",
+    "tanstack",
+    "toastify",
+    "zustand"
+  ]
 }

@@ -15,14 +15,13 @@ import {
   BsMoon,
 } from "react-icons/bs";
 import { VscListSelection } from "react-icons/vsc";
-import { FiUsers, FiUser, FiLogOut } from "react-icons/fi";
+import { FiUsers, FiUser, FiLogOut, FiSearch } from "react-icons/fi";
 
 import axios from "axios";
 
 import { useStoreUser } from "../../store/user";
 import { useStoreTheme } from "../../store/state";
 import { User } from "../../gql/graphql";
-
 
 const topCenterNavlinks = [
   {
@@ -49,7 +48,6 @@ const topCenterNavlinks = [
 
 const Navigation = () => {
   const [mounted, setMounted] = useState(false);
-  const [dbUser, setDbUser] = useState<User>();
 
   const { user } = useStoreUser();
   const router = useRouter();
@@ -60,12 +58,8 @@ const Navigation = () => {
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
   const openMobileMenu = () => setIsMobileMenuOpen(true);
   const { theme, setTheme } = useStoreTheme();
+
   useEffect(() => setMounted(true), []);
-  useEffect(() => {
-    axios
-      .get(`/api/user?email=${user.email}`)
-      .then(({ data }) => setDbUser(data));
-  }, [user?.email]);
 
   const renderThemeChanger = () => {
     if (!mounted) return null;
@@ -123,7 +117,7 @@ const Navigation = () => {
               )}
             </Link>
             {/* Search */}
-            {/* <button className="lg:hidden whitespace-nowrap text-lg md:text-2xl p-3 flex gap-1.5 items-center justify-between rounded-lg dark:bg-zinc-700 dark:bg-opacity-50 dark:hover:bg-opacity-90 bg-white dark:text-white bg-opacity-50 hover:bg-opacity-90 focus:outline-none focus:ring-1 focus:ring-offset-0 focus:ring-teal-400">
+            <button className="lg:hidden whitespace-nowrap text-lg md:text-2xl p-3 flex gap-1.5 items-center justify-between rounded-lg dark:bg-zinc-700 dark:bg-opacity-50 dark:hover:bg-opacity-90 bg-white dark:text-white bg-opacity-50 hover:bg-opacity-90 focus:outline-none focus:ring-1 focus:ring-offset-0 focus:ring-teal-400">
               <FiSearch />
             </button>
             <div className="max-w-lg w-full lg:max-w-xs hidden lg:block">
@@ -142,7 +136,7 @@ const Navigation = () => {
                   type="search"
                 />
               </div>
-            </div> */}
+            </div>
           </div>
           {/* end of Logo & search */}
           {/* Navigations */}
@@ -172,10 +166,10 @@ const Navigation = () => {
                 <button
                   onClick={toggleProfileMenu}
                   className="whitespace-nowrap relative h-11 w-11 border border-gray-300 dark:border-zinc-600 dark:hover:bg-zinc-900 hover:bg-gray-100 rounded-full text-lg focus:outline-none focus:ring-offset-0">
-                  {dbUser?.avatar ? (
+                  {user?.avatar ? (
                     <Image
-                      src={dbUser?.avatar}
-                      alt={dbUser?.fullName}
+                      src={user?.avatar}
+                      alt={user?.fullName}
                       layout="fill"
                       objectFit="cover"
                       className="h-full w-full rounded-full"
@@ -194,14 +188,14 @@ const Navigation = () => {
                     : "opacity-0 translate-y-4 pointer-events-none"
                 }  transform transition-all divide-y divide-gray-300 dark:divide-zinc-600 duration-200 absolute z-50 right-4 mt-2 p-1 w-64 rounded-md shadow-lg overflow-hidden dark:bg-black bg-white ring-1 ring-gray-100 dark:ring-zinc-600 focus:outline-none`}>
                 <Link
-                  href={`/${dbUser?.username}`}
+                  href={`/${user?.username}`}
                   onClick={closeProfileMenu}
                   className="relative p-3 mb-1 rounded-lg flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-zinc-800 focus-within:ring-1 focus-within:ring-inset focus-within:ring-white">
                   <div className="flex-shrink-0 relative w-11 h-11 rounded-full overflow-hidden">
-                    {dbUser?.avatar ? (
+                    {user?.avatar ? (
                       <Image
-                        src={dbUser?.avatar}
-                        alt={dbUser?.fullName}
+                        src={user?.avatar}
+                        alt={user?.fullName}
                         layout="fill"
                         objectFit="cover"
                       />
@@ -210,7 +204,7 @@ const Navigation = () => {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="truncate text-sm">{dbUser?.fullName}</p>
+                    <p className="truncate text-sm">{user?.fullName}</p>
                     <p className="text-sm text-gray-400 dark:text-zinc-400 truncate">
                       See profile
                     </p>
@@ -238,7 +232,7 @@ const Navigation = () => {
                     <BsChevronRight />
                   </Link>
                   <Link
-                    href={`/${dbUser?.username}`}
+                    href={`/${user?.username}`}
                     onClick={closeProfileMenu}
                     className="flex items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg">
                     <p className="flex items-center gap-2">

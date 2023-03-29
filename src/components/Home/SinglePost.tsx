@@ -17,10 +17,11 @@ import {
 } from "react-icons/bs";
 import { toast } from "react-toastify";
 import { IPost } from "../../gql/graphql";
+import { useStoreUser } from "../../store/user";
 
 interface IProps {
   post: IPost;
-  userData: any;
+
   setIsLike: any;
   setController: any;
   isLike: any;
@@ -34,7 +35,7 @@ interface IProps {
 
 const SinglePost: React.FC<IProps> = ({
   post,
-  userData,
+
   setIsLike,
   setController,
   isLike,
@@ -54,7 +55,7 @@ const SinglePost: React.FC<IProps> = ({
   const [status, setStatus] = useState("");
   const [menu, setMenu] = useState("hidden");
   const ref = useRef<HTMLInputElement>(null);
-
+  const { user } = useStoreUser();
   const handleCommentChange = (e: any) => {
     setComment(e.target.value);
   };
@@ -71,7 +72,7 @@ const SinglePost: React.FC<IProps> = ({
   };
 
   const handleLike = async () => {
-    const data = { userId: userData._id };
+    const data = { userId: user.id };
   };
   const handleDelete = (id: any) => {};
 
@@ -97,7 +98,6 @@ const SinglePost: React.FC<IProps> = ({
             <div className="relative">
               <Image
                 src={
-                  post.user.avatar ||
                   "https://i.ibb.co/MVbC3v6/114-1149878-setting-user-avatar-in-specific-size-w.png"
                 }
                 className="rounded-full cursor-pointer"
@@ -206,7 +206,7 @@ const SinglePost: React.FC<IProps> = ({
         <div className="flex gap-2 items-center pt-5">
           <div className="relative">
             <Image
-              src={userData?.photoURL || "/user-8.png"}
+              src={user.avatar || "/user-8.png"}
               alt=""
               height="50"
               width="50"

@@ -4,22 +4,59 @@ import { FiChevronRight } from "react-icons/fi";
 import Image from "next/image";
 import Link from "next/link";
 import UserListSkeleton from "../Loaders/UserListSkeleton";
-import { User } from "../../gql/graphql";
 
+import { graphql } from "../../gql";
+import { graphQLClient } from "../../plugins/graphql.plugin";
+import { Theme, toast } from "react-toastify";
+import { useStoreTheme } from "../../store/state";
+interface IUser {
+  fullName: string;
+  avatar: string;
+  username: string;
+}
 const RightSideBar = () => {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<IUser[]>([]);
   const [loading, setLoading] = useState(false);
-
+  const { theme } = useStoreTheme();
+  const queryUsers = graphql(`
+    query getUsers {
+      getUsers {
+        code
+        success
+        message
+        users {
+          fullName
+          avatar
+          username
+        }
+        errors {
+          message
+          field
+        }
+      }
+    }
+  `);
   useEffect(() => {
     setLoading(true);
     const fetchData = async () => {
-      const res = await axios.get("/api/user/allUsers");
-      setUsers(res.data);
+      const res = await graphQLClient.request(queryUsers);
+      if (res.getUsers.code === 400) {
+        toast.error(res.getUsers.message, {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          theme: theme ? (theme as Theme) : "light",
+        });
+      }
+      if (res.getUsers.users) {
+        setUsers(res.getUsers.users);
+      }
       setLoading(false);
     };
     fetchData();
-    // axios.get('/api/user/allUsers').then(({ data }) => setUsers(data));
-  }, []);
+  }, [queryUsers, theme]);
   return (
     <div>
       <div className="bg-white dark:bg-black drop-shadow-sm p-3 rounded-lg">

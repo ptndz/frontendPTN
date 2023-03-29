@@ -21,6 +21,7 @@ import "../plugins/axios.plugin";
 import SEO from "../../next-seo.config";
 import { useStoreTheme } from "../store/state";
 import { getThemeC, setThemeC } from "../plugins/theme";
+import { setCookies } from "cookies-next";
 
 export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: ReactElement) => ReactNode;
@@ -43,6 +44,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         d.classList.remove("dark", "light");
         d.classList.add(theme);
         setThemeC(theme);
+        setCookies("theme", theme);
         return;
       }
 
@@ -50,11 +52,13 @@ function MyApp({ Component, pageProps }: AppProps) {
         d.classList.remove("dark", "light");
         d.classList.add(themeC);
         setTheme(themeC);
+        setCookies("theme", themeC);
         return;
       }
 
       setTheme("light");
       setThemeC("light");
+      setCookies("theme", "light");
       d.classList.add("light");
     }
   }, [setTheme, theme]);

@@ -1,42 +1,83 @@
-import Head from "next/head";
-import axios from "axios";
 import React, { useEffect, useState } from "react";
 import Navigation from "../components/Share/Navigation";
 import UserProfile from "../components/userProfile/UserProfile";
 import { useRouter } from "next/router";
+import { graphql } from "../gql";
+import { graphQLClient } from "../plugins/graphql.plugin";
+import { Theme, toast } from "react-toastify";
+import { useStoreTheme } from "../store/state";
+import { User } from "../gql/graphql";
 
 const Profile = () => {
   const router = useRouter();
-  const userName = router.query.username;
-  const [userData, setUserData] = useState({});
+  const userName = router.query.username as string;
+  const [userData, setUserData] = useState<User>();
   const [updateUserData, setUpdateUserData] = useState(false);
-
+  const { theme } = useStoreTheme();
   useEffect(() => {
-    axios
-      .get(`/api/user/userName?userName=${userName}`)
-      .then(({ data }) => setUserData(data));
-  }, [userName, updateUserData]);
+    const queryUser = graphql(`
+      query getUser($username: String!) {
+        getUser(username: $username) {
+          code
+          success
+          message
+          user {
+            id
+            fullName
+            lastName
+            firstName
+            username
+            email
+            avatar
+            phone
+            birthday
+            sex
+            createAt
+            updateAt
+          }
+          errors {
+            message
+            field
+          }
+        }
+      }
+    `);
+    const fetchData = async () => {
+      const res = await graphQLClient.request(queryUser, {
+        username: userName,
+      });
+      if (res.getUser.code === 400) {
+        toast.error(res.getUser.message, {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          theme: theme ? (theme as Theme) : "light",
+        });
+      }
+      if (res.getUser.code === 200) {
+        if (res.getUser.user) {
+          setUserData(res.getUser.user);
+        }
+      }
+    };
+    fetchData();
+  }, [userName, updateUserData, theme]);
 
   return (
     <>
-      <Head>
-        <title>Message</title>
-        <link rel="icon" href="/favicon.png" />
-        <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-          integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
-          crossOrigin="anonymous"
-          referrerPolicy="no-referrer"
-        />
-      </Head>
       <Navigation />
-      <div className="max-w-4xl mx-auto gap-4 bg-gray-100 dark:bg-zinc-900 pt-2 w-full ">
-        <UserProfile
-          userData={userData}
-          setUpdateUserData={setUpdateUserData}
-        />
-      </div>
+      {userData ? (
+        <div className="max-w-4xl mx-auto gap-4 bg-gray-100 dark:bg-zinc-900 pt-2 w-full ">
+          <UserProfile
+            userData={userData}
+            setUpdateUserData={setUpdateUserData}
+          />
+        </div>
+      ) : (
+        router.push("/404")
+      )}
     </>
   );
 };

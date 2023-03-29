@@ -3,7 +3,7 @@ import PostSkeleton from "../Loaders/PostSkeleton";
 import CreatePost from "./CreatePost";
 import SinglePost from "./SinglePost";
 import { useStoreUser } from "../../store/user";
-import { User } from "../../gql/graphql";
+
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { graphQLClient } from "../../plugins/graphql.plugin";
@@ -11,12 +11,12 @@ import { graphql } from "../../gql";
 
 const MiddleLeftBar = () => {
   const [bookmarkedPostsId, setBookmarkedPostsId] = useState([]);
-  const [userData, setUserData] = useState<User>();
+
   const [loading, setLoading] = useState(false);
 
   const [isLike, setIsLike] = useState(false);
   const [deletePost, setDeletePost] = useState(false);
-  const [newPost, setNewPost] = useState(false);
+  const [newPost, setNewPost] = useState<boolean>(false);
   const { user } = useStoreUser();
   const queryPost = graphql(`
     query posts {
@@ -32,6 +32,7 @@ const MiddleLeftBar = () => {
           shares
           images
           user {
+            avatar
             username
             fullName
           }
@@ -39,6 +40,7 @@ const MiddleLeftBar = () => {
             id
             reactions
             user {
+              avatar
               username
               fullName
             }
@@ -47,6 +49,7 @@ const MiddleLeftBar = () => {
             id
             content
             user {
+              avatar
               username
               fullName
             }
@@ -76,6 +79,9 @@ const MiddleLeftBar = () => {
   const loadMoreRef = useRef() as React.RefObject<HTMLButtonElement>;
   const router = useRouter();
   useEffect(() => {
+    console.log(user);
+  }, [user]);
+  useEffect(() => {
     if (!hasNextPage) {
       return;
     }
@@ -92,11 +98,10 @@ const MiddleLeftBar = () => {
 
     observer.observe(el);
   }, [hasNextPage, router, fetchNextPage]);
-  console.log(data);
 
   return (
     <div>
-      <CreatePost user={userData} setNewPost={setNewPost} />
+      <CreatePost setNewPost={setNewPost} />
       {loading && Array(3).map((_, i) => <PostSkeleton key={i} />)}
 
       {data?.pages
@@ -113,7 +118,6 @@ const MiddleLeftBar = () => {
                   setIsLike={setIsLike}
                   deletePost={deletePost}
                   setDeletePost={setDeletePost}
-                  userData={userData}
                   setController={undefined}
                   isBookmarkPage={undefined}
                   setRemovedBookmarked={undefined}
