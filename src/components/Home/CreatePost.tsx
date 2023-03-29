@@ -7,7 +7,7 @@ import Image from "next/image";
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import { toast } from "react-toastify";
-
+import jsonP from "@ptndev/json";
 import { useStoreUser } from "../../store/user";
 import { graphql } from "../../gql";
 import { graphQLClient } from "../../plugins/graphql.plugin";
@@ -24,6 +24,7 @@ const CreatePost: React.FC<IProps> = ({ setNewPost }) => {
   const textareaRef = useRef<any>(null);
   const filePickerRef = useRef<any>(null);
   const { user } = useStoreUser();
+
   useEffect(() => {
     autosize(textareaRef.current);
   }, [postContents]);
@@ -74,7 +75,7 @@ const CreatePost: React.FC<IProps> = ({ setNewPost }) => {
       }
     }
     const resPost = await graphQLClient.request(queryPost, {
-      content: postContents,
+      content: jsonP.stringify(postContents),
       images: imagesData ? imagesData : [],
     });
     if (resPost.createPost.code !== 200) {
@@ -131,7 +132,7 @@ const CreatePost: React.FC<IProps> = ({ setNewPost }) => {
                 onChange={(e) => setPostContents(e.target.value)}
                 placeholder="What's on your mind?"
                 rows={2}
-                className="w-full placeholder:text-sm dark:text-zinc-200 resize-none max-h-40 focus:outline-none focus:border-none focus:ring-0 bg-transparent border-none"></textarea>
+                className="w-full placeholder:text-sm dark:text-zinc-200 resize-none max-h-40 focus:outline-none focus:border-none focus:ring-0 bg-transparent border-none scrollbar-hide overflow-y-scroll scrollbar scroll-ml-5"></textarea>
             </div>
           </div>
         </div>

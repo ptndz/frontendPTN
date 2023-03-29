@@ -4,7 +4,7 @@ import moment from "moment";
 import { FaArrowUp } from "react-icons/fa";
 import { FiTrash } from "react-icons/fi";
 import { BiShare } from "react-icons/bi";
-
+import jsonP from "@ptndev/json";
 import Comments from "./Comments";
 import Link from "next/link";
 import {
@@ -16,15 +16,16 @@ import {
   BsHeart,
 } from "react-icons/bs";
 import { toast } from "react-toastify";
-import { IPost } from "../../gql/graphql";
+import { IComment, IPost } from "../../gql/graphql";
 import { useStoreUser } from "../../store/user";
+import { graphql } from "../../gql";
+import { graphQLClient } from "../../plugins/graphql.plugin";
 
 interface IProps {
   post: IPost;
 
-  setIsLike: any;
   setController: any;
-  isLike: any;
+
   setDeletePost: any;
   bookmarkedPostsId: any;
   deletePost: any;
@@ -36,9 +37,8 @@ interface IProps {
 const SinglePost: React.FC<IProps> = ({
   post,
 
-  setIsLike,
   setController,
-  isLike,
+
   setDeletePost,
   bookmarkedPostsId,
   deletePost,
@@ -49,30 +49,126 @@ const SinglePost: React.FC<IProps> = ({
   const [alreadyBookmarked, setAlreadyBookmarked] = useState(
     bookmarkedPostsId?.some((p: string) => p === post.uuid)
   );
-  const [dbComments, setDbComments] = useState([]);
+  const [isLike, setIsLike] = useState<boolean>(false);
+  const [isSeeMore, setIsSeeMore] = useState<boolean>(false);
+  const [dbComments, setDbComments] = useState<IComment[]>([]);
   const [comment, setComment] = useState("");
-  const [userName, setUserName] = useState("");
+
   const [status, setStatus] = useState("");
   const [menu, setMenu] = useState("hidden");
   const ref = useRef<HTMLInputElement>(null);
   const { user } = useStoreUser();
-  const handleCommentChange = (e: any) => {
-    setComment(e.target.value);
-  };
+  useEffect(() => {
+    const isLikePost = post?.likes?.find(
+      (item) => item.user.username === user.username
+    );
+    setIsLike(isLikePost ? true : false);
+  }, [post, user.username]);
+
+  useEffect(() => {
+    if (post.comments) {
+      setDbComments(post.comments);
+    }
+  }, [post.comments]);
+
+  useEffect(() => {
+    if (post.content.split("\n").length >= 6) {
+      setIsSeeMore(false);
+    }
+  }, [post.content]);
 
   const handleSubmitComment = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    let comments = {};
+    if (comment.length < 1) {
+      toast.error("Comment is required");
+      return;
+    }
 
-    const postComments = [...dbComments, comments];
-
-    if (ref.current?.value) {
-      ref.current.value = "";
+    const queryCommentPost = graphql(`
+      mutation commentPost($postUuid: String!, $content: String!) {
+        commentPost(postUuid: $postUuid, content: $content) {
+          code
+          success
+          message
+          comment {
+            id
+            user {
+              username
+              fullName
+              avatar
+            }
+            content
+            likes {
+              id
+              reactions
+              user {
+                username
+                fullName
+                avatar
+              }
+            }
+          }
+          comments {
+            id
+            content
+            user {
+              username
+              fullName
+              avatar
+            }
+            likes {
+              id
+              user {
+                username
+                fullName
+                avatar
+              }
+              reactions
+            }
+          }
+        }
+      }
+    `);
+    const res = await graphQLClient.request(queryCommentPost, {
+      postUuid: post.uuid,
+      content: comment,
+    });
+    if (res.commentPost.code === 200) {
+      if (res.commentPost.comments) {
+        setDbComments(res.commentPost.comments);
+      }
+      if (ref.current?.value) {
+        ref.current.value = "";
+        setComment("");
+      }
     }
   };
 
   const handleLike = async () => {
-    const data = { userId: user.id };
+    const queryLike = graphql(`
+      mutation likePost($postUuid: String!, $typeReact: String!) {
+        likePost(postUuid: $postUuid, typeReact: $typeReact) {
+          code
+          success
+          message
+          like {
+            id
+            reactions
+            user {
+              fullName
+              username
+            }
+          }
+        }
+      }
+    `);
+    const res = await graphQLClient.request(queryLike, {
+      postUuid: post.uuid,
+      typeReact: "LIKE",
+    });
+    if (res.likePost.code === 200) {
+      setIsLike(!isLike);
+    }
   };
   const handleDelete = (id: any) => {};
 
@@ -160,10 +256,33 @@ const SinglePost: React.FC<IProps> = ({
         </div>
       </div>
       <div className="pt-3 mb-3">
-        <p>
-          {post.content}
-          {/* <button className="text-blue-600 pl-2">see more</button> */}
-        </p>
+        {isSeeMore
+          ? post.content.split("\n").map(function (item, idx) {
+              return (
+                <p key={idx}>
+                  {item}
+                  <br />
+                </p>
+              );
+            })
+          : post.content.split("\n").map(function (item, idx) {
+              if (idx <= 5) {
+                return (
+                  <p key={idx}>
+                    {item}
+                    <br />
+                  </p>
+                );
+              }
+            })}
+
+        {post.content.split("\n").length >= 6 && (
+          <button
+            onClick={() => setIsSeeMore(!isSeeMore)}
+            className="text-blue-600 pl-2">
+            see more
+          </button>
+        )}
       </div>
       {post.images
         ? post.images.map((image: string, index: number) => (
@@ -176,8 +295,37 @@ const SinglePost: React.FC<IProps> = ({
         : ""}
       <div className="flex justify-between items-center">
         <div className="pt-3 flex items-center">
-          {/* <span className="p-1 pt-2 pb-0 px-1.5">
-            {post?.like?.find((id: any) => id === userData._id) ? (
+          <div className="box pt-2 pb-0 px-1.5">
+            <input type="checkbox" id="like" className="field-reactions" />
+            <label htmlFor="like" className="label-reactions">
+              Like
+            </label>
+            <span className="text-desc">
+              Press space and after tab key to navigation
+            </span>
+            <div className="toolbox" />
+            <label className="overlay" htmlFor="like" />
+            <button className="reaction-like">
+              <span className="legend-reaction">Like</span>
+            </button>
+            <button className="reaction-love">
+              <span className="legend-reaction">Love</span>
+            </button>
+            <button className="reaction-haha">
+              <span className="legend-reaction">Haha</span>
+            </button>
+            <button className="reaction-wow">
+              <span className="legend-reaction">Wow</span>
+            </button>
+            <button className="reaction-sad">
+              <span className="legend-reaction">Sad</span>
+            </button>
+            <button className="reaction-angry">
+              <span className="legend-reaction">Angry</span>
+            </button>
+          </div>
+          <span className="p-1 pt-2 pb-0 px-1.5">
+            {isLike ? (
               <button onClick={handleLike}>
                 <BsHeartFill className="text-xl text-red-500" />
               </button>
@@ -187,19 +335,20 @@ const SinglePost: React.FC<IProps> = ({
               </button>
             )}
           </span>
-          <span className="ml-3">{post?.like?.length} Like</span> */}
+
+          <span className="ml-3">{post?.likes?.length}</span>
           <div className="ml-5 ">
             <button className="items-center flex gap-1">
               <BsChatLeft className="text-xl mt-1" />
-              <span className="ml-1">{dbComments.length} Comments</span>
+              <span className="ml-1">{post.comments?.length} Comments</span>
             </button>
           </div>
         </div>
         <div>
-          {/* <button className="flex items-center">
+          <button className="flex items-center">
             <BiShare className="text-xl" />
-            <span className="ml-1">{post.share} Share</span>
-          </button> */}
+            <span className="ml-1">{post.shares} Share</span>
+          </button>
         </div>
       </div>
       <form onSubmit={handleSubmitComment}>
@@ -215,7 +364,7 @@ const SinglePost: React.FC<IProps> = ({
           </div>
           <div className="w-full">
             <input
-              onChange={handleCommentChange}
+              onChange={(e) => setComment(e.target.value)}
               ref={ref}
               className="w-full h-10 dark:bg-zinc-800 bg-gray-200 rounded-full p-2 resize-none scrollbar-hide"
               placeholder="Wright a comment ..."

@@ -52,7 +52,7 @@ const BookmarkedPosts = () => {
             .filter((post) => post)
             .map((post) => (
               <SinglePost
-                key={post.id}
+                key={post.uuid}
                 isBookmarkPage
                 isLike={isLike}
                 setIsLike={setIsLike}

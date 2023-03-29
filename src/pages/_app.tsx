@@ -5,6 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "../styles/globals.css";
 import "nprogress/nprogress.css";
 import "../styles/globals.css";
+import "../styles/reaction.css";
 import Router from "next/router";
 import type { AppProps } from "next/app";
 import type { ReactElement, ReactNode } from "react";

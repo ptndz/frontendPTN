@@ -26,8 +26,6 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
   const [deletePost, setDeletePost] = useState(false);
   const { user } = useStoreUser();
 
-  const [isLike, setIsLike] = useState(false);
-
   const [openProfileModal, setOpenProfileModal] = useState(false);
   const [openDetailsModal, setOpenDetailsModal] = useState(false);
   const [newPost, setNewPost] = useState(false);
@@ -218,8 +216,6 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
                       bookmarkedPostsId={undefined}
                       key={post.uuid}
                       post={post}
-                      isLike={isLike}
-                      setIsLike={setIsLike}
                       deletePost={deletePost}
                       setDeletePost={setDeletePost}
                       setController={undefined}

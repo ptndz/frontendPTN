@@ -14,7 +14,6 @@ const MiddleLeftBar = () => {
 
   const [loading, setLoading] = useState(false);
 
-  const [isLike, setIsLike] = useState(false);
   const [deletePost, setDeletePost] = useState(false);
   const [newPost, setNewPost] = useState<boolean>(false);
   const { user } = useStoreUser();
@@ -78,9 +77,7 @@ const MiddleLeftBar = () => {
 
   const loadMoreRef = useRef() as React.RefObject<HTMLButtonElement>;
   const router = useRouter();
-  useEffect(() => {
-    console.log(user);
-  }, [user]);
+
   useEffect(() => {
     if (!hasNextPage) {
       return;
@@ -114,8 +111,6 @@ const MiddleLeftBar = () => {
                   bookmarkedPostsId={bookmarkedPostsId}
                   key={post.uuid}
                   post={post}
-                  isLike={isLike}
-                  setIsLike={setIsLike}
                   deletePost={deletePost}
                   setDeletePost={setDeletePost}
                   setController={undefined}
