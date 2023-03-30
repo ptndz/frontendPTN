@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import NProgress from "nprogress";
-import { ToastContainer } from "react-toastify";
+import { Theme, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../styles/globals.css";
 import "nprogress/nprogress.css";
@@ -67,7 +67,14 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <Hydrate state={pageProps.dehydratedState}>
-        <ToastContainer />
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          closeOnClick={true}
+          pauseOnHover={true}
+          theme={theme ? (theme as Theme) : "light"}
+        />
         <DefaultSeo {...SEO} />
         <Component {...pageProps} />
       </Hydrate>

@@ -8,13 +8,14 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { graphQLClient } from "../../plugins/graphql.plugin";
 import { graphql } from "../../gql";
+import axios from "axios";
 
 const MiddleLeftBar = () => {
-  const [bookmarkedPostsId, setBookmarkedPostsId] = useState([]);
+  const [bookmarkedPostsId, setBookmarkedPostsId] = useState<string[]>();
 
   const [loading, setLoading] = useState(false);
 
-  const [deletePost, setDeletePost] = useState(false);
+  const [deletePost, setDeletePost] = useState<boolean>(false);
   const [newPost, setNewPost] = useState<boolean>(false);
   const { user } = useStoreUser();
   const queryPost = graphql(`
@@ -94,7 +95,17 @@ const MiddleLeftBar = () => {
     }
 
     observer.observe(el);
-  }, [hasNextPage, router, fetchNextPage]);
+  }, [hasNextPage, router, fetchNextPage, deletePost]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const res = await axios.get("/bookmark/all");
+      if (res.data.status === 200) {
+        setBookmarkedPostsId(res.data.bookmarkedPostsId || []);
+      }
+    };
+    fetchData();
+  }, []);
 
   return (
     <div>
@@ -108,7 +119,7 @@ const MiddleLeftBar = () => {
               data?.posts.map((post) => (
                 <SinglePost
                   loading={loading}
-                  bookmarkedPostsId={bookmarkedPostsId}
+                  bookmarkedPostsId={bookmarkedPostsId || []}
                   key={post.uuid}
                   post={post}
                   deletePost={deletePost}

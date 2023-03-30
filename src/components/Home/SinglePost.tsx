@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import moment from "moment";
-import { FaArrowUp } from "react-icons/fa";
+import { FaArrowUp, FaRegSurprise } from "react-icons/fa";
 import { FiTrash } from "react-icons/fi";
-import { BiShare } from "react-icons/bi";
+import { BiSad, BiShare } from "react-icons/bi";
+import { AiOutlineLike } from "react-icons/ai";
+import { TbMoodCry } from "react-icons/tb";
 import jsonP from "@ptndev/json";
 import Comments from "./Comments";
 import Link from "next/link";
@@ -14,21 +16,23 @@ import {
   BsThreeDotsVertical,
   BsHeartFill,
   BsHeart,
+  BsEmojiAngry,
 } from "react-icons/bs";
 import { toast } from "react-toastify";
 import { IComment, IPost } from "../../gql/graphql";
 import { useStoreUser } from "../../store/user";
 import { graphql } from "../../gql";
 import { graphQLClient } from "../../plugins/graphql.plugin";
+import { CgSmileMouthOpen } from "react-icons/cg";
 
 interface IProps {
   post: IPost;
 
   setController: any;
 
-  setDeletePost: any;
-  bookmarkedPostsId: any;
-  deletePost: any;
+  setDeletePost: (deletePost: boolean) => void;
+  bookmarkedPostsId: string[];
+  deletePost: boolean;
   isBookmarkPage: any;
   loading: any;
   setRemovedBookmarked: any;
@@ -49,7 +53,7 @@ const SinglePost: React.FC<IProps> = ({
   const [alreadyBookmarked, setAlreadyBookmarked] = useState(
     bookmarkedPostsId?.some((p: string) => p === post.uuid)
   );
-  const [isLike, setIsLike] = useState<boolean>(false);
+  const [like, setLike] = useState<string>("");
   const [isSeeMore, setIsSeeMore] = useState<boolean>(false);
   const [dbComments, setDbComments] = useState<IComment[]>([]);
   const [comment, setComment] = useState("");
@@ -62,7 +66,7 @@ const SinglePost: React.FC<IProps> = ({
     const isLikePost = post?.likes?.find(
       (item) => item.user.username === user.username
     );
-    setIsLike(isLikePost ? true : false);
+    setLike(isLikePost ? isLikePost.reactions : "");
   }, [post, user.username]);
 
   useEffect(() => {
@@ -144,7 +148,7 @@ const SinglePost: React.FC<IProps> = ({
     }
   };
 
-  const handleLike = async () => {
+  const handleLike = async (typeReact: string) => {
     const queryLike = graphql(`
       mutation likePost($postUuid: String!, $typeReact: String!) {
         likePost(postUuid: $postUuid, typeReact: $typeReact) {
@@ -164,26 +168,158 @@ const SinglePost: React.FC<IProps> = ({
     `);
     const res = await graphQLClient.request(queryLike, {
       postUuid: post.uuid,
-      typeReact: "LIKE",
+      typeReact: typeReact,
     });
     if (res.likePost.code === 200) {
-      setIsLike(!isLike);
+      if (res.likePost.like) {
+        setLike(res.likePost.like.reactions);
+      }
     }
   };
-  const handleDelete = (id: any) => {};
+  const handleDelete = async (uuid: string) => {
+    const queryDeletePost = graphql(`
+      mutation deletePost($uuid: String!) {
+        deletePost(uuid: $uuid) {
+          code
+          success
+          message
+          post {
+            uuid
+            content
+            createAt
+            updateAt
+            images
+          }
+          errors {
+            field
+            message
+          }
+        }
+      }
+    `);
+    const res = await graphQLClient.request(queryDeletePost, {
+      uuid: uuid,
+    });
 
-  const handleBookmark = async () => {
-    try {
-    } catch (error) {
-      toast.error("");
+    if (res.deletePost.code === 200) {
+      setDeletePost(!deletePost);
     }
   };
 
-  const handleBookmarkRemove = async () => {
+  const handleBookmark = async (uuid: string) => {
     try {
+      const queryBookmarkPost = graphql(`
+        query createBookmark($postUuid: String!) {
+          createBookmark(postUuid: $postUuid) {
+            code
+            success
+            bookmarks {
+              user {
+                username
+                fullName
+                avatar
+              }
+              post {
+                uuid
+                content
+                createAt
+                updateAt
+                shares
+                images
+                user {
+                  username
+                  fullName
+                }
+                likes {
+                  id
+                  reactions
+                }
+                comments {
+                  id
+                  content
+                }
+              }
+            }
+          }
+        }
+      `);
+      const res = await graphQLClient.request(queryBookmarkPost, {
+        postUuid: uuid,
+      });
+      if (res.createBookmark.code === 200) {
+        setAlreadyBookmarked(true);
+      }
     } catch (error) {
-      toast.error("");
+      toast.error(uuid);
     }
+  };
+
+  const handleBookmarkRemove = async (uuid: string) => {
+    try {
+      setAlreadyBookmarked(false);
+    } catch (error) {
+      toast.error(uuid);
+    }
+  };
+  const renderLike = () => {
+    const reactions = [
+      {
+        type: "LIKE",
+        icon: (
+          <button>
+            <AiOutlineLike className="text-2xl text-sky-600" />
+          </button>
+        ),
+      },
+      {
+        type: "LOVE",
+        icon: (
+          <button>
+            <BsHeart className="text-2xl text-red-500" />
+          </button>
+        ),
+      },
+      {
+        type: "HAHA",
+        icon: (
+          <button>
+            <CgSmileMouthOpen className="text-2xl text-yellow-400" />
+          </button>
+        ),
+      },
+      {
+        type: "SAD",
+        icon: (
+          <button>
+            <TbMoodCry className="text-2xl text-yellow-400" />
+          </button>
+        ),
+      },
+      {
+        type: "WOW",
+        icon: (
+          <button>
+            <FaRegSurprise className="text-2xl text-yellow-400" />
+          </button>
+        ),
+      },
+      {
+        type: "ANGRY",
+        icon: (
+          <button>
+            <BsEmojiAngry className="text-2xl text-yellow-400" />
+          </button>
+        ),
+      },
+    ];
+    const icon = reactions.find((item) => item.type === like)?.icon;
+    return icon ? (
+      icon
+    ) : (
+      <button>
+        <BsHeart className="text-2xl" />
+      </button>
+    );
   };
 
   return (
@@ -225,7 +361,7 @@ const SinglePost: React.FC<IProps> = ({
             {alreadyBookmarked ? (
               <li
                 onClick={() => {
-                  handleBookmarkRemove();
+                  handleBookmarkRemove(post.uuid);
                   setMenu("hidden");
                 }}
                 className="py-1 flex items-center cursor-pointer hover:bg-white dark:hover:bg-zinc-600 px-3">
@@ -235,23 +371,23 @@ const SinglePost: React.FC<IProps> = ({
             ) : (
               <li
                 onClick={() => {
-                  handleBookmark();
+                  handleBookmark(post.uuid);
                   setMenu("hidden");
                 }}
                 className="py-1 flex items-center cursor-pointer hover:bg-white dark:hover:bg-zinc-600 px-3">
                 <BsBookmark className="mr-2" /> Bookmark post
               </li>
             )}
-            {/* {userData.email && !isBookmarkPage && (
+            {user.username === post.user.username && (
               <li
-                className="py-1 flex items-center cursor-pointer hover:bg-white  dark:hover:bg-zinc-600 px-3"
+                className="py-1 flex items-center cursor-pointer hover:bg-white dark:hover:bg-zinc-600 px-3"
                 onClick={() => {
                   handleDelete(post.uuid);
                   setMenu("hidden");
                 }}>
                 <FiTrash className="mr-2" /> Delete posts
               </li>
-            )} */}
+            )}
           </ul>
         </div>
       </div>
@@ -305,38 +441,40 @@ const SinglePost: React.FC<IProps> = ({
             </span>
             <div className="toolbox" />
             <label className="overlay" htmlFor="like" />
-            <button className="reaction-like">
+            <button
+              className="reaction-like"
+              onClick={() => handleLike("LIKE")}>
               <span className="legend-reaction">Like</span>
             </button>
-            <button className="reaction-love">
+            <button
+              className="reaction-love"
+              onClick={() => handleLike("LOVE")}>
               <span className="legend-reaction">Love</span>
             </button>
-            <button className="reaction-haha">
+            <button
+              className="reaction-haha"
+              onClick={() => handleLike("HAHA")}>
               <span className="legend-reaction">Haha</span>
             </button>
-            <button className="reaction-wow">
+            <button className="reaction-wow" onClick={() => handleLike("WOW")}>
               <span className="legend-reaction">Wow</span>
             </button>
-            <button className="reaction-sad">
+            <button className="reaction-sad" onClick={() => handleLike("SAD")}>
               <span className="legend-reaction">Sad</span>
             </button>
-            <button className="reaction-angry">
+            <button
+              className="reaction-angry"
+              onClick={() => handleLike("ANGRY")}>
               <span className="legend-reaction">Angry</span>
             </button>
           </div>
-          <span className="p-1 pt-2 pb-0 px-1.5">
-            {isLike ? (
-              <button onClick={handleLike}>
-                <BsHeartFill className="text-xl text-red-500" />
-              </button>
-            ) : (
-              <button onClick={handleLike}>
-                <BsHeart className="text-xl" />
-              </button>
-            )}
-          </span>
+          <span className="p-1 pt-2 pb-0 px-1.5">{renderLike()}</span>
+          {like ? (
+            <span className="ml-2">Ban va {post?.likes?.length} nguoi</span>
+          ) : (
+            <span className="ml-2">{post?.likes?.length} Like</span>
+          )}
 
-          <span className="ml-3">{post?.likes?.length}</span>
           <div className="ml-5 ">
             <button className="items-center flex gap-1">
               <BsChatLeft className="text-xl mt-1" />

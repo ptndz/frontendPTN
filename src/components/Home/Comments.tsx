@@ -12,6 +12,7 @@ interface IProps {
 
 const Comments: React.FC<IProps> = ({ comment }) => {
   const [userData, setUserData] = useState<User>();
+  const [like, setLike] = useState<string>("");
   useEffect(() => {
     if (comment.user.username) {
       const queryUser = graphql(`
@@ -55,6 +56,7 @@ const Comments: React.FC<IProps> = ({ comment }) => {
       fetchData();
     }
   }, [comment.user.username]);
+
   return (
     <div className="flex pt-3">
       <div className="">

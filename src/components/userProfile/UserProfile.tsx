@@ -3,7 +3,7 @@ import Image from "next/image";
 import ProfileModal from "./ProfileModal";
 import AboutModal from "./AboutModal";
 import axios from "axios";
-
+import { TiTick } from "react-icons/ti";
 import SinglePost from "../Home/SinglePost";
 import { useRouter } from "next/router";
 import "react-responsive-modal/styles.css";
@@ -138,7 +138,10 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
               />
             </div>
             <div className="ml-6">
-              <div className="font-bold text-lg ">{user.fullName}</div>
+              <div className="font-bold text-lg ">
+                {user.fullName}{" "}
+                <TiTick className="text-[20px] text-white rounded-full bg-sky-500 " />
+              </div>
               <div className="text-xs font-medium	text-gray-400 ">
                 <a href={`mailto:${user.email}`}>{user.email}</a>
               </div>

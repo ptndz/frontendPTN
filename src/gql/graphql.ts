@@ -22,6 +22,15 @@ export type Scalars = {
   DateTime: any;
 };
 
+export type BookmarkResponse = IMutationResponse & {
+  __typename?: "BookmarkResponse";
+  bookmarks?: Maybe<Array<IBookmark>>;
+  code: Scalars["Float"];
+  errors?: Maybe<Array<FieldError>>;
+  message?: Maybe<Scalars["String"]>;
+  success: Scalars["Boolean"];
+};
+
 export type CommentResponse = IMutationResponse & {
   __typename?: "CommentResponse";
   code: Scalars["Float"];
@@ -41,6 +50,14 @@ export type FieldError = {
   __typename?: "FieldError";
   field: Scalars["String"];
   message: Scalars["String"];
+};
+
+export type IBookmark = {
+  __typename?: "IBookmark";
+  createAt: Scalars["DateTime"];
+  id: Scalars["Float"];
+  post: IPost;
+  user: IUser;
 };
 
 export type IComment = {
@@ -202,6 +219,8 @@ export type PostQueryResponse = IMutationResponse & {
 
 export type Query = {
   __typename?: "Query";
+  bookmarkAll: BookmarkResponse;
+  createBookmark: BookmarkResponse;
   getCommentComment: CommentResponse;
   getCommentPost: CommentResponse;
   getLikeComment: LikeResponse;
@@ -214,6 +233,10 @@ export type Query = {
   post?: Maybe<PostQueryResponse>;
   posts: PostQueryResponse;
   user: UserMutationResponse;
+};
+
+export type QueryCreateBookmarkArgs = {
+  postUuid: Scalars["String"];
 };
 
 export type QueryGetCommentCommentArgs = {
@@ -551,6 +574,75 @@ export type LikePostMutation = {
       reactions: string;
       user: { __typename?: "IUser"; fullName: string; username: string };
     } | null;
+  };
+};
+
+export type DeletePostMutationVariables = Exact<{
+  uuid: Scalars["String"];
+}>;
+
+export type DeletePostMutation = {
+  __typename?: "Mutation";
+  deletePost: {
+    __typename?: "PostMutationResponse";
+    code: number;
+    success: boolean;
+    message?: string | null;
+    post?: {
+      __typename?: "Post";
+      uuid: string;
+      content: string;
+      createAt: any;
+      updateAt: any;
+      images: Array<string>;
+    } | null;
+    errors?: Array<{
+      __typename?: "FieldError";
+      field: string;
+      message: string;
+    }> | null;
+  };
+};
+
+export type CreateBookmarkQueryVariables = Exact<{
+  postUuid: Scalars["String"];
+}>;
+
+export type CreateBookmarkQuery = {
+  __typename?: "Query";
+  createBookmark: {
+    __typename?: "BookmarkResponse";
+    code: number;
+    success: boolean;
+    bookmarks?: Array<{
+      __typename?: "IBookmark";
+      user: {
+        __typename?: "IUser";
+        username: string;
+        fullName: string;
+        avatar: string;
+      };
+      post: {
+        __typename?: "IPost";
+        uuid: string;
+        content: string;
+        createAt: any;
+        updateAt: any;
+        shares: number;
+        images?: Array<string> | null;
+        user: { __typename?: "IUser"; username: string; fullName: string };
+        likes?: Array<{
+          __typename?: "ILike";
+          id: number;
+          reactions: string;
+        }> | null;
+        comments?: Array<{
+          __typename?: "IComment";
+          id: number;
+          content: string;
+        }> | null;
+      };
+    }> | null;
   };
 };
 
@@ -1515,6 +1607,262 @@ export const LikePostDocument = {
     },
   ],
 } as unknown as DocumentNode<LikePostMutation, LikePostMutationVariables>;
+export const DeletePostDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "deletePost" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "uuid" } },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "deletePost" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "uuid" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "uuid" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "code" } },
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "post" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "uuid" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "content" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "createAt" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "updateAt" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "images" },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "field" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "message" },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DeletePostMutation, DeletePostMutationVariables>;
+export const CreateBookmarkDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "createBookmark" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "postUuid" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createBookmark" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "postUuid" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "postUuid" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "code" } },
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "bookmarks" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "user" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "username" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "fullName" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "avatar" },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "post" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "uuid" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "content" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "createAt" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "updateAt" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "shares" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "images" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "user" },
+                              selectionSet: {
+                                kind: "SelectionSet",
+                                selections: [
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "username" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "fullName" },
+                                  },
+                                ],
+                              },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "likes" },
+                              selectionSet: {
+                                kind: "SelectionSet",
+                                selections: [
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "id" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "reactions" },
+                                  },
+                                ],
+                              },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "comments" },
+                              selectionSet: {
+                                kind: "SelectionSet",
+                                selections: [
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "id" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "content" },
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<CreateBookmarkQuery, CreateBookmarkQueryVariables>;
 export const UserDocument = {
   kind: "Document",
   definitions: [
