@@ -99,6 +99,7 @@ export type IUser = {
   __typename?: "IUser";
   avatar: Scalars["String"];
   fullName: Scalars["String"];
+  id: Scalars["String"];
   username: Scalars["String"];
 };
 
@@ -276,6 +277,7 @@ export type QueryPostArgs = {
 export type RegisterInput = {
   avatar: Scalars["String"];
   birthday: Scalars["String"];
+  coverImage: Scalars["String"];
   email: Scalars["String"];
   firstName: Scalars["String"];
   fullName: Scalars["String"];
@@ -296,11 +298,12 @@ export type User = {
   __typename?: "User";
   avatar: Scalars["String"];
   birthday: Scalars["String"];
+  coverImage: Scalars["String"];
   createAt: Scalars["DateTime"];
   email: Scalars["String"];
   firstName: Scalars["String"];
   fullName: Scalars["String"];
-  id: Scalars["ID"];
+  id: Scalars["String"];
   lastName: Scalars["String"];
   phone: Scalars["String"];
   sex: Scalars["Boolean"];
@@ -327,72 +330,65 @@ export type UserQueryResponse = IMutationResponse & {
   users?: Maybe<Array<User>>;
 };
 
-export type LoginMutationVariables = Exact<{
-  email: Scalars["String"];
-  password: Scalars["String"];
-}>;
+export type BookmarkAllQueryVariables = Exact<{ [key: string]: never }>;
 
-export type LoginMutation = {
-  __typename?: "Mutation";
-  login: {
-    __typename?: "UserMutationResponse";
-    code: number;
-    success: boolean;
-    message?: string | null;
-    accessToken?: string | null;
-    user?: {
-      __typename?: "User";
-      id: string;
-      fullName: string;
-      lastName: string;
-      firstName: string;
-      username: string;
-      email: string;
-      avatar: string;
-      phone: string;
-      birthday: string;
-      sex: boolean;
-      createAt: any;
-      updateAt: any;
-    } | null;
-    errors?: Array<{
-      __typename?: "FieldError";
-      message: string;
-      field: string;
-    }> | null;
-  };
-};
-
-export type GetUserQueryVariables = Exact<{
-  username: Scalars["String"];
-}>;
-
-export type GetUserQuery = {
+export type BookmarkAllQuery = {
   __typename?: "Query";
-  getUser: {
-    __typename?: "UserMutationResponse";
+  bookmarkAll: {
+    __typename?: "BookmarkResponse";
     code: number;
     success: boolean;
-    message?: string | null;
-    user?: {
-      __typename?: "User";
-      id: string;
-      fullName: string;
-      lastName: string;
-      firstName: string;
-      username: string;
-      email: string;
-      avatar: string;
-      phone: string;
-      birthday: string;
-      sex: boolean;
+    bookmarks?: Array<{
+      __typename?: "IBookmark";
+      id: number;
       createAt: any;
-      updateAt: any;
-    } | null;
-    errors?: Array<{
-      __typename?: "FieldError";
-      message: string;
-      field: string;
+      user: {
+        __typename?: "IUser";
+        id: string;
+        username: string;
+        fullName: string;
+        avatar: string;
+      };
+      post: {
+        __typename?: "IPost";
+        uuid: string;
+        content: string;
+        createAt: any;
+        updateAt: any;
+        shares: number;
+        images?: Array<string> | null;
+        user: {
+          __typename?: "IUser";
+          id: string;
+          username: string;
+          avatar: string;
+          fullName: string;
+        };
+        likes?: Array<{
+          __typename?: "ILike";
+          id: number;
+          reactions: string;
+          user: {
+            __typename?: "IUser";
+            id: string;
+            username: string;
+            avatar: string;
+            fullName: string;
+          };
+        }> | null;
+        comments?: Array<{
+          __typename?: "IComment";
+          id: number;
+          content: string;
+          user: {
+            __typename?: "IUser";
+            id: string;
+            username: string;
+            avatar: string;
+            fullName: string;
+          };
+        }> | null;
+      };
     }> | null;
   };
 };
@@ -421,55 +417,6 @@ export type CreatePostMutation = {
       __typename?: "FieldError";
       field: string;
       message: string;
-    }> | null;
-  };
-};
-
-export type PostsQueryVariables = Exact<{ [key: string]: never }>;
-
-export type PostsQuery = {
-  __typename?: "Query";
-  posts: {
-    __typename?: "PostQueryResponse";
-    code: number;
-    success: boolean;
-    message?: string | null;
-    posts?: Array<{
-      __typename?: "IPost";
-      uuid: string;
-      content: string;
-      createAt: any;
-      updateAt: any;
-      shares: number;
-      images?: Array<string> | null;
-      user: {
-        __typename?: "IUser";
-        avatar: string;
-        username: string;
-        fullName: string;
-      };
-      likes?: Array<{
-        __typename?: "ILike";
-        id: number;
-        reactions: string;
-        user: {
-          __typename?: "IUser";
-          avatar: string;
-          username: string;
-          fullName: string;
-        };
-      }> | null;
-      comments?: Array<{
-        __typename?: "IComment";
-        id: number;
-        content: string;
-        user: {
-          __typename?: "IUser";
-          avatar: string;
-          username: string;
-          fullName: string;
-        };
-      }> | null;
     }> | null;
   };
 };
@@ -515,6 +462,7 @@ export type CommentPostMutation = {
       content: string;
       user: {
         __typename?: "IUser";
+        id: string;
         username: string;
         fullName: string;
         avatar: string;
@@ -525,6 +473,7 @@ export type CommentPostMutation = {
         reactions: string;
         user: {
           __typename?: "IUser";
+          id: string;
           username: string;
           fullName: string;
           avatar: string;
@@ -537,6 +486,7 @@ export type CommentPostMutation = {
       content: string;
       user: {
         __typename?: "IUser";
+        id: string;
         username: string;
         fullName: string;
         avatar: string;
@@ -547,6 +497,7 @@ export type CommentPostMutation = {
         reactions: string;
         user: {
           __typename?: "IUser";
+          id: string;
           username: string;
           fullName: string;
           avatar: string;
@@ -646,6 +597,184 @@ export type CreateBookmarkQuery = {
   };
 };
 
+export type GetPostsUserByUserNameQueryVariables = Exact<{
+  username: Scalars["String"];
+}>;
+
+export type GetPostsUserByUserNameQuery = {
+  __typename?: "Query";
+  getPostsUserByUserName?: {
+    __typename?: "PostQueryResponse";
+    code: number;
+    success: boolean;
+    message?: string | null;
+    posts?: Array<{
+      __typename?: "IPost";
+      uuid: string;
+      content: string;
+      createAt: any;
+      updateAt: any;
+      shares: number;
+      images?: Array<string> | null;
+      user: {
+        __typename?: "IUser";
+        id: string;
+        avatar: string;
+        username: string;
+        fullName: string;
+      };
+      likes?: Array<{
+        __typename?: "ILike";
+        id: number;
+        reactions: string;
+        user: {
+          __typename?: "IUser";
+          id: string;
+          avatar: string;
+          username: string;
+          fullName: string;
+        };
+      }> | null;
+      comments?: Array<{
+        __typename?: "IComment";
+        id: number;
+        content: string;
+        user: {
+          __typename?: "IUser";
+          id: string;
+          avatar: string;
+          username: string;
+          fullName: string;
+        };
+      }> | null;
+    }> | null;
+  } | null;
+};
+
+export type PostsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type PostsQuery = {
+  __typename?: "Query";
+  posts: {
+    __typename?: "PostQueryResponse";
+    code: number;
+    success: boolean;
+    message?: string | null;
+    posts?: Array<{
+      __typename?: "IPost";
+      uuid: string;
+      content: string;
+      createAt: any;
+      updateAt: any;
+      shares: number;
+      images?: Array<string> | null;
+      user: {
+        __typename?: "IUser";
+        id: string;
+        avatar: string;
+        username: string;
+        fullName: string;
+      };
+      likes?: Array<{
+        __typename?: "ILike";
+        id: number;
+        reactions: string;
+        user: {
+          __typename?: "IUser";
+          id: string;
+          avatar: string;
+          username: string;
+          fullName: string;
+        };
+      }> | null;
+      comments?: Array<{
+        __typename?: "IComment";
+        id: number;
+        content: string;
+        user: {
+          __typename?: "IUser";
+          id: string;
+          avatar: string;
+          username: string;
+          fullName: string;
+        };
+      }> | null;
+    }> | null;
+  };
+};
+
+export type GetUserQueryVariables = Exact<{
+  username: Scalars["String"];
+}>;
+
+export type GetUserQuery = {
+  __typename?: "Query";
+  getUser: {
+    __typename?: "UserMutationResponse";
+    code: number;
+    success: boolean;
+    message?: string | null;
+    user?: {
+      __typename?: "User";
+      id: string;
+      fullName: string;
+      lastName: string;
+      firstName: string;
+      username: string;
+      email: string;
+      avatar: string;
+      coverImage: string;
+      phone: string;
+      birthday: string;
+      sex: boolean;
+      createAt: any;
+      updateAt: any;
+    } | null;
+    errors?: Array<{
+      __typename?: "FieldError";
+      message: string;
+      field: string;
+    }> | null;
+  };
+};
+
+export type LoginMutationVariables = Exact<{
+  email: Scalars["String"];
+  password: Scalars["String"];
+}>;
+
+export type LoginMutation = {
+  __typename?: "Mutation";
+  login: {
+    __typename?: "UserMutationResponse";
+    code: number;
+    success: boolean;
+    message?: string | null;
+    accessToken?: string | null;
+    user?: {
+      __typename?: "User";
+      id: string;
+      fullName: string;
+      lastName: string;
+      firstName: string;
+      username: string;
+      email: string;
+      avatar: string;
+      phone: string;
+      birthday: string;
+      sex: boolean;
+      coverImage: string;
+      createAt: any;
+      updateAt: any;
+    } | null;
+    errors?: Array<{
+      __typename?: "FieldError";
+      message: string;
+      field: string;
+    }> | null;
+  };
+};
+
 export type UserQueryVariables = Exact<{ [key: string]: never }>;
 
 export type UserQuery = {
@@ -664,6 +793,7 @@ export type UserQuery = {
       username: string;
       email: string;
       avatar: string;
+      coverImage: string;
       phone: string;
       birthday: string;
       sex: boolean;
@@ -678,251 +808,220 @@ export type UserQuery = {
   };
 };
 
-export const LoginDocument = {
-  kind: "Document",
-  definitions: [
-    {
-      kind: "OperationDefinition",
-      operation: "mutation",
-      name: { kind: "Name", value: "login" },
-      variableDefinitions: [
-        {
-          kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "email" },
-          },
-          type: {
-            kind: "NonNullType",
-            type: {
-              kind: "NamedType",
-              name: { kind: "Name", value: "String" },
-            },
-          },
-        },
-        {
-          kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "password" },
-          },
-          type: {
-            kind: "NonNullType",
-            type: {
-              kind: "NamedType",
-              name: { kind: "Name", value: "String" },
-            },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: "SelectionSet",
-        selections: [
-          {
-            kind: "Field",
-            name: { kind: "Name", value: "login" },
-            arguments: [
-              {
-                kind: "Argument",
-                name: { kind: "Name", value: "loginInput" },
-                value: {
-                  kind: "ObjectValue",
-                  fields: [
-                    {
-                      kind: "ObjectField",
-                      name: { kind: "Name", value: "usernameOrEmail" },
-                      value: {
-                        kind: "Variable",
-                        name: { kind: "Name", value: "email" },
-                      },
-                    },
-                    {
-                      kind: "ObjectField",
-                      name: { kind: "Name", value: "password" },
-                      value: {
-                        kind: "Variable",
-                        name: { kind: "Name", value: "password" },
-                      },
-                    },
-                  ],
-                },
-              },
-            ],
-            selectionSet: {
-              kind: "SelectionSet",
-              selections: [
-                { kind: "Field", name: { kind: "Name", value: "code" } },
-                { kind: "Field", name: { kind: "Name", value: "success" } },
-                { kind: "Field", name: { kind: "Name", value: "message" } },
-                { kind: "Field", name: { kind: "Name", value: "accessToken" } },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "user" },
-                  selectionSet: {
-                    kind: "SelectionSet",
-                    selections: [
-                      { kind: "Field", name: { kind: "Name", value: "id" } },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "fullName" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "lastName" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "firstName" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "username" },
-                      },
-                      { kind: "Field", name: { kind: "Name", value: "email" } },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "avatar" },
-                      },
-                      { kind: "Field", name: { kind: "Name", value: "phone" } },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "birthday" },
-                      },
-                      { kind: "Field", name: { kind: "Name", value: "sex" } },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "createAt" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "updateAt" },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "errors" },
-                  selectionSet: {
-                    kind: "SelectionSet",
-                    selections: [
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "message" },
-                      },
-                      { kind: "Field", name: { kind: "Name", value: "field" } },
-                    ],
-                  },
-                },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<LoginMutation, LoginMutationVariables>;
-export const GetUserDocument = {
+export const BookmarkAllDocument = {
   kind: "Document",
   definitions: [
     {
       kind: "OperationDefinition",
       operation: "query",
-      name: { kind: "Name", value: "getUser" },
-      variableDefinitions: [
-        {
-          kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "username" },
-          },
-          type: {
-            kind: "NonNullType",
-            type: {
-              kind: "NamedType",
-              name: { kind: "Name", value: "String" },
-            },
-          },
-        },
-      ],
+      name: { kind: "Name", value: "bookmarkAll" },
       selectionSet: {
         kind: "SelectionSet",
         selections: [
           {
             kind: "Field",
-            name: { kind: "Name", value: "getUser" },
-            arguments: [
-              {
-                kind: "Argument",
-                name: { kind: "Name", value: "username" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "username" },
-                },
-              },
-            ],
+            name: { kind: "Name", value: "bookmarkAll" },
             selectionSet: {
               kind: "SelectionSet",
               selections: [
                 { kind: "Field", name: { kind: "Name", value: "code" } },
                 { kind: "Field", name: { kind: "Name", value: "success" } },
-                { kind: "Field", name: { kind: "Name", value: "message" } },
                 {
                   kind: "Field",
-                  name: { kind: "Name", value: "user" },
+                  name: { kind: "Name", value: "bookmarks" },
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
                       { kind: "Field", name: { kind: "Name", value: "id" } },
                       {
                         kind: "Field",
-                        name: { kind: "Name", value: "fullName" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "lastName" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "firstName" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "username" },
-                      },
-                      { kind: "Field", name: { kind: "Name", value: "email" } },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "avatar" },
-                      },
-                      { kind: "Field", name: { kind: "Name", value: "phone" } },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "birthday" },
-                      },
-                      { kind: "Field", name: { kind: "Name", value: "sex" } },
-                      {
-                        kind: "Field",
                         name: { kind: "Name", value: "createAt" },
                       },
                       {
                         kind: "Field",
-                        name: { kind: "Name", value: "updateAt" },
+                        name: { kind: "Name", value: "user" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "id" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "username" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "fullName" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "avatar" },
+                            },
+                          ],
+                        },
                       },
-                    ],
-                  },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "errors" },
-                  selectionSet: {
-                    kind: "SelectionSet",
-                    selections: [
                       {
                         kind: "Field",
-                        name: { kind: "Name", value: "message" },
+                        name: { kind: "Name", value: "post" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "uuid" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "content" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "createAt" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "updateAt" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "shares" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "images" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "user" },
+                              selectionSet: {
+                                kind: "SelectionSet",
+                                selections: [
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "id" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "username" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "avatar" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "fullName" },
+                                  },
+                                ],
+                              },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "likes" },
+                              selectionSet: {
+                                kind: "SelectionSet",
+                                selections: [
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "id" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "reactions" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "user" },
+                                    selectionSet: {
+                                      kind: "SelectionSet",
+                                      selections: [
+                                        {
+                                          kind: "Field",
+                                          name: { kind: "Name", value: "id" },
+                                        },
+                                        {
+                                          kind: "Field",
+                                          name: {
+                                            kind: "Name",
+                                            value: "username",
+                                          },
+                                        },
+                                        {
+                                          kind: "Field",
+                                          name: {
+                                            kind: "Name",
+                                            value: "avatar",
+                                          },
+                                        },
+                                        {
+                                          kind: "Field",
+                                          name: {
+                                            kind: "Name",
+                                            value: "fullName",
+                                          },
+                                        },
+                                      ],
+                                    },
+                                  },
+                                ],
+                              },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "comments" },
+                              selectionSet: {
+                                kind: "SelectionSet",
+                                selections: [
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "id" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "content" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "user" },
+                                    selectionSet: {
+                                      kind: "SelectionSet",
+                                      selections: [
+                                        {
+                                          kind: "Field",
+                                          name: { kind: "Name", value: "id" },
+                                        },
+                                        {
+                                          kind: "Field",
+                                          name: {
+                                            kind: "Name",
+                                            value: "username",
+                                          },
+                                        },
+                                        {
+                                          kind: "Field",
+                                          name: {
+                                            kind: "Name",
+                                            value: "avatar",
+                                          },
+                                        },
+                                        {
+                                          kind: "Field",
+                                          name: {
+                                            kind: "Name",
+                                            value: "fullName",
+                                          },
+                                        },
+                                      ],
+                                    },
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
                       },
-                      { kind: "Field", name: { kind: "Name", value: "field" } },
                     ],
                   },
                 },
@@ -933,7 +1032,7 @@ export const GetUserDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<GetUserQuery, GetUserQueryVariables>;
+} as unknown as DocumentNode<BookmarkAllQuery, BookmarkAllQueryVariables>;
 export const CreatePostDocument = {
   kind: "Document",
   definitions: [
@@ -1064,160 +1163,6 @@ export const CreatePostDocument = {
     },
   ],
 } as unknown as DocumentNode<CreatePostMutation, CreatePostMutationVariables>;
-export const PostsDocument = {
-  kind: "Document",
-  definitions: [
-    {
-      kind: "OperationDefinition",
-      operation: "query",
-      name: { kind: "Name", value: "posts" },
-      selectionSet: {
-        kind: "SelectionSet",
-        selections: [
-          {
-            kind: "Field",
-            name: { kind: "Name", value: "posts" },
-            selectionSet: {
-              kind: "SelectionSet",
-              selections: [
-                { kind: "Field", name: { kind: "Name", value: "code" } },
-                { kind: "Field", name: { kind: "Name", value: "success" } },
-                { kind: "Field", name: { kind: "Name", value: "message" } },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "posts" },
-                  selectionSet: {
-                    kind: "SelectionSet",
-                    selections: [
-                      { kind: "Field", name: { kind: "Name", value: "uuid" } },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "content" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "createAt" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "updateAt" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "shares" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "images" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "user" },
-                        selectionSet: {
-                          kind: "SelectionSet",
-                          selections: [
-                            {
-                              kind: "Field",
-                              name: { kind: "Name", value: "avatar" },
-                            },
-                            {
-                              kind: "Field",
-                              name: { kind: "Name", value: "username" },
-                            },
-                            {
-                              kind: "Field",
-                              name: { kind: "Name", value: "fullName" },
-                            },
-                          ],
-                        },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "likes" },
-                        selectionSet: {
-                          kind: "SelectionSet",
-                          selections: [
-                            {
-                              kind: "Field",
-                              name: { kind: "Name", value: "id" },
-                            },
-                            {
-                              kind: "Field",
-                              name: { kind: "Name", value: "reactions" },
-                            },
-                            {
-                              kind: "Field",
-                              name: { kind: "Name", value: "user" },
-                              selectionSet: {
-                                kind: "SelectionSet",
-                                selections: [
-                                  {
-                                    kind: "Field",
-                                    name: { kind: "Name", value: "avatar" },
-                                  },
-                                  {
-                                    kind: "Field",
-                                    name: { kind: "Name", value: "username" },
-                                  },
-                                  {
-                                    kind: "Field",
-                                    name: { kind: "Name", value: "fullName" },
-                                  },
-                                ],
-                              },
-                            },
-                          ],
-                        },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "comments" },
-                        selectionSet: {
-                          kind: "SelectionSet",
-                          selections: [
-                            {
-                              kind: "Field",
-                              name: { kind: "Name", value: "id" },
-                            },
-                            {
-                              kind: "Field",
-                              name: { kind: "Name", value: "content" },
-                            },
-                            {
-                              kind: "Field",
-                              name: { kind: "Name", value: "user" },
-                              selectionSet: {
-                                kind: "SelectionSet",
-                                selections: [
-                                  {
-                                    kind: "Field",
-                                    name: { kind: "Name", value: "avatar" },
-                                  },
-                                  {
-                                    kind: "Field",
-                                    name: { kind: "Name", value: "username" },
-                                  },
-                                  {
-                                    kind: "Field",
-                                    name: { kind: "Name", value: "fullName" },
-                                  },
-                                ],
-                              },
-                            },
-                          ],
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<PostsQuery, PostsQueryVariables>;
 export const GetUsersDocument = {
   kind: "Document",
   definitions: [
@@ -1362,6 +1307,10 @@ export const CommentPostDocument = {
                           selections: [
                             {
                               kind: "Field",
+                              name: { kind: "Name", value: "id" },
+                            },
+                            {
+                              kind: "Field",
                               name: { kind: "Name", value: "username" },
                             },
                             {
@@ -1399,6 +1348,10 @@ export const CommentPostDocument = {
                               selectionSet: {
                                 kind: "SelectionSet",
                                 selections: [
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "id" },
+                                  },
                                   {
                                     kind: "Field",
                                     name: { kind: "Name", value: "username" },
@@ -1439,6 +1392,10 @@ export const CommentPostDocument = {
                           selections: [
                             {
                               kind: "Field",
+                              name: { kind: "Name", value: "id" },
+                            },
+                            {
+                              kind: "Field",
                               name: { kind: "Name", value: "username" },
                             },
                             {
@@ -1468,6 +1425,10 @@ export const CommentPostDocument = {
                               selectionSet: {
                                 kind: "SelectionSet",
                                 selections: [
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "id" },
+                                  },
                                   {
                                     kind: "Field",
                                     name: { kind: "Name", value: "username" },
@@ -1863,6 +1824,631 @@ export const CreateBookmarkDocument = {
     },
   ],
 } as unknown as DocumentNode<CreateBookmarkQuery, CreateBookmarkQueryVariables>;
+export const GetPostsUserByUserNameDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "getPostsUserByUserName" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "username" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "getPostsUserByUserName" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "username" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "username" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "code" } },
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "posts" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "uuid" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "content" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "createAt" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "updateAt" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "shares" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "images" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "user" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "id" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "avatar" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "username" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "fullName" },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "likes" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "id" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "reactions" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "user" },
+                              selectionSet: {
+                                kind: "SelectionSet",
+                                selections: [
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "id" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "avatar" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "username" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "fullName" },
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "comments" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "id" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "content" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "user" },
+                              selectionSet: {
+                                kind: "SelectionSet",
+                                selections: [
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "id" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "avatar" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "username" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "fullName" },
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  GetPostsUserByUserNameQuery,
+  GetPostsUserByUserNameQueryVariables
+>;
+export const PostsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "posts" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "posts" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "code" } },
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "posts" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "uuid" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "content" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "createAt" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "updateAt" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "shares" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "images" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "user" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "id" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "avatar" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "username" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "fullName" },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "likes" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "id" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "reactions" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "user" },
+                              selectionSet: {
+                                kind: "SelectionSet",
+                                selections: [
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "id" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "avatar" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "username" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "fullName" },
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "comments" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "id" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "content" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "user" },
+                              selectionSet: {
+                                kind: "SelectionSet",
+                                selections: [
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "id" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "avatar" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "username" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "fullName" },
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<PostsQuery, PostsQueryVariables>;
+export const GetUserDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "getUser" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "username" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "getUser" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "username" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "username" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "code" } },
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "user" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "fullName" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "lastName" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "firstName" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "username" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "email" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "avatar" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "coverImage" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "phone" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "birthday" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "sex" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "createAt" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "updateAt" },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "message" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "field" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<GetUserQuery, GetUserQueryVariables>;
+export const LoginDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "login" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "email" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "password" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "login" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "loginInput" },
+                value: {
+                  kind: "ObjectValue",
+                  fields: [
+                    {
+                      kind: "ObjectField",
+                      name: { kind: "Name", value: "usernameOrEmail" },
+                      value: {
+                        kind: "Variable",
+                        name: { kind: "Name", value: "email" },
+                      },
+                    },
+                    {
+                      kind: "ObjectField",
+                      name: { kind: "Name", value: "password" },
+                      value: {
+                        kind: "Variable",
+                        name: { kind: "Name", value: "password" },
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "code" } },
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                { kind: "Field", name: { kind: "Name", value: "accessToken" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "user" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "fullName" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "lastName" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "firstName" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "username" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "email" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "avatar" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "phone" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "birthday" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "sex" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "coverImage" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "createAt" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "updateAt" },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "message" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "field" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<LoginMutation, LoginMutationVariables>;
 export const UserDocument = {
   kind: "Document",
   definitions: [
@@ -1909,6 +2495,10 @@ export const UserDocument = {
                       {
                         kind: "Field",
                         name: { kind: "Name", value: "avatar" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "coverImage" },
                       },
                       { kind: "Field", name: { kind: "Name", value: "phone" } },
                       {

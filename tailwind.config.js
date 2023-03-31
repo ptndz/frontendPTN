@@ -6,13 +6,24 @@ module.exports = {
   ],
   darkMode: "class",
   theme: {
+    screens: {
+      DEFAULT: "1rem",
+      xs: "460px",
+      sm: "640px",
+      md: "840px",
+      lg: "1024px",
+      xl: "1280px",
+      "2xl": "1536px",
+    },
     extend: {
+      transitionProperty: {
+        right: "right",
+        left: "left",
+      },
       colors: {
-        primary: "#1877f2",
-        greenLight: "#42b72a",
+        "regal-blue": "#243c5a",
       },
     },
   },
-
-  plugins: [],
+  plugins: [require("tailwind-scrollbar-hide"), require("@tailwindcss/forms")],
 };

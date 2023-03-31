@@ -46,23 +46,40 @@ const Register = () => {
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 <div>
                   <label
-                    htmlFor="displayName"
+                    htmlFor="firstName"
                     className="block text-lg text-gray-900 dark:text-white">
-                    Full name<span className="text-red-500">*</span>
+                    First Name<span className="text-red-500">*</span>
                   </label>
                   <div className="mt-1">
                     <input
-                      id="displayName"
-                      {...register("displayName", { required: true })}
+                      id="firstName"
+                      {...register("firstName", { required: true })}
                       type="text"
                       autoComplete="given-name"
                       required
-                      placeholder="John doe"
+                      placeholder="Pham "
                       className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     />
                   </div>
                 </div>
-
+                <div>
+                  <label
+                    htmlFor="lastName"
+                    className="block text-lg text-gray-900 dark:text-white">
+                    Last Name<span className="text-red-500">*</span>
+                  </label>
+                  <div className="mt-1">
+                    <input
+                      id="lastName"
+                      {...register("lastName", { required: true })}
+                      type="text"
+                      autoComplete="given-name"
+                      required
+                      placeholder="Nam"
+                      className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    />
+                  </div>
+                </div>
                 <div>
                   <label
                     htmlFor="email"
@@ -139,7 +156,6 @@ const Register = () => {
                   <button
                     type="submit"
                     className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium dark:text-black text-white dark:bg-white bg-black hover:bg-opacity-80 dark:hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white">
-                    {/* {isLoading ? 'Loading...' : 'Sign in'} */}
                     Register
                   </button>
                 </div>
@@ -151,20 +167,20 @@ const Register = () => {
                     <div className="w-full border-t border-gray-300"></div>
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-gray-50 dark:bg-black text-gray-900 dark:text-white font-medium">
+                    {/* <span className="px-2 bg-gray-50 dark:bg-black text-gray-900 dark:text-white font-medium">
                       Or
-                    </span>
+                    </span> */}
                   </div>
                 </div>
 
-                <div className="mt-6">
+                {/* <div className="mt-6">
                   <div>
                     <button className="w-full inline-flex justify-center items-center py-2 px-4 rounded-md shadow-sm bg-black dark:bg-white text-sm font-medium text-white dark:text-black hover:bg-opacity-90 dark:hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white">
                       <BsGoogle className="w-6 h-6" />
                       &nbsp;Sign in with Google
                     </button>
                   </div>
-                </div>
+                </div> */}
                 <p className="mt-6 text-center text-base font-medium text-gray-900 dark:text-white">
                   Have an account?
                   <Link

@@ -9,6 +9,7 @@ import { useRouter } from "next/router";
 import { graphQLClient } from "../../plugins/graphql.plugin";
 import { graphql } from "../../gql";
 import axios from "axios";
+import { queryPosts } from "../../graphql/post";
 
 const MiddleLeftBar = () => {
   const [bookmarkedPostsId, setBookmarkedPostsId] = useState<string[]>();
@@ -17,49 +18,9 @@ const MiddleLeftBar = () => {
 
   const [deletePost, setDeletePost] = useState<boolean>(false);
   const [newPost, setNewPost] = useState<boolean>(false);
-  const { user } = useStoreUser();
-  const queryPost = graphql(`
-    query posts {
-      posts {
-        code
-        success
-        message
-        posts {
-          uuid
-          content
-          createAt
-          updateAt
-          shares
-          images
-          user {
-            avatar
-            username
-            fullName
-          }
-          likes {
-            id
-            reactions
-            user {
-              avatar
-              username
-              fullName
-            }
-          }
-          comments {
-            id
-            content
-            user {
-              avatar
-              username
-              fullName
-            }
-          }
-        }
-      }
-    }
-  `);
+
   const getPost = async (pageParam: string) => {
-    const resPost = await graphQLClient.request(queryPost);
+    const resPost = await graphQLClient.request(queryPosts);
 
     return resPost.posts;
   };

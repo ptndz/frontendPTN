@@ -27,9 +27,7 @@ import { CgSmileMouthOpen } from "react-icons/cg";
 
 interface IProps {
   post: IPost;
-
   setController: any;
-
   setDeletePost: (deletePost: boolean) => void;
   bookmarkedPostsId: string[];
   deletePost: boolean;
@@ -62,6 +60,7 @@ const SinglePost: React.FC<IProps> = ({
   const [menu, setMenu] = useState("hidden");
   const ref = useRef<HTMLInputElement>(null);
   const { user } = useStoreUser();
+
   useEffect(() => {
     const isLikePost = post?.likes?.find(
       (item) => item.user.username === user.username
@@ -97,6 +96,7 @@ const SinglePost: React.FC<IProps> = ({
           comment {
             id
             user {
+              id
               username
               fullName
               avatar
@@ -106,6 +106,7 @@ const SinglePost: React.FC<IProps> = ({
               id
               reactions
               user {
+                id
                 username
                 fullName
                 avatar
@@ -116,6 +117,7 @@ const SinglePost: React.FC<IProps> = ({
             id
             content
             user {
+              id
               username
               fullName
               avatar
@@ -123,6 +125,7 @@ const SinglePost: React.FC<IProps> = ({
             likes {
               id
               user {
+                id
                 username
                 fullName
                 avatar
@@ -416,7 +419,7 @@ const SinglePost: React.FC<IProps> = ({
           <button
             onClick={() => setIsSeeMore(!isSeeMore)}
             className="text-blue-600 pl-2">
-            see more
+            {isSeeMore ? "See less" : "See more"}
           </button>
         )}
       </div>

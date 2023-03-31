@@ -14,6 +14,7 @@ import { graphQLClient } from "../../plugins/graphql.plugin";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { graphql } from "../../gql";
 import moment from "moment";
+import Link from "next/link";
 
 interface IProps {
   userData: User;
@@ -22,17 +23,25 @@ interface IProps {
 
 const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
   const router = useRouter();
-  const userName = router.query.username;
+  const userName = router.query.username as string;
   const [deletePost, setDeletePost] = useState(false);
   const { user } = useStoreUser();
-
+  const [bookmarkedPostsId, setBookmarkedPostsId] = useState<string[]>();
   const [openProfileModal, setOpenProfileModal] = useState(false);
   const [openDetailsModal, setOpenDetailsModal] = useState(false);
   const [newPost, setNewPost] = useState(false);
-
+  useEffect(() => {
+    const fetchData = async () => {
+      const res = await axios.get("/bookmark/all");
+      if (res.data.status === 200) {
+        setBookmarkedPostsId(res.data.bookmarkedPostsId || []);
+      }
+    };
+    fetchData();
+  }, []);
   const queryPost = graphql(`
-    query posts {
-      posts {
+    query getPostsUserByUserName($username: String!) {
+      getPostsUserByUserName(username: $username) {
         code
         success
         message
@@ -44,6 +53,7 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
           shares
           images
           user {
+            id
             avatar
             username
             fullName
@@ -52,6 +62,7 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
             id
             reactions
             user {
+              id
               avatar
               username
               fullName
@@ -61,6 +72,7 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
             id
             content
             user {
+              id
               avatar
               username
               fullName
@@ -71,9 +83,11 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
     }
   `);
   const getPost = async (pageParam: string) => {
-    const resPost = await graphQLClient.request(queryPost);
+    const resPost = await graphQLClient.request(queryPost, {
+      username: userName,
+    });
 
-    return resPost.posts;
+    return resPost.getPostsUserByUserName;
   };
   const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =
     useInfiniteQuery(
@@ -91,8 +105,8 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
   const loadMoreRef = useRef() as React.RefObject<HTMLButtonElement>;
 
   useEffect(() => {
-    console.log(user);
-  }, [user]);
+    console.log(userData);
+  }, [userData]);
   useEffect(() => {
     if (!hasNextPage) {
       return;
@@ -118,7 +132,7 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
         <div className="">
           <Image
             className="rounded-2xl object-content"
-            src={user.avatar || "https://i.ibb.co/pWc2Ffd/u-bg.jpg"}
+            src={"https://i.ibb.co/pWc2Ffd/u-bg.jpg"}
             width={1000}
             objectFit="cover"
             height={300}
@@ -129,7 +143,7 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
           <div className=" flex ">
             <div className="-mt-12 ml-5">
               <Image
-                src={user.avatar || "https://i.ibb.co/5kdWHNN/user-12.png"}
+                src={userData.avatar || "https://i.ibb.co/5kdWHNN/user-12.png"}
                 alt="user profile photo"
                 width={100}
                 height={100}
@@ -138,17 +152,23 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
               />
             </div>
             <div className="ml-6">
-              <div className="font-bold text-lg ">
-                {user.fullName}{" "}
-                <TiTick className="text-[20px] text-white rounded-full bg-sky-500 " />
+              <div className="font-bold text-lg text-center flex items-center justify-center">
+                {userData.fullName}&ensp;
+                <a className="group relative inline-block">
+                  <TiTick className="text-[20px] text-white rounded-full bg-sky-500" />
+                  <span className="absolute hidden group-hover:flex -top-2 -right-3 translate-x-full w-48 px-2 py-1 bg-gray-700 rounded-lg text-center text-white text-sm before:content-[''] before:absolute before:top-1/2  before:right-[100%] before:-translate-y-1/2 before:border-8 before:border-y-transparent before:border-l-transparent before:border-r-gray-700">
+                    day la tich xanh ne
+                  </span>
+                </a>
               </div>
+
               <div className="text-xs font-medium	text-gray-400 ">
-                <a href={`mailto:${user.email}`}>{user.email}</a>
+                <a href={`mailto:${userData.email}`}>{userData.email}</a>
               </div>
             </div>
           </div>
           <div className="">
-            {user.email === user.email ? (
+            {userData.username === user.username ? (
               <button
                 className="bg-green-500 hover:bg-green-700	text-white font-bold text-xs p-3 rounded-md "
                 onClick={() => setOpenProfileModal(true)}>
@@ -159,14 +179,14 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
             )}
           </div>
         </div>
-        {/* <div className="flex ">
+        <div className="flex">
           <button>
             <a className="pr-8 pt-3 font-semibold">Post</a>
           </button>
-          <Link href="/friends">
-            <a className="pr-8 pt-3 font-semibold">Friends</a>
-          </Link>
-        </div> */}
+          <button>
+            <a className="pr-8 pt-3 font-semibold"> Friends</a>
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-12 gap-4 bg-gray-100 dark:bg-zinc-900 pt-3">
@@ -216,7 +236,7 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
                   data?.posts.map((post) => (
                     <SinglePost
                       loading={undefined}
-                      bookmarkedPostsId={undefined}
+                      bookmarkedPostsId={bookmarkedPostsId || []}
                       key={post.uuid}
                       post={post}
                       deletePost={deletePost}

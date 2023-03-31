@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { useForm } from "react-hook-form";
-import { graphql } from "../../gql";
+import { queryLogin } from "../../graphql/user";
 import { graphQLClient } from "../../plugins/graphql.plugin";
 import { Theme, toast } from "react-toastify";
 import { useStoreTheme } from "../../store/state";
@@ -15,35 +15,6 @@ import { setCookies } from "cookies-next";
 const Login = () => {
   const [showPass, setShowPass] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
-  const queryLogin = graphql(`
-    mutation login($email: String!, $password: String!) {
-      login(loginInput: { usernameOrEmail: $email, password: $password }) {
-        code
-        success
-        message
-        accessToken
-        user {
-          id
-          fullName
-          lastName
-          firstName
-          username
-          email
-          avatar
-          phone
-          birthday
-          sex
-          createAt
-          updateAt
-        }
-        errors {
-          message
-          field
-        }
-      }
-    }
-  `);
 
   const { register, handleSubmit } = useForm();
   const { theme } = useStoreTheme();
@@ -99,7 +70,7 @@ const Login = () => {
       return;
     }
     try {
-      setCookies("username", res.login.user.username);
+      setCookies("uuid", res.login.user.id);
       setCookies("accessToken", accessToken);
 
       setUser(res.login.user);
@@ -185,7 +156,7 @@ const Login = () => {
                     <button
                       disabled
                       type="button"
-                      className="w-full flex justify-center py-2 px-4 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center mr-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 inline-flex items-center">
+                      className="w-full flex justify-center py-2 px-4 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center mr-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 items-center">
                       <svg
                         role="status"
                         className="inline mr-3 w-4 h-4 text-white animate-spin"

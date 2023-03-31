@@ -1,10 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
-
 import { IComment, User } from "../../gql/graphql";
 import { graphQLClient } from "../../plugins/graphql.plugin";
-import { graphql } from "../../gql";
+import { queryGetUser } from "../../graphql/user";
 
 interface IProps {
   comment: IComment;
@@ -15,35 +14,8 @@ const Comments: React.FC<IProps> = ({ comment }) => {
   const [like, setLike] = useState<string>("");
   useEffect(() => {
     if (comment.user.username) {
-      const queryUser = graphql(`
-        query getUser($username: String!) {
-          getUser(username: $username) {
-            code
-            success
-            message
-            user {
-              id
-              fullName
-              lastName
-              firstName
-              username
-              email
-              avatar
-              phone
-              birthday
-              sex
-              createAt
-              updateAt
-            }
-            errors {
-              message
-              field
-            }
-          }
-        }
-      `);
       const fetchData = async () => {
-        const res = await graphQLClient.request(queryUser, {
+        const res = await graphQLClient.request(queryGetUser, {
           username: comment.user.username,
         });
 

@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import NProgress from "nprogress";
-import { Theme, ToastContainer } from "react-toastify";
+import { Theme, ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../styles/globals.css";
 import "nprogress/nprogress.css";
@@ -23,6 +23,9 @@ import SEO from "../../next-seo.config";
 import { useStoreTheme } from "../store/state";
 import { getThemeC, setThemeC } from "../plugins/theme";
 import { setCookies } from "cookies-next";
+import { useStoreUser } from "../store/user";
+import { graphql } from "../gql";
+import { graphQLClient } from "../plugins/graphql.plugin";
 
 export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: ReactElement) => ReactNode;
@@ -35,6 +38,61 @@ Router.events.on("routeChangeError", () => NProgress.done());
 
 function MyApp({ Component, pageProps }: AppProps) {
   const { theme, setTheme } = useStoreTheme();
+  const { user, setUser } = useStoreUser();
+  const queryUser = graphql(`
+    query user {
+      user {
+        code
+        success
+        message
+        user {
+          id
+          fullName
+          lastName
+          firstName
+          username
+          email
+          avatar
+          coverImage
+          phone
+          birthday
+          sex
+          createAt
+          updateAt
+        }
+        errors {
+          message
+          field
+        }
+      }
+    }
+  `);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const resUser = await graphQLClient.request(queryUser);
+        if (resUser.user.code === 400) {
+          toast.error(resUser.user.message, {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            theme: theme ? (theme as Theme) : "light",
+          });
+        }
+        if (resUser.user.code === 200) {
+          if (resUser.user.user) {
+            setUser(resUser.user.user);
+          }
+        }
+      } catch (error) {
+        console.log("Error: Not authenticated to perform GraphQL request");
+      }
+    };
+    fetchUser();
+  }, [queryUser, setUser, theme, user.username]);
 
   useEffect(() => {
     if (document) {
