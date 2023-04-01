@@ -9,6 +9,7 @@ const nextConfig = {
       "random.imagecdn.app",
       "i.ibb.co",
       "localhost",
+      "encrypted-tbn0.gstatic.com",
     ],
   },
 };

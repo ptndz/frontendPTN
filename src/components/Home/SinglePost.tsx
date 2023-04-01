@@ -27,7 +27,7 @@ import { CgSmileMouthOpen } from "react-icons/cg";
 
 interface IProps {
   post: IPost;
-  setController: any;
+
   setDeletePost: (deletePost: boolean) => void;
   bookmarkedPostsId: string[];
   deletePost: boolean;
@@ -38,9 +38,6 @@ interface IProps {
 
 const SinglePost: React.FC<IProps> = ({
   post,
-
-  setController,
-
   setDeletePost,
   bookmarkedPostsId,
   deletePost,

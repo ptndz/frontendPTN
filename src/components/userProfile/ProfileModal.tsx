@@ -50,43 +50,6 @@ const ProfileModal: React.FC<IProps> = ({
       userData.avatar = displayName;
     }
     const formData = new FormData();
-    formData.append("upload_preset", "my-uploads");
-
-    // if (profileImg) {
-    //   formData.append("file", profileImg);
-    //   await fetch(` https://api.cloudinary.com/v1_1/dtkl4ic8s/image/upload`, {
-    //     method: "POST",
-    //     body: formData,
-    //   })
-    //     .then((res) => res.json())
-    //     .then((data) => {
-    //       userData.photoURL = data.url;
-    //     });
-    // }
-
-    // if (coverImg) {
-    //   formData.append("file", coverImg);
-    //   await fetch(` https://api.cloudinary.com/v1_1/dtkl4ic8s/image/upload`, {
-    //     method: "POST",
-    //     body: formData,
-    //   })
-    //     .then((res) => res.json())
-    //     .then((data) => {
-    //       userData.coverPicture = data.url;
-    //     });
-    // }
-
-    const response = await axios.put(
-      `/api/user/updateProfile?email=${user.email}`,
-      {
-        userData,
-      }
-    );
-    if (response.status === 200) {
-      setUpdateUserData(true);
-      setUpdating(false);
-      toast("Update successfully");
-    }
   };
   return (
     <>

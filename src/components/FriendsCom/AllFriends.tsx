@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import SingleFrends from "./SingleFrends";
-import axios from "axios";
+
 import { User } from "../../gql/graphql";
 
 const AllFrends = () => {
@@ -10,18 +10,10 @@ const AllFrends = () => {
 
   const [users, setUsers] = useState<User[]>([]);
 
-  useEffect(() => {
-    axios.get("/api/user/allUsers").then(({ data }) => setUsers(data));
-  }, []);
-
   const handleSubmit = (e: any) => {
     e.preventDefault();
     // setLoading(true);
     if (searchText !== "") {
-      axios.get(`/api/user/allUsers?search=${searchText}`).then(({ data }) => {
-        setUsers(data);
-        console.log(data);
-      });
       //  setLoading(false);
     }
   };

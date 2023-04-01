@@ -1,7 +1,6 @@
 import React from "react";
 import Navigation from "../components/Share/Navigation";
 import AllFriends from "../components/FriendsCom/AllFriends";
-import Head from "next/head";
 
 const friends = () => {
   return (

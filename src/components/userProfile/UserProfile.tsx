@@ -15,6 +15,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { graphql } from "../../gql";
 import moment from "moment";
 import Link from "next/link";
+import { queryGetPostsUserByUserName } from "../../graphql/post";
 
 interface IProps {
   userData: User;
@@ -29,6 +30,7 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
   const [bookmarkedPostsId, setBookmarkedPostsId] = useState<string[]>();
   const [openProfileModal, setOpenProfileModal] = useState(false);
   const [openDetailsModal, setOpenDetailsModal] = useState(false);
+  const [statusFriends, setStatusFriends] = useState<string>("");
   const [newPost, setNewPost] = useState(false);
   useEffect(() => {
     const fetchData = async () => {
@@ -39,51 +41,9 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
     };
     fetchData();
   }, []);
-  const queryPost = graphql(`
-    query getPostsUserByUserName($username: String!) {
-      getPostsUserByUserName(username: $username) {
-        code
-        success
-        message
-        posts {
-          uuid
-          content
-          createAt
-          updateAt
-          shares
-          images
-          user {
-            id
-            avatar
-            username
-            fullName
-          }
-          likes {
-            id
-            reactions
-            user {
-              id
-              avatar
-              username
-              fullName
-            }
-          }
-          comments {
-            id
-            content
-            user {
-              id
-              avatar
-              username
-              fullName
-            }
-          }
-        }
-      }
-    }
-  `);
+
   const getPost = async (pageParam: string) => {
-    const resPost = await graphQLClient.request(queryPost, {
+    const resPost = await graphQLClient.request(queryGetPostsUserByUserName, {
       username: userName,
     });
 
@@ -105,29 +65,62 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
   const loadMoreRef = useRef() as React.RefObject<HTMLButtonElement>;
 
   useEffect(() => {
-    console.log(userData);
-  }, [userData]);
-  useEffect(() => {
     if (!hasNextPage) {
       return;
     }
-
     const observer = new IntersectionObserver((entries) =>
       entries.forEach((entry) => entry.isIntersecting && fetchNextPage())
     );
-
     const el = loadMoreRef && loadMoreRef.current;
-
     if (!el) {
       return;
     }
-
     observer.observe(el);
   }, [hasNextPage, router, fetchNextPage]);
 
+  useEffect(() => {
+    const fetchFriends = async () => {
+      const res = await axios.get(`/friends/${user.id}/${userData.id}`);
+      if (res.data.code === 200) {
+        setStatusFriends(
+          res.data.friends.status ? res.data.friends.status.toString() : null
+        );
+      }
+    };
+    if (userData.id !== user.id) {
+      fetchFriends();
+    }
+  }, [userData, user]);
+  const handleFriendRequest = async (status: string) => {};
+  const renderFriendsButton = () => {
+    if (statusFriends === "true") {
+      return (
+        <button
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          onClick={() => handleFriendRequest("unfriend")}>
+          Unfriend
+        </button>
+      );
+    }
+    if (statusFriends === "false") {
+      return (
+        <button
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          onClick={() => handleFriendRequest("accept")}>
+          Accept Friend
+        </button>
+      );
+    }
+    return (
+      <button
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        onClick={() => handleFriendRequest("add")}>
+        Add Friends
+      </button>
+    );
+  };
   return (
     <>
-      {/* Profile banner */}
       <div className="drop-shadow-sm p-5 bg-white dark:bg-black rounded-2xl">
         <div className="">
           <Image
@@ -168,23 +161,29 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
             </div>
           </div>
           <div className="">
-            {userData.username === user.username ? (
+            {userData.id === user.id ? (
               <button
                 className="bg-green-500 hover:bg-green-700	text-white font-bold text-xs p-3 rounded-md "
                 onClick={() => setOpenProfileModal(true)}>
                 Edit profile
               </button>
-            ) : (
+            ) : userData.id === user.id ? (
               <button id="edit-profile" className="hidden"></button>
+            ) : (
+              renderFriendsButton()
             )}
           </div>
         </div>
         <div className="flex">
           <button>
-            <a className="pr-8 pt-3 font-semibold">Post</a>
+            <Link href="/friends" className="pr-8 pt-3 font-semibold">
+              Post
+            </Link>
           </button>
           <button>
-            <a className="pr-8 pt-3 font-semibold"> Friends</a>
+            <Link href="/friends" className="pr-8 pt-3 font-semibold">
+              Friends
+            </Link>
           </button>
         </div>
       </div>
@@ -215,7 +214,7 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
                 Joined {moment(user.createAt).format()}
               </span>
             </div>
-            {user.email === user.email ? (
+            {userData.id === user.id ? (
               <button
                 className="w-full bg-gray-200 dark:bg-zinc-800 hover:dark:bg-zinc-700 hover:bg-slate-300 font-semibold rounded-md text-gray-700 dark:text-white mt-3 py-2"
                 onClick={() => setOpenDetailsModal(true)}>
@@ -228,7 +227,7 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
         </div>
         <div className="md:col-span-8 sm:col-span-12 col-span-12 ">
           {/* create post */}
-          {user.email === user.email && <CreatePost setNewPost={setNewPost} />}
+          {userData.id === user.id && <CreatePost setNewPost={setNewPost} />}
           {data?.pages
             .map((data, i) => (
               <Fragment key={i}>
@@ -241,7 +240,6 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
                       post={post}
                       deletePost={deletePost}
                       setDeletePost={setDeletePost}
-                      setController={undefined}
                       isBookmarkPage={undefined}
                       setRemovedBookmarked={undefined}
                     />

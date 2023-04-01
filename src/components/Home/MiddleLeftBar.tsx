@@ -2,12 +2,9 @@ import React, { useEffect, useRef, useState, Fragment } from "react";
 import PostSkeleton from "../Loaders/PostSkeleton";
 import CreatePost from "./CreatePost";
 import SinglePost from "./SinglePost";
-import { useStoreUser } from "../../store/user";
-
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { graphQLClient } from "../../plugins/graphql.plugin";
-import { graphql } from "../../gql";
 import axios from "axios";
 import { queryPosts } from "../../graphql/post";
 
@@ -85,7 +82,6 @@ const MiddleLeftBar = () => {
                   post={post}
                   deletePost={deletePost}
                   setDeletePost={setDeletePost}
-                  setController={undefined}
                   isBookmarkPage={undefined}
                   setRemovedBookmarked={undefined}
                 />

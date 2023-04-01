@@ -17,7 +17,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const { register, handleSubmit } = useForm();
-  const { theme } = useStoreTheme();
+
   const { setUser } = useStoreUser();
   const router = useRouter();
   const onSubmit = async (data: any) => {
@@ -27,59 +27,27 @@ const Login = () => {
       password: data.password,
     });
     if (res.login.code === 400) {
-      toast.error(res.login.message, {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: theme ? (theme as Theme) : "light",
-      });
+      toast.error(res.login.message);
       setIsLoading(false);
       return;
     }
     const accessToken = res.login.accessToken;
     if (!accessToken) {
-      toast.error("loi he thong", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: theme ? (theme as Theme) : "light",
-      });
+      toast.error("loi he thong");
       setIsLoading(false);
       return;
     }
     if (!res.login.user) {
-      toast.error("loi he thong", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: theme ? (theme as Theme) : "light",
-      });
+      toast.error("loi he thong");
       setIsLoading(false);
       return;
     }
-    try {
-      setCookies("uuid", res.login.user.id);
-      setCookies("accessToken", accessToken);
+    setCookies("uuid", res.login.user.id);
+    setCookies("accessToken", accessToken);
 
-      setUser(res.login.user);
-      return router.push("/");
-    } catch (error) {
-      console.log(error);
-      setIsLoading(false);
-      return;
-    }
+    setUser(res.login.user);
+    setIsLoading(false);
+    return router.push("/");
   };
 
   return (

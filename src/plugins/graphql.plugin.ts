@@ -43,3 +43,10 @@ export const graphQLClient = new GraphQLClient(endpoint, {
   credentials: "include",
   mode: "cors",
 });
+export const graphQLServer = (cookie: string | undefined) => {
+  return new GraphQLClient(endpoint, {
+    headers: {
+      cookie: cookie || "",
+    },
+  });
+};

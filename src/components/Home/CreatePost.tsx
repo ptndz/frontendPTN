@@ -165,7 +165,7 @@ const CreatePost: React.FC<IProps> = ({ setNewPost }) => {
         ) : (
           ""
         )}
-        {/* buttons */}
+       
         <div className="border m-2 rounded-lg overflow-hidden border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-black grid divide-gray-200 dark:divide-zinc-700 grid-cols-2 divide-y-0 divide-x">
           <button
             type="button"

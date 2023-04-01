@@ -57,3 +57,58 @@ export const queryLogin = graphql(`
     }
   }
 `);
+export const queryRegister = graphql(`
+  mutation register(
+    $firstName: String!
+    $lastName: String!
+    $email: String!
+    $password: String!
+    $username: String!
+    $fullName: String!
+    $phone: String!
+    $birthday: String!
+    $sex: Boolean!
+    $avatar: String!
+    $coverImage: String!
+  ) {
+    register(
+      registerInput: {
+        firstName: $firstName
+        lastName: $lastName
+        email: $email
+        password: $password
+        username: $username
+        fullName: $fullName
+        phone: $phone
+        birthday: $birthday
+        sex: $sex
+        avatar: $avatar
+        coverImage: $coverImage
+      }
+    ) {
+      code
+      success
+      message
+      accessToken
+      user {
+        id
+        fullName
+        lastName
+        firstName
+        username
+        email
+        avatar
+        phone
+        birthday
+        sex
+        coverImage
+        createAt
+        updateAt
+      }
+      errors {
+        message
+        field
+      }
+    }
+  }
+`);

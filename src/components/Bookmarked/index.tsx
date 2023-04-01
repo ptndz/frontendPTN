@@ -1,16 +1,13 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { BsBookmarkX } from "react-icons/bs";
-
 import SinglePost from "../Home/SinglePost";
 import Navigation from "../Share/Navigation";
-import { useStoreUser } from "../../store/user";
 import { IBookmark } from "../../gql/graphql";
-import { graphql } from "../../gql";
 import { graphQLClient } from "../../plugins/graphql.plugin";
+import { queryBookmarkPost } from "../../graphql/bookmark";
 
 const BookmarkedPosts = () => {
-  const [controller, setController] = useState(false);
 
   const [removedBookmarked, setRemovedBookmarked] = useState(false);
   const [bookmarkedPostsId, setBookmarkedPostsId] = useState<string[]>();
@@ -18,7 +15,6 @@ const BookmarkedPosts = () => {
   const [loading, setLoading] = useState(false);
 
   const [deletePost, setDeletePost] = useState<boolean>(false);
-
   useEffect(() => {
     const fetchBookmarkedPostsId = async () => {
       const res = await axios.get("/bookmark/all");
@@ -26,60 +22,10 @@ const BookmarkedPosts = () => {
         setBookmarkedPostsId(res.data.bookmarkedPostsId || []);
       }
     };
-
+    fetchBookmarkedPostsId();
+  }, []);
+  useEffect(() => {
     const fetchBookmarkedPosts = async () => {
-      const queryBookmarkPost = graphql(`
-        query bookmarkAll {
-          bookmarkAll {
-            code
-            success
-            bookmarks {
-              id
-              createAt
-              user {
-                id
-                username
-                fullName
-                avatar
-              }
-              post {
-                uuid
-                content
-                createAt
-                updateAt
-                shares
-                images
-                user {
-                  id
-                  username
-                  avatar
-                  fullName
-                }
-                likes {
-                  id
-                  reactions
-                  user {
-                    id
-                    username
-                    avatar
-                    fullName
-                  }
-                }
-                comments {
-                  id
-                  content
-                  user {
-                    id
-                    username
-                    avatar
-                    fullName
-                  }
-                }
-              }
-            }
-          }
-        }
-      `);
       const res = await graphQLClient.request(queryBookmarkPost);
       if (res.bookmarkAll.code === 200) {
         if (res.bookmarkAll.bookmarks) {
@@ -87,7 +33,7 @@ const BookmarkedPosts = () => {
         }
       }
     };
-    fetchBookmarkedPostsId();
+
     fetchBookmarkedPosts();
   }, []);
 
@@ -114,7 +60,7 @@ const BookmarkedPosts = () => {
                 post={bookmark.post}
                 deletePost={deletePost}
                 setDeletePost={setDeletePost}
-                setController={undefined}
+                
                 isBookmarkPage={undefined}
                 setRemovedBookmarked={undefined}
               />

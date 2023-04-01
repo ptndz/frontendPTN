@@ -1,26 +1,69 @@
-import { useState } from "react";
-import { BsEyeSlash, BsEye, BsGoogle } from "react-icons/bs";
+import { useEffect, useState } from "react";
+import { BsEyeSlash, BsEye } from "react-icons/bs";
 import Image from "next/image";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useStoreRegisterError } from "../../store/state";
+import { graphQLClient } from "../../plugins/graphql.plugin";
+import { queryRegister } from "../../graphql/user";
+import { setCookies } from "cookies-next";
+import { useStoreUser } from "../../store/user";
+import { useRouter } from "next/router";
 
 const Register = () => {
-  const { registerError } = useStoreRegisterError();
-
+  const router = useRouter();
   const [showPass, setShowPass] = useState(false);
+  const [sex, setSex] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [showPassConfirm, setShowPassConfirm] = useState(false);
+  const { setUser } = useStoreUser();
+  const { register, handleSubmit } = useForm();
 
-  const { register, handleSubmit, reset } = useForm();
-
-  const onSubmit = (data: any) => {
+  const onSubmit = async (data: any) => {
     if (data.password === data.confirmPass) {
-      toast("Wow password matched!");
-      reset();
+      setIsLoading(true);
+      const res = await graphQLClient.request(queryRegister, {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        password: data.password,
+        phone: data.phone,
+        username: data.username,
+        fullName: `${data.firstName} ${data.lastName}`,
+        sex: sex,
+        birthday: data.birthday,
+        avatar: "https://i.ibb.co/5kdWHNN/user-12.png",
+        coverImage: "https://i.ibb.co/pWc2Ffd/u-bg.jpg",
+      });
+      if (res.register.code != 200) {
+        toast.error(res.register.message);
+        if (res.register.errors) {
+          res.register.errors.forEach((err) => {
+            toast.error(err.message);
+          });
+        }
+        setIsLoading(false);
+        return;
+      }
+      const accessToken = res.register.accessToken;
+      if (!accessToken) {
+        toast.error("loi he thong");
+        setIsLoading(false);
+        return;
+      }
+      if (!res.register.user) {
+        toast.error("loi he thong");
+        setIsLoading(false);
+        return;
+      }
+      setCookies("uuid", res.register.user.id);
+      setCookies("accessToken", accessToken);
+      setUser(res.register.user);
+      setIsLoading(false);
+      return router.push("/");
     } else {
-      toast("Oops! password dosen't match");
+      toast.warn("Oops! password dosen't match");
     }
   };
 
@@ -98,7 +141,43 @@ const Register = () => {
                     />
                   </div>
                 </div>
-
+                <div>
+                  <label
+                    htmlFor="phone"
+                    className="block text-lg text-gray-900 dark:text-white">
+                    Phone Number<span className="text-red-500">*</span>
+                  </label>
+                  <div className="mt-1">
+                    <input
+                      id="phone"
+                      {...register("phone", { required: true })}
+                      type="tel"
+                      pattern="^(0\W*\W*(?:\d\W*){9})$"
+                      autoComplete="phone"
+                      required
+                      placeholder="0987654321"
+                      className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label
+                    htmlFor="username"
+                    className="block text-lg text-gray-900 dark:text-white">
+                    User name<span className="text-red-500">*</span>
+                  </label>
+                  <div className="mt-1">
+                    <input
+                      id="username"
+                      {...register("username", { required: true })}
+                      type="text"
+                      autoComplete="given-name"
+                      required
+                      placeholder="Username"
+                      className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    />
+                  </div>
+                </div>
                 <div>
                   <div className="flex items-center justify-between">
                     <label
@@ -151,13 +230,77 @@ const Register = () => {
                     />
                   </div>
                 </div>
+                <div>
+                  <label
+                    htmlFor="birthday"
+                    className="block text-lg text-gray-900 dark:text-white">
+                    Birth Day<span className="text-red-500">*</span>
+                  </label>
+                  <div className="mt-1">
+                    <input
+                      id="birthday"
+                      {...register("birthday", { required: true })}
+                      autoComplete="date"
+                      required
+                      className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      type="date"
+                      placeholder="dd-mm-yyyy"
+                      min="1970-01-01"
+                      max="2030-12-31"></input>
+                  </div>
+                </div>
 
                 <div>
-                  <button
-                    type="submit"
-                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium dark:text-black text-white dark:bg-white bg-black hover:bg-opacity-80 dark:hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white">
-                    Register
-                  </button>
+                  <label
+                    htmlFor="username"
+                    className="block text-lg text-gray-900 dark:text-white">
+                    Sex<span className="text-red-500">*</span>
+                  </label>
+                  <div className="mt-1">
+                    <div className="mb-3 xl:w-96 ">
+                      <select
+                        data-te-select-init
+                        className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="true" onClick={() => setSex(true)}>
+                          Male
+                        </option>
+                        <option value="false" onClick={() => setSex(false)}>
+                          Female
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  {isLoading ? (
+                    <button
+                      disabled
+                      type="button"
+                      className="w-full flex justify-center py-2 px-4 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm text-center mr-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 items-center">
+                      <svg
+                        role="status"
+                        className="inline mr-3 w-4 h-4 text-white animate-spin"
+                        viewBox="0 0 100 101"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path
+                          d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9184 73.1895 90.9184 50.5908C90.9184 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                          fill="#E5E7EB"
+                        />
+                        <path
+                          d="M93.9676 39.0409C96.393 38.4038 97.8424 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8442 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 84.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                      Loading...
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium dark:text-black text-white dark:bg-white bg-black hover:bg-opacity-80 dark:hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white">
+                      Register
+                    </button>
+                  )}
                 </div>
               </form>
 
