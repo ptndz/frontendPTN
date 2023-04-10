@@ -11,6 +11,7 @@ import { useStoreTheme } from "../../store/state";
 import { useStoreUser } from "../../store/user";
 import { useRouter } from "next/router";
 import { setCookies } from "cookies-next";
+import { log } from "console";
 
 const Login = () => {
   const [showPass, setShowPass] = useState(false);
@@ -42,8 +43,16 @@ const Login = () => {
       setIsLoading(false);
       return;
     }
-    setCookies("uuid", res.login.user.id);
-    setCookies("accessToken", accessToken);
+    try {
+      setCookies("uuid", res.login.user.id, {
+        maxAge: 60 * 60 * 24 * 30,
+      });
+      setCookies("accessToken", accessToken, {
+        maxAge: 60 * 60 * 24 * 30,
+      });
+    } catch (error) {
+      console.log(error);
+    }
 
     setUser(res.login.user);
     setIsLoading(false);

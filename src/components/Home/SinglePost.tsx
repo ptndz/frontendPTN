@@ -3,10 +3,10 @@ import Image from "next/image";
 import moment from "moment";
 import { FaArrowUp, FaRegSurprise } from "react-icons/fa";
 import { FiTrash } from "react-icons/fi";
-import { BiSad, BiShare } from "react-icons/bi";
+import {  BiShare } from "react-icons/bi";
 import { AiOutlineLike } from "react-icons/ai";
 import { TbMoodCry } from "react-icons/tb";
-import jsonP from "@ptndev/json";
+
 import Comments from "./Comments";
 import Link from "next/link";
 import {
@@ -14,7 +14,7 @@ import {
   BsBookmark,
   BsBookmarkX,
   BsThreeDotsVertical,
-  BsHeartFill,
+
   BsHeart,
   BsEmojiAngry,
 } from "react-icons/bs";

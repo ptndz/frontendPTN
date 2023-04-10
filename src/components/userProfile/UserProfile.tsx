@@ -12,10 +12,11 @@ import { useStoreUser } from "../../store/user";
 import { Post, User } from "../../gql/graphql";
 import { graphQLClient } from "../../plugins/graphql.plugin";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { graphql } from "../../gql";
+
 import moment from "moment";
 import Link from "next/link";
 import { queryGetPostsUserByUserName } from "../../graphql/post";
+import { FriendRequestStatus } from "../../types/friends";
 
 interface IProps {
   userData: User;
@@ -30,8 +31,9 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
   const [bookmarkedPostsId, setBookmarkedPostsId] = useState<string[]>();
   const [openProfileModal, setOpenProfileModal] = useState(false);
   const [openDetailsModal, setOpenDetailsModal] = useState(false);
-  const [statusFriends, setStatusFriends] = useState<string>("");
+  const [statusFriends, setStatusFriends] = useState<FriendRequestStatus>();
   const [newPost, setNewPost] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       const res = await axios.get("/bookmark/all");
@@ -65,6 +67,10 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
   const loadMoreRef = useRef() as React.RefObject<HTMLButtonElement>;
 
   useEffect(() => {
+    fetchNextPage();
+  }, [fetchNextPage, newPost]);
+
+  useEffect(() => {
     if (!hasNextPage) {
       return;
     }
@@ -80,43 +86,74 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
 
   useEffect(() => {
     const fetchFriends = async () => {
-      const res = await axios.get(`/friends/${user.id}/${userData.id}`);
-      if (res.data.code === 200) {
-        setStatusFriends(
-          res.data.friends.status ? res.data.friends.status.toString() : null
-        );
+      const res = await axios.get(`/friends/status/${userData.id}`);
+      console.log("friends status", res.data);
+
+      if (res.data.status) {
+        setStatusFriends({
+          status: res.data.status,
+        });
       }
     };
     if (userData.id !== user.id) {
       fetchFriends();
     }
   }, [userData, user]);
-  const handleFriendRequest = async (status: string) => {};
+
   const renderFriendsButton = () => {
-    if (statusFriends === "true") {
-      return (
-        <button
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          onClick={() => handleFriendRequest("unfriend")}>
-          Unfriend
-        </button>
-      );
-    }
-    if (statusFriends === "false") {
-      return (
-        <button
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          onClick={() => handleFriendRequest("accept")}>
-          Accept Friend
-        </button>
-      );
-    }
+    const componentStatus = [
+      {
+        status: "not-sent",
+        component: (
+          <button
+            className="bg-blue-500 hover:bg-blue-700	text-white font-bold text-xs p-3 rounded-md"
+            onClick={async () => {
+              const res = await axios.post(`/friends/send/${userData.id}`);
+              console.log("data", res.data);
+              if (res.data.status) {
+              }
+            }}>
+            Thêm bạn bè
+          </button>
+        ),
+      },
+      {
+        status: "pending",
+        component: (
+          <button className="bg-yellow-300 hover:bg-yellow-700	text-white font-bold text-xs p-3 rounded-md ">
+            Đã gửi kết bạn
+          </button>
+        ),
+      },
+      {
+        status: "accepted",
+        component: (
+          <button className="bg-green-300 hover:bg-green-700	text-white font-bold text-xs p-3 rounded-md ">
+            Bạn bè
+          </button>
+        ),
+      },
+      {
+        status: "declined",
+        component: (
+          <button className="bg-rose-700 hover:bg-rose-900	text-white font-bold text-xs p-3 rounded-md ">
+            Huỷ kết bạn
+          </button>
+        ),
+      },
+      {
+        status: "waiting-for-current-user-response",
+        component: (
+          <button className="bg-green-300 hover:bg-green-700	text-white font-bold text-xs p-3 rounded-md ">
+            Chấp nhận yêu cầu
+          </button>
+        ),
+      },
+    ];
+
     return (
-      <button
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        onClick={() => handleFriendRequest("add")}>
-        Add Friends
-      </button>
+      componentStatus.find((item) => item.status === statusFriends?.status)
+        ?.component || null
     );
   };
   return (
@@ -167,8 +204,6 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
                 onClick={() => setOpenProfileModal(true)}>
                 Edit profile
               </button>
-            ) : userData.id === user.id ? (
-              <button id="edit-profile" className="hidden"></button>
             ) : (
               renderFriendsButton()
             )}
@@ -211,7 +246,7 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
             <div className="flex items-center py-3">
               <i className="fa-solid fa-clock"></i>
               <span className="ml-3">
-                Joined {moment(user.createAt).format()}
+                Joined {moment(user.createAt).fromNow()}
               </span>
             </div>
             {userData.id === user.id ? (

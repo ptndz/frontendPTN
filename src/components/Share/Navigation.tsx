@@ -271,7 +271,7 @@ const Navigation = () => {
               <div className="flex items-center justify-between">
                 <Link href="/" className="relative flex gap-3 items-center">
                   <Image
-                    src="/dark-logo.png"
+                    src="/android-chrome-192x192.png"
                     width="150"
                     height="55"
                     alt="Socio Trend"

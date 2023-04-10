@@ -6,7 +6,7 @@ import { User } from "../gql/graphql";
 import Error from "./404";
 import { queryGetUser } from "../graphql/user";
 import { GetServerSideProps } from "next/types";
-import { GraphQLClient } from "graphql-request";
+
 import { graphQLServer } from "../plugins/graphql.plugin";
 
 interface IProps {

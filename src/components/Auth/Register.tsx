@@ -57,8 +57,12 @@ const Register = () => {
         setIsLoading(false);
         return;
       }
-      setCookies("uuid", res.register.user.id);
-      setCookies("accessToken", accessToken);
+      setCookies("uuid", res.register.user.id, {
+        maxAge: 60 * 60 * 24 * 30,
+      });
+      setCookies("accessToken", accessToken, {
+        maxAge: 60 * 60 * 24 * 30,
+      });
       setUser(res.register.user);
       setIsLoading(false);
       return router.push("/");

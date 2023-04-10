@@ -38,6 +38,10 @@ const MiddleLeftBar = () => {
   const router = useRouter();
 
   useEffect(() => {
+    fetchNextPage();
+  }, [fetchNextPage, newPost]);
+  
+  useEffect(() => {
     if (!hasNextPage) {
       return;
     }
@@ -63,7 +67,7 @@ const MiddleLeftBar = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [fetchNextPage]);
 
   return (
     <div>

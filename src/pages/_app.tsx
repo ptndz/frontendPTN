@@ -69,8 +69,8 @@ function MyApp({ Component, pageProps }: AppProps) {
   `);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
+    try {
+      const fetchUser = async () => {
         const resUser = await graphQLClient.request(queryUser);
         if (resUser.user.code === 400) {
           toast.error(resUser.user.message, {
@@ -87,11 +87,11 @@ function MyApp({ Component, pageProps }: AppProps) {
             setUser(resUser.user.user);
           }
         }
-      } catch (error) {
-        console.log("Error: Not authenticated to perform GraphQL request");
-      }
-    };
-    fetchUser();
+      };
+      fetchUser();
+    } catch (error) {
+      console.log("Error: Not authenticated to perform GraphQL request");
+    }
   }, [queryUser, setUser, theme, user.username]);
 
   useEffect(() => {
