@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { useSelector } from "react-redux";
+
 import Navigation from "../Share/Navigation";
 import ChatUserSearchOffcanvas from "./ChatUserSearchOffcanvas";
 import { FiSearch } from "react-icons/fi";
@@ -8,143 +8,91 @@ import { RiSendPlaneLine } from "react-icons/ri";
 import { HiOutlineChatAlt2 } from "react-icons/hi";
 import { MdGroupAdd } from "react-icons/md";
 
-// Existing
 import axios from "axios";
 import { io } from "socket.io-client";
 import ChatUser from "./ChatUser";
 import Chat from "./Chat";
 import UserListSkeleton from "../Loaders/UserListSkeleton";
 import OnlineUsers from "./OnlineUsers";
+import { useStoreUser } from "../../store/user";
+import { User } from "../../gql/graphql";
 
 const MessagingMain = () => {
   const [isSearchOffcanvasOpen, setIsSearchOffcanvasOpen] = useState(false);
   const closeSearchOffcanvas = () => setIsSearchOffcanvasOpen(false);
   const openSearchOffcanvas = () => setIsSearchOffcanvasOpen(true);
 
-  // Existing
-  const user = useSelector((state) => state.states.user);
-  const [conversations, setConversations] = useState([]);
+  const { user } = useStoreUser();
+  const [conversations, setConversations] = useState<any>([]);
   const [currentChat, setCurrentChat] = useState(null);
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<any>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [dbUser, setDbUser] = useState({});
-  const scrollRef = useRef();
-  const [arrivalMessage, setArrivalMessage] = useState(null);
-  const [allUsers, setAllUsers] = useState([]);
-  const [onlineUsers, setOnlineUsers] = useState([]);
 
-  const socket = useRef();
+  const scrollRef: any = useRef();
+  const [arrivalMessage, setArrivalMessage] = useState(null);
+  const [allUsers, setAllUsers] = useState<User[]>();
+  const [onlineUsers, setOnlineUsers] = useState<User[]>();
+
+  const socket: any = useRef();
 
   useEffect(() => {
-    socket.current = io("http://localhost:8900");
-    socket.current.on("getMessage", (data) => {
-      setArrivalMessage({
-        sender: data.senderId,
-        text: data.text,
-        createdAt: Date.now(),
-      });
+    socket.current = io("http://localhost:8080", {
+      withCredentials: true,
+    });
+
+    socket.current.emit("sendMessage", {
+      senderId: "sssss",
+      receiverId: "receiverId",
+      text: "newMessage",
     });
   }, []);
-
+  const handleSubmit = async (e: any) => {
+    e.preventDefault();
+    if (newMessage !== "") {
+    }
+  };
   useEffect(() => {
-    arrivalMessage &&
-      currentChat?.members.includes(arrivalMessage.sender) &&
-      setMessages((prev) => [...prev, arrivalMessage]);
-  }, [arrivalMessage, currentChat]);
-
-  useEffect(() => {
-    socket.current.emit("addUser", dbUser._id);
-    socket.current.on("getUsers", (users) => {
-      setOnlineUsers(
-        allUsers.filter((f) => users.some((u) => u.userId === f._id))
-      );
-    });
-  }, [allUsers, dbUser._id]);
+    const fetchFriends = async () => {
+      const res = await axios.get("/friends/my");
+      if (res.data.success) {
+        setAllUsers(res.data.friends);
+        setOnlineUsers(res.data.friends);
+      }
+    };
+    fetchFriends();
+  }, []);
 
   useEffect(() => {
     const getConversations = async () => {
       try {
-        const res = await axios.get(
-          `/api/messenger/getConversations?userId=${dbUser._id}`
-        );
-        setConversations(res.data);
+        const res = await axios.get("/messenger/getConversations");
+
+        setConversations(res.data.conversations);
       } catch (err) {
         console.log(err);
       }
     };
     getConversations();
-  }, [dbUser._id, currentChat]);
-
-  useEffect(() => {
-    const getMessages = async () => {
-      try {
-        const res = await axios.get(
-          `/api/messenger/messages?conversationId=${currentChat?._id}`
-        );
-        setMessages(res.data);
-      } catch (err) {
-        console.log(err);
-      }
-    };
-    getMessages();
-  }, [currentChat]);
-
-  useEffect(() => {
-    axios
-      .get(`/api/user?email=${user?.email}`)
-      .then(({ data }) => setDbUser(data));
-  }, [user?.email]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (newMessage !== "") {
-      const message = {
-        sender: dbUser._id,
-        text: newMessage,
-        conversationId: currentChat._id,
-      };
-
-      const receiverId = currentChat.members.find(
-        (member) => member !== dbUser._id
-      );
-
-      socket.current.emit("sendMessage", {
-        senderId: dbUser._id,
-        receiverId,
-        text: newMessage,
-      });
-
-      try {
-        const res = await axios.post("/api/messenger/messages", message);
-        setMessages([...messages, res.data]);
-        setNewMessage("");
-      } catch (err) {
-        console.log(err);
-      }
-    }
-  };
+  }, [user.id, currentChat]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  useEffect(() => {
-    axios.get("/api/user/allUsers").then(({ data }) => {
-      setAllUsers(data);
-    });
-  }, []);
-
   return (
     <div className="relative h-screen flex overflow-hidden bg-white dark:bg-black mx-auto shadow-md">
       {/* <!-- Static sidebar for desktop --> */}
-      <ChatUserSearchOffcanvas
-        setCurrentChat={setCurrentChat}
-        currentId={dbUser._id}
-        allUsers={allUsers}
-        onlineUsers={onlineUsers}
-        closeOffcanvas={closeSearchOffcanvas}
-        isOffcanvasOpen={isSearchOffcanvasOpen}
-      />
+      {allUsers && (
+        <ChatUserSearchOffcanvas
+          setCurrentChat={setCurrentChat}
+          currentId={user.id}
+          allUsers={allUsers}
+          onlineUsers={onlineUsers}
+          closeOffcanvas={closeSearchOffcanvas}
+          isOffcanvasOpen={isSearchOffcanvasOpen}
+        />
+      )}
+
       <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
         {/* topbar */}
         <Navigation />
@@ -166,14 +114,13 @@ const MessagingMain = () => {
             </div>
             {/* online user list */}
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
-              {onlineUsers.length > 0 && (
+              {onlineUsers && onlineUsers.length > 0 && (
                 <div className="py-3 overflow-x-scroll	scrollbar flex">
                   {onlineUsers?.map((u) => (
-                    <div className={`px-2 relative cursor-pointer`} key={u._id}>
+                    <div className={`px-2 relative cursor-pointer`} key={u.id}>
                       <OnlineUsers
-                        key={u._id}
+                        key={u.id}
                         onlineUser={u}
-                        currentId={dbUser._id}
                         setCurrentChat={setCurrentChat}
                       />
                     </div>
@@ -185,15 +132,15 @@ const MessagingMain = () => {
                   <UserListSkeleton />
                 ) : (
                   conversations
-                    ?.map((c) => (
+                    ?.map((c: any) => (
                       <li
                         className={`px-2 relative overflow-hidden cursor-pointer`}
                         onClick={() => setCurrentChat(c)}
-                        key={c._id}>
+                        key={c.id}>
                         <ChatUser
-                          key={c._id}
+                          key={c.id}
                           conversation={c}
-                          currentUser={dbUser}
+                          currentUser={user}
                           currentChat={currentChat}
                           onlineUsers={onlineUsers}
                         />
@@ -213,9 +160,9 @@ const MessagingMain = () => {
               <>
                 {/* chat body */}
                 <div className="flex-1 w-full mx-auto py-8 px-3 space-y-6">
-                  {messages.map((m) => (
-                    <div ref={scrollRef} key={m._id}>
-                      <Chat message={m} own={m.sender === dbUser._id} />
+                  {messages.map((m: any) => (
+                    <div ref={scrollRef} key={m.id}>
+                      <Chat message={m} own={m?.sender === user?.id} />
                     </div>
                   ))}
                 </div>

@@ -1,33 +1,42 @@
-import { BsXLg } from 'react-icons/bs';
-import Image from 'next/image';
-import { FiSearch } from 'react-icons/fi';
-import { RiUserSmileLine } from 'react-icons/ri';
-import { useState } from 'react';
-import { toast } from 'react-toastify';
-import axios from 'axios';
-import UserListSkeleton from '../Loaders/UserListSkeleton';
-
-const ChatUserSearchOffcanvas = ({
+import { BsXLg } from "react-icons/bs";
+import Image from "next/image";
+import { FiSearch } from "react-icons/fi";
+import { RiUserSmileLine } from "react-icons/ri";
+import { useState } from "react";
+import { toast } from "react-toastify";
+import axios from "axios";
+import UserListSkeleton from "../Loaders/UserListSkeleton";
+import { User } from "../../gql/graphql";
+interface IProps {
+  isOffcanvasOpen?: boolean;
+  closeOffcanvas: () => void;
+  setCurrentChat: (chat: any) => void;
+  currentId?: string;
+  allUsers: User[];
+  onlineUsers?: User[];
+}
+const ChatUserSearchOffCanvas: React.FC<IProps> = ({
   isOffcanvasOpen,
   closeOffcanvas,
   setCurrentChat,
   currentId,
+  allUsers,
+  onlineUsers,
 }) => {
-  const [search, setSearch] = useState('');
-  const [searchResult, setSearchResult] = useState([]);
+  const [search, setSearch] = useState("");
+  const [searchResult, setSearchResult] = useState<User[]>();
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     setLoading(true);
-    if (search !== '') {
+    if (search !== "") {
       try {
-        const res = await axios.get(`/api/user/allUsers?search=${search}`);
-        setSearchResult(res.data);
+        const res = await axios.get(`/user/search?keyword=${search}`);
+        setSearchResult(res.data.users);
         setLoading(false);
         console.log(res.data);
       } catch (err) {
-        toast(err.message);
         setLoading(false);
       }
     } else {
@@ -35,37 +44,24 @@ const ChatUserSearchOffcanvas = ({
     }
   };
 
-  const handleClick = async (user) => {
-    try {
-      const res = await axios.get(
-        `/api/messenger/conversations?firstUserId=${currentId}?secondUserId=${user._id}`
-      );
-      setCurrentChat(res.data);
-      toast(`${user.displayName} has been added to the conversation`);
-    } catch (err) {
-      console.log(err);
-    }
-  };
+  const handleClick = async (user: User) => {};
   return (
     <div
       className={`${
-        !isOffcanvasOpen && 'pointer-events-none'
-      } fixed inset-0 overflow-hidden scrollbar-hide z-50`}
-    >
+        !isOffcanvasOpen && "pointer-events-none"
+      } fixed inset-0 overflow-hidden scrollbar-hide z-50`}>
       <div className="absolute inset-0 overflow-hidden scrollbar-hide">
         <div
           onClick={closeOffcanvas}
           className={`${
-            isOffcanvasOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          } fixed inset-0 bg-clip-padding backdrop-filter backdrop-blur-md bg-opacity-30 transition-opacity`}
-        ></div>
+            isOffcanvasOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          } fixed inset-0 bg-clip-padding backdrop-filter backdrop-blur-md bg-opacity-30 transition-opacity`}></div>
 
         <div className="fixed inset-y-0 left-0 max-w-full flex">
           <div
             className={`${
-              isOffcanvasOpen ? 'translate-x-0' : '-translate-x-full'
-            } transform transition ease-in-out duration-300 w-screen max-w-md`}
-          >
+              isOffcanvasOpen ? "translate-x-0" : "-translate-x-full"
+            } transform transition ease-in-out duration-300 w-screen max-w-md`}>
             <div className="h-full flex flex-col bg-white dark:bg-black md:border-r border-gray-300 dark:border-zinc-700">
               <div className="min-h-0 flex-1 flex flex-col">
                 {/* offcanvas head */}
@@ -75,8 +71,7 @@ const ChatUserSearchOffcanvas = ({
                     <div className="ml-3 h-7 flex items-center">
                       <button
                         onClick={closeOffcanvas}
-                        className="bg-gray-100 dark:bg-zinc-800 hover:bg-opacity-60 dark:hover:bg-opacity-60 rounded-full p-3 focus:outline-none"
-                      >
+                        className="bg-gray-100 dark:bg-zinc-800 hover:bg-opacity-60 dark:hover:bg-opacity-60 rounded-full p-3 focus:outline-none">
                         <BsXLg />
                       </button>
                     </div>
@@ -85,8 +80,7 @@ const ChatUserSearchOffcanvas = ({
                 {/* offcanvas content */}
                 <form
                   onSubmit={handleSubmit}
-                  className="py-4 border-b dark:border-zinc-700 flex space-x-4 px-3"
-                >
+                  className="py-4 border-b dark:border-zinc-700 flex space-x-4 px-3">
                   <div className="flex-1 min-w-0">
                     <label htmlFor="search" className="sr-only">
                       Search
@@ -108,8 +102,7 @@ const ChatUserSearchOffcanvas = ({
                   </div>
                   <button
                     type="submit"
-                    className="inline-flex justify-center px-6 py-2 border border-gray-300 dark:border-zinc-700 shadow-sm text-sm font-medium rounded-md hover:bg-opacity-70"
-                  >
+                    className="inline-flex justify-center px-6 py-2 border border-gray-300 dark:border-zinc-700 shadow-sm text-sm font-medium rounded-md hover:bg-opacity-70">
                     <FiSearch className="h-5 w-5" />
                   </button>
                 </form>
@@ -121,40 +114,41 @@ const ChatUserSearchOffcanvas = ({
                   <nav className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
                     <div className="relative">
                       <ul className="relative z-0 divide-y divide-gray-200 dark:divide-zinc-700">
-                        {searchResult.map((user) => (
-                          <li
-                            key={user._id}
-                            onClick={() => {
-                              handleClick(user);
-                              closeOffcanvas();
-                            }}
-                            className="px-4 py-4 flex items-center justify-between hover:bg-gray-200 dark:hover:bg-zinc-800 cursor-pointer"
-                          >
-                            <div className="flex items-center">
-                              {user.photoURL ? (
-                                <Image
-                                  src={user.photoURL}
-                                  width={40}
-                                  height={40}
-                                  alt={user.displayName}
-                                  className="rounded-full"
-                                />
-                              ) : (
-                                <div className="w-11 h-11 rounded-full object-cover mr-2 bg-gray-300 dark:bg-zinc-900">
-                                  <RiUserSmileLine className="w-full h-full object-cover p-2" />
+                        {searchResult
+                          ? searchResult.map((user) => (
+                              <li
+                                key={user.id}
+                                onClick={() => {
+                                  handleClick(user);
+                                  closeOffcanvas();
+                                }}
+                                className="px-4 py-4 flex items-center justify-between hover:bg-gray-200 dark:hover:bg-zinc-800 cursor-pointer">
+                                <div className="flex items-center">
+                                  {user.avatar ? (
+                                    <Image
+                                      src={user.avatar}
+                                      width={40}
+                                      height={40}
+                                      alt={user.fullName}
+                                      className="rounded-full"
+                                    />
+                                  ) : (
+                                    <div className="w-11 h-11 rounded-full object-cover mr-2 bg-gray-300 dark:bg-zinc-900">
+                                      <RiUserSmileLine className="w-full h-full object-cover p-2" />
+                                    </div>
+                                  )}
+                                  <div className="ml-3">
+                                    <div className="text-sm leading-5 font-medium text-gray-900 dark:text-white">
+                                      {user.fullName}
+                                    </div>
+                                    <div className="text-sm leading-5 text-gray-500 dark:text-gray-300">
+                                      {user.username}
+                                    </div>
+                                  </div>
                                 </div>
-                              )}
-                              <div className="ml-3">
-                                <div className="text-sm leading-5 font-medium text-gray-900 dark:text-white">
-                                  {user.displayName}
-                                </div>
-                                <div className="text-sm leading-5 text-gray-500 dark:text-gray-300">
-                                  {user.email}
-                                </div>
-                              </div>
-                            </div>
-                          </li>
-                        ))}
+                              </li>
+                            ))
+                          : null}
                         {/* {allUsers &&
                         allUsers.map((user, i) => (
                           <li key={i}>
@@ -198,4 +192,4 @@ const ChatUserSearchOffcanvas = ({
   );
 };
 
-export default ChatUserSearchOffcanvas;
+export default ChatUserSearchOffCanvas;

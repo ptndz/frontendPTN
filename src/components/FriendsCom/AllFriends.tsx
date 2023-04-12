@@ -1,23 +1,38 @@
 import React, { useEffect, useState } from "react";
-import SingleFrends from "./SingleFrends";
+import SingleFriends from "./SingleFriends";
 
 import { User } from "../../gql/graphql";
+import axios from "axios";
+
+interface IMembers {
+  avatar: string;
+  fullName: string;
+  id: string;
+  username: string;
+}
 
 const AllFrends = () => {
-  // const [members, setMembers] = useState([]);
   const [searchText, setSearchText] = useState("");
-  // const [searchMember, setSearchMember] = useState([]);
-
   const [users, setUsers] = useState<User[]>([]);
-
   const handleSubmit = (e: any) => {
     e.preventDefault();
-    // setLoading(true);
     if (searchText !== "") {
-      //  setLoading(false);
     }
   };
+  useEffect(() => {
+    const getReceived = async () => {
+      const res = await axios.get("/friends/me/received-requests");
+      console.log(res.data);
+    };
 
+    const myFriends = async () => {
+      const res = await axios.get("/friends/my");
+      if (res.data.success) {
+        setUsers(res.data.friends);
+      }
+    };
+    myFriends();
+  }, []);
   return (
     <div className=" pb-20">
       <div className="mx-8 md:mx-18 sm:mx-11 xs:mx-8 lg:mx-1 pt-5">
@@ -31,7 +46,6 @@ const AllFrends = () => {
             <div className=" bg-gray-100 w-72 h-12 rounded-lg relative">
               <form onSubmit={handleSubmit}>
                 <input
-                  // onChange={searchFiealdhandle}
                   type="text"
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
@@ -54,8 +68,8 @@ const AllFrends = () => {
         </div>
         <div className="grid grid-cols-1 xs:grid-cols-12 sm:grid-cols-12 md:grid-cols-12 gap-3">
           {users &&
-            users.map((user, index) => (
-              <SingleFrends key={user.username} user={user} />
+            users.map((user) => (
+              <SingleFriends key={user.username} user={user} />
             ))}
         </div>
       </div>

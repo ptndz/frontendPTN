@@ -7,12 +7,12 @@ interface IProps {
   user: User;
 }
 
-const SingleFrends: React.FC<IProps> = ({ user }) => {
+const SingleFriends: React.FC<IProps> = ({ user }) => {
   const router = useRouter();
-  const { avatar, fullName } = user;
+  const { avatar, fullName, username } = user;
   return (
-    <div className=" md:col-span-3 lg:col-span-3 sm:col-span-4 xs:col-span-6 text-center rounded bg-white dark:bg-black">
-      <div className=" mt-5">
+    <div className="md:col-span-3 lg:col-span-3 sm:col-span-4 xs:col-span-6 text-center rounded bg-white dark:bg-black">
+      <div className="mt-5 ml-16">
         <Image
           src={user.avatar || "http://uitheme.net/sociala/images/profile-4.png"}
           height={100}
@@ -21,11 +21,11 @@ const SingleFrends: React.FC<IProps> = ({ user }) => {
           alt="Friends image"></Image>
       </div>
       <h1 className="text-lg font-semibold dark:text-white text-black">
-        {user.fullName}
+        {fullName}
       </h1>
       {/* <p className='text-sm text-slate-400'>{userId}</p> */}
       <button
-        onClick={() => router.push(`/${user.username}`)}
+        onClick={() => router.push(`/${username}`)}
         className={`${
           avatar === "FRIEND" ? "bg-red-600" : "bg-green-500"
         } py-2.5 px-4 mt-4 mb-6 rounded-full text-white font-medium text-sm`}>
@@ -36,4 +36,4 @@ const SingleFrends: React.FC<IProps> = ({ user }) => {
   );
 };
 
-export default SingleFrends;
+export default SingleFriends;

@@ -6,7 +6,7 @@ import "../styles/globals.css";
 import "nprogress/nprogress.css";
 import "../styles/globals.css";
 import "../styles/reaction.css";
-import Router from "next/router";
+import Router, { useRouter } from "next/router";
 import type { AppProps } from "next/app";
 import type { ReactElement, ReactNode } from "react";
 import type { NextPage } from "next";
@@ -67,7 +67,7 @@ function MyApp({ Component, pageProps }: AppProps) {
       }
     }
   `);
-
+  const router = useRouter();
   useEffect(() => {
     try {
       const fetchUser = async () => {
@@ -88,11 +88,13 @@ function MyApp({ Component, pageProps }: AppProps) {
           }
         }
       };
-      fetchUser();
+      if (!["/login", "/register"].includes(router.asPath)) {
+        fetchUser();
+      }
     } catch (error) {
       console.log("Error: Not authenticated to perform GraphQL request");
     }
-  }, [queryUser, setUser, theme, user.username]);
+  }, [queryUser, router.asPath, setUser, theme, user.username]);
 
   useEffect(() => {
     if (document) {

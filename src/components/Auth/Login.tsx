@@ -116,6 +116,7 @@ const Login = () => {
                     </button>
                   </div>
                   <div className="mt-1">
+                    <p>Aa@12345678</p>
                     <input
                       id="password"
                       {...register("password", { required: true })}

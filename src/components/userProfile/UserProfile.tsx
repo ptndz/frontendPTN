@@ -9,7 +9,7 @@ import { useRouter } from "next/router";
 import "react-responsive-modal/styles.css";
 import CreatePost from "../Home/CreatePost";
 import { useStoreUser } from "../../store/user";
-import { Post, User } from "../../gql/graphql";
+import { User } from "../../gql/graphql";
 import { graphQLClient } from "../../plugins/graphql.plugin";
 import { useInfiniteQuery } from "@tanstack/react-query";
 
@@ -22,7 +22,9 @@ interface IProps {
   userData: User;
   setUpdateUserData: any;
 }
-
+interface IFriendRequestStatus extends FriendRequestStatus {
+  id: number;
+}
 const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
   const router = useRouter();
   const userName = router.query.username as string;
@@ -31,7 +33,7 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
   const [bookmarkedPostsId, setBookmarkedPostsId] = useState<string[]>();
   const [openProfileModal, setOpenProfileModal] = useState(false);
   const [openDetailsModal, setOpenDetailsModal] = useState(false);
-  const [statusFriends, setStatusFriends] = useState<FriendRequestStatus>();
+  const [statusFriends, setStatusFriends] = useState<IFriendRequestStatus>();
   const [newPost, setNewPost] = useState(false);
 
   useEffect(() => {
@@ -91,6 +93,7 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
 
       if (res.data.status) {
         setStatusFriends({
+          id: res.data.id,
           status: res.data.status,
         });
       }
@@ -109,8 +112,12 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
             className="bg-blue-500 hover:bg-blue-700	text-white font-bold text-xs p-3 rounded-md"
             onClick={async () => {
               const res = await axios.post(`/friends/send/${userData.id}`);
-              console.log("data", res.data);
+
               if (res.data.status) {
+                setStatusFriends({
+                  id: res.data.id,
+                  status: res.data.status,
+                });
               }
             }}>
             Thêm bạn bè
@@ -120,8 +127,23 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
       {
         status: "pending",
         component: (
-          <button className="bg-yellow-300 hover:bg-yellow-700	text-white font-bold text-xs p-3 rounded-md ">
-            Đã gửi kết bạn
+          <button
+            className="bg-yellow-300 hover:bg-yellow-700	text-white font-bold text-xs rounded-md inline-block p-3"
+            onClick={async () => {
+              const res = await axios.put(
+                `/friends/response/${statusFriends?.id}`,
+                {
+                  status: "declined",
+                }
+              );
+              if (res.data.status) {
+                setStatusFriends({
+                  id: res.data.id,
+                  status: res.data.status,
+                });
+              }
+            }}>
+            Thu hồi
           </button>
         ),
       },
@@ -136,15 +158,45 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
       {
         status: "declined",
         component: (
-          <button className="bg-rose-700 hover:bg-rose-900	text-white font-bold text-xs p-3 rounded-md ">
-            Huỷ kết bạn
+          <button
+            className="bg-rose-700 hover:bg-rose-900	text-white font-bold text-xs p-3 rounded-md"
+            onClick={async () => {
+              const res = await axios.put(
+                `/friends/response/${statusFriends?.id}`,
+                {
+                  status: "pending",
+                }
+              );
+              if (res.data.status) {
+                setStatusFriends({
+                  id: res.data.id,
+                  status: res.data.status,
+                });
+              }
+            }}>
+            Thêm bạn bè
           </button>
         ),
       },
       {
         status: "waiting-for-current-user-response",
         component: (
-          <button className="bg-green-300 hover:bg-green-700	text-white font-bold text-xs p-3 rounded-md ">
+          <button
+            className="bg-green-300 hover:bg-green-700	text-white font-bold text-xs p-3 rounded-md "
+            onClick={async () => {
+              const res = await axios.put(
+                `/friends/response/${statusFriends?.id}`,
+                {
+                  status: "accepted",
+                }
+              );
+              if (res.data.status) {
+                setStatusFriends({
+                  id: res.data.id,
+                  status: res.data.status,
+                });
+              }
+            }}>
             Chấp nhận yêu cầu
           </button>
         ),
