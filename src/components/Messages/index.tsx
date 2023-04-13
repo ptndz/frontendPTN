@@ -24,31 +24,55 @@ const MessagingMain = () => {
 
   const { user } = useStoreUser();
   const [conversations, setConversations] = useState<any>([]);
-  const [currentChat, setCurrentChat] = useState(null);
+  const [currentChat, setCurrentChat] = useState<any>();
   const [messages, setMessages] = useState<any>([]);
   const [newMessage, setNewMessage] = useState("");
 
-  const scrollRef: any = useRef();
-  const [arrivalMessage, setArrivalMessage] = useState(null);
+  const [scroll, setScroll] = useState<string>("");
   const [allUsers, setAllUsers] = useState<User[]>();
   const [onlineUsers, setOnlineUsers] = useState<User[]>();
-
+  const scrollRef: any = useRef();
   const socket: any = useRef();
 
   useEffect(() => {
     socket.current = io("http://localhost:8080", {
       withCredentials: true,
     });
-
-    socket.current.emit("sendMessage", {
-      senderId: "sssss",
-      receiverId: "receiverId",
-      text: "newMessage",
-    });
   }, []);
+
+  useEffect(() => {
+    const friend: User = currentChat?.users.find((u: User) => u.id !== user.id);
+    if (friend) {
+      socket.current.emit("joinConversation", friend.id);
+    }
+  }, [currentChat, user.id]);
+  useEffect(() => {
+    socket.current.on("messages", (messages: any) => {
+      setMessages(messages);
+    });
+  }, [currentChat]);
+
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    if (newMessage !== "") {
+    if (newMessage !== "" && currentChat.id !== undefined) {
+      const message = {
+        message: newMessage,
+        conversation: {
+          id: currentChat?.id,
+        },
+        user: {
+          id: user.id,
+        },
+      };
+      socket.current.emit("sendMessage", message);
+      socket.current.on("newMessage", (message: any) => {
+        const allMessageIds = messages.map((message: any) => message.id);
+        if (!allMessageIds.includes(message.id)) {
+          setMessages([...messages, message]);
+        }
+        setNewMessage("");
+        setScroll(`scroll-${message.id}`);
+      });
     }
   };
   useEffect(() => {
@@ -77,7 +101,7 @@ const MessagingMain = () => {
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, scroll]);
 
   return (
     <div className="relative h-screen flex overflow-hidden bg-white dark:bg-black mx-auto shadow-md">
@@ -162,7 +186,7 @@ const MessagingMain = () => {
                 <div className="flex-1 w-full mx-auto py-8 px-3 space-y-6">
                   {messages.map((m: any) => (
                     <div ref={scrollRef} key={m.id}>
-                      <Chat message={m} own={m?.sender === user?.id} />
+                      <Chat message={m} own={m?.user.id === user?.id} />
                     </div>
                   ))}
                 </div>

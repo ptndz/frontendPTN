@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { RiUserSmileLine } from "react-icons/ri";
 import moment from "moment";
 import { User } from "../../gql/graphql";
+import { graphQLClient } from "../../plugins/graphql.plugin";
+import { queryGetUser } from "../../graphql/user";
 interface IProps {
   message: any;
   own: boolean;
@@ -11,12 +13,21 @@ interface IProps {
 
 const Chat: React.FC<IProps> = ({ message, own }) => {
   const [user, setUser] = useState<User>();
+  console.log(message);
 
   useEffect(() => {
-    axios
-      .get(`/api/user/singleUser?id=${message.sender}`)
-      .then(({ data }) => setUser(data));
-  }, [message.sender]);
+    const getUser = async () => {
+      try {
+        const res = await graphQLClient.request(queryGetUser, {
+          username: message.user.username,
+        });
+        if (res.getUser.user) setUser(res.getUser.user);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    getUser();
+  }, [message, message.id]);
   return (
     <>
       {own ? (
@@ -41,7 +52,7 @@ const Chat: React.FC<IProps> = ({ message, own }) => {
               {user?.fullName}
             </p>
             <p className="bg-blue-500 text-white text-left text-sm font-normal md:max-w-sm max-w-sm shadow py-2 px-4 inline-block rounded-md">
-              {message.text}
+              {message.message}
             </p>
             <div className="text-xs">{moment(message.createdAt).fromNow()}</div>
           </div>
@@ -68,7 +79,7 @@ const Chat: React.FC<IProps> = ({ message, own }) => {
               {user?.fullName}
             </p>
             <p className="bg-white dark:bg-zinc-800 text-sm font-normal md:max-w-sm max-w-sm shadow py-2 px-4 inline-block rounded-md">
-              {message.text}
+              {message.message}
             </p>
             <div className="text-xs">{moment(message.createdAt).fromNow()}</div>
           </div>

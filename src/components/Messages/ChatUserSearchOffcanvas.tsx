@@ -35,7 +35,6 @@ const ChatUserSearchOffCanvas: React.FC<IProps> = ({
         const res = await axios.get(`/user/search?keyword=${search}`);
         setSearchResult(res.data.users);
         setLoading(false);
-        console.log(res.data);
       } catch (err) {
         setLoading(false);
       }
@@ -44,7 +43,21 @@ const ChatUserSearchOffCanvas: React.FC<IProps> = ({
     }
   };
 
-  const handleClick = async (user: User) => {};
+  const handleClick = async (user: User) => {
+    const getConversations = async () => {
+      try {
+        const res = await axios.get(
+          `/messenger/conversation?friendId=${user.id}`
+        );
+
+        setCurrentChat(res.data.conversation);
+        toast(`${user.fullName} has been added to the conversation`);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    getConversations();
+  };
   return (
     <div
       className={`${
