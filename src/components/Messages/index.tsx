@@ -35,12 +35,33 @@ const MessagingMain = () => {
   const socket: any = useRef();
 
   useEffect(() => {
-    socket.current = io("http://localhost:8080", {
+    socket.current = io(process.env.NEXT_PUBLIC_BASE_URL_API as string, {
       withCredentials: true,
     });
   }, []);
 
   useEffect(() => {
+    socket.current.on("conversations", (conversations: any) => {
+      setConversations(conversations);
+    });
+  }, [user.id, currentChat]);
+
+  useEffect(() => {
+    const getConversations = async () => {
+      try {
+        const res = await axios.get("/messenger/getConversations");
+
+        setConversations(res.data.conversations);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    getConversations();
+  }, [user.id, currentChat]);
+
+  useEffect(() => {
+    console.log(currentChat);
+
     const friend: User = currentChat?.users.find((u: User) => u.id !== user.id);
     if (friend) {
       socket.current.emit("joinConversation", friend.id);
@@ -49,6 +70,7 @@ const MessagingMain = () => {
   useEffect(() => {
     socket.current.on("messages", (messages: any) => {
       setMessages(messages);
+      setScroll("scroll");
     });
   }, [currentChat]);
 
@@ -65,16 +87,20 @@ const MessagingMain = () => {
         },
       };
       socket.current.emit("sendMessage", message);
-      socket.current.on("newMessage", (message: any) => {
-        const allMessageIds = messages.map((message: any) => message.id);
-        if (!allMessageIds.includes(message.id)) {
-          setMessages([...messages, message]);
-        }
-        setNewMessage("");
-        setScroll(`scroll-${message.id}`);
-      });
+      setNewMessage("");
     }
   };
+  useEffect(() => {
+    socket.current.on("newMessage", (message: any) => {
+      const allMessageIds = messages.map((message: any) => message.id);
+      if (!allMessageIds.includes(message.id)) {
+        setMessages([...messages, message]);
+
+        setScroll(`scroll-${message.id}`);
+      }
+    });
+  }, [messages, newMessage]);
+
   useEffect(() => {
     const fetchFriends = async () => {
       const res = await axios.get("/friends/my");
@@ -85,19 +111,6 @@ const MessagingMain = () => {
     };
     fetchFriends();
   }, []);
-
-  useEffect(() => {
-    const getConversations = async () => {
-      try {
-        const res = await axios.get("/messenger/getConversations");
-
-        setConversations(res.data.conversations);
-      } catch (err) {
-        console.log(err);
-      }
-    };
-    getConversations();
-  }, [user.id, currentChat]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });

@@ -4,7 +4,7 @@ import UserProfile from "../components/userProfile/UserProfile";
 
 import { User } from "../gql/graphql";
 import Error from "./404";
-import { queryGetUser } from "../graphql/user";
+import { queryGetUserByUsername } from "../graphql/user";
 import { GetServerSideProps } from "next/types";
 
 import { graphQLServer } from "../plugins/graphql.plugin";
@@ -38,7 +38,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const { username } = context.query;
 
   const res = await graphQLServer(context.req.headers.cookie).request(
-    queryGetUser,
+    queryGetUserByUsername,
     {
       username: username as string,
     }

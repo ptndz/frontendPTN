@@ -3,7 +3,7 @@ import Image from "next/image";
 import moment from "moment";
 import { FaArrowUp, FaRegSurprise } from "react-icons/fa";
 import { FiTrash } from "react-icons/fi";
-import {  BiShare } from "react-icons/bi";
+import { BiShare } from "react-icons/bi";
 import { AiOutlineLike } from "react-icons/ai";
 import { TbMoodCry } from "react-icons/tb";
 
@@ -14,7 +14,6 @@ import {
   BsBookmark,
   BsBookmarkX,
   BsThreeDotsVertical,
-
   BsHeart,
   BsEmojiAngry,
 } from "react-icons/bs";
@@ -329,9 +328,7 @@ const SinglePost: React.FC<IProps> = ({
           <Link href={`/${post.user.username}`} passHref>
             <div className="relative">
               <Image
-                src={
-                  "https://i.ibb.co/MVbC3v6/114-1149878-setting-user-avatar-in-specific-size-w.png"
-                }
+                src={post.user.avatar}
                 className="rounded-full cursor-pointer"
                 alt={post.user.fullName}
                 height={45}

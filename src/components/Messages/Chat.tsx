@@ -1,33 +1,16 @@
-import axios from "axios";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+
 import { RiUserSmileLine } from "react-icons/ri";
 import moment from "moment";
-import { User } from "../../gql/graphql";
-import { graphQLClient } from "../../plugins/graphql.plugin";
-import { queryGetUser } from "../../graphql/user";
+
 interface IProps {
   message: any;
   own: boolean;
 }
 
 const Chat: React.FC<IProps> = ({ message, own }) => {
-  const [user, setUser] = useState<User>();
-  console.log(message);
+  const user = message.user;
 
-  useEffect(() => {
-    const getUser = async () => {
-      try {
-        const res = await graphQLClient.request(queryGetUser, {
-          username: message.user.username,
-        });
-        if (res.getUser.user) setUser(res.getUser.user);
-      } catch (err) {
-        console.log(err);
-      }
-    };
-    getUser();
-  }, [message, message.id]);
   return (
     <>
       {own ? (

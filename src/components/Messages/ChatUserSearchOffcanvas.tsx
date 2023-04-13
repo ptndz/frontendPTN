@@ -49,7 +49,6 @@ const ChatUserSearchOffCanvas: React.FC<IProps> = ({
         const res = await axios.get(
           `/messenger/conversation?friendId=${user.id}`
         );
-
         setCurrentChat(res.data.conversation);
         toast(`${user.fullName} has been added to the conversation`);
       } catch (err) {

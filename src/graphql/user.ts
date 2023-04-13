@@ -1,6 +1,34 @@
 import { graphql } from "../gql";
-
-export const queryGetUser = graphql(`
+export const queryUser = graphql(`
+  query user {
+    user {
+      code
+      success
+      message
+      user {
+        id
+        fullName
+        lastName
+        firstName
+        username
+        email
+        avatar
+        coverImage
+        phone
+        birthday
+        sex
+        role
+        createAt
+        updateAt
+      }
+      errors {
+        message
+        field
+      }
+    }
+  }
+`);
+export const queryGetUserByUsername = graphql(`
   query getUser($username: String!) {
     getUser(username: $username) {
       code
@@ -18,6 +46,7 @@ export const queryGetUser = graphql(`
         phone
         birthday
         sex
+        role
         createAt
         updateAt
       }
@@ -46,6 +75,7 @@ export const queryLogin = graphql(`
         phone
         birthday
         sex
+        role
         coverImage
         createAt
         updateAt
@@ -101,6 +131,7 @@ export const queryRegister = graphql(`
         phone
         birthday
         sex
+        role
         coverImage
         createAt
         updateAt

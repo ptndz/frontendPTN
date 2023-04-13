@@ -1,5 +1,12 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+
+const withPWA = require("next-pwa")({
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+});
+
+module.exports = withPWA({
   reactStrictMode: true,
   swcMinify: true,
   images: {
@@ -12,6 +19,4 @@ const nextConfig = {
       "encrypted-tbn0.gstatic.com",
     ],
   },
-};
-
-module.exports = nextConfig;
+});

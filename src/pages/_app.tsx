@@ -22,10 +22,13 @@ import "../plugins/axios.plugin";
 import SEO from "../../next-seo.config";
 import { useStoreTheme } from "../store/state";
 import { getThemeC, setThemeC } from "../plugins/theme";
-import { setCookies } from "cookies-next";
+import { setCookie } from "cookies-next";
 import { useStoreUser } from "../store/user";
-import { graphql } from "../gql";
+
 import { graphQLClient } from "../plugins/graphql.plugin";
+import { queryUser } from "../graphql/user";
+import axios from "axios";
+import { base64ToUint8Array } from "../plugins/notification";
 
 export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: ReactElement) => ReactNode;
@@ -39,63 +42,64 @@ Router.events.on("routeChangeError", () => NProgress.done());
 function MyApp({ Component, pageProps }: AppProps) {
   const { theme, setTheme } = useStoreTheme();
   const { user, setUser } = useStoreUser();
-  const queryUser = graphql(`
-    query user {
-      user {
-        code
-        success
-        message
-        user {
-          id
-          fullName
-          lastName
-          firstName
-          username
-          email
-          avatar
-          coverImage
-          phone
-          birthday
-          sex
-          createAt
-          updateAt
-        }
-        errors {
-          message
-          field
-        }
-      }
-    }
-  `);
   const router = useRouter();
+
   useEffect(() => {
-    try {
-      const fetchUser = async () => {
+    const fetchUser = async () => {
+      try {
         const resUser = await graphQLClient.request(queryUser);
-        if (resUser.user.code === 400) {
-          toast.error(resUser.user.message, {
-            position: "top-right",
-            autoClose: 3000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            theme: theme ? (theme as Theme) : "light",
-          });
+
+        if (resUser.user.user) {
+          setUser(resUser.user.user);
         }
-        if (resUser.user.code === 200) {
-          if (resUser.user.user) {
-            setUser(resUser.user.user);
-          }
-        }
-      };
+      } catch (error) {
+        console.warn(error);
+      }
       if (!["/login", "/register"].includes(router.asPath)) {
         fetchUser();
       }
-    } catch (error) {
-      console.log("Error: Not authenticated to perform GraphQL request");
-    }
-  }, [queryUser, router.asPath, setUser, theme, user.username]);
+    };
+  }, [router.asPath, setUser, theme, user.username]);
 
+  useEffect(() => {
+    const postSubscribe = async (sub: any) => {
+      try {
+        const res = await axios.post("/user/notification/subscription", {
+          subscription: sub,
+          agent: window.navigator.userAgent,
+        });
+      } catch (error) {
+        console.warn(error);
+      }
+    };
+
+    const getSubscribe = async () => {
+      if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        const sub: any = await reg.pushManager.getSubscription();
+        if (
+          sub &&
+          !(
+            sub.expirationTime &&
+            Date.now() > sub.expirationTime - 5 * 60 * 1000
+          )
+        ) {
+          postSubscribe(sub);
+          return;
+        } else {
+          const sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: base64ToUint8Array(
+              process.env.NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY
+            ),
+          });
+          postSubscribe(sub);
+          return;
+        }
+      }
+    };
+    getSubscribe();
+  }, []);
   useEffect(() => {
     if (document) {
       const themeC = getThemeC();
@@ -105,7 +109,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         d.classList.remove("dark", "light");
         d.classList.add(theme);
         setThemeC(theme);
-        setCookies("theme", theme);
+        setCookie("theme", theme);
         return;
       }
 
@@ -113,13 +117,13 @@ function MyApp({ Component, pageProps }: AppProps) {
         d.classList.remove("dark", "light");
         d.classList.add(themeC);
         setTheme(themeC);
-        setCookies("theme", themeC);
+        setCookie("theme", themeC);
         return;
       }
 
       setTheme("light");
       setThemeC("light");
-      setCookies("theme", "light");
+      setCookie("theme", "light");
       d.classList.add("light");
     }
   }, [setTheme, theme]);

@@ -3,7 +3,7 @@ import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { IComment, User } from "../../gql/graphql";
 import { graphQLClient } from "../../plugins/graphql.plugin";
-import { queryGetUser } from "../../graphql/user";
+import { queryGetUserByUsername } from "../../graphql/user";
 
 interface IProps {
   comment: IComment;
@@ -15,14 +15,18 @@ const Comments: React.FC<IProps> = ({ comment }) => {
   useEffect(() => {
     if (comment.user.username) {
       const fetchData = async () => {
-        const res = await graphQLClient.request(queryGetUser, {
-          username: comment.user.username,
-        });
+        try {
+          const res = await graphQLClient.request(queryGetUserByUsername, {
+            username: comment.user.username,
+          });
 
-        if (res.getUser.code === 200) {
-          if (res.getUser.user) {
-            setUserData(res.getUser.user);
+          if (res.getUser.code === 200) {
+            if (res.getUser.user) {
+              setUserData(res.getUser.user);
+            }
           }
+        } catch (error) {
+          console.log(error);
         }
       };
       fetchData();

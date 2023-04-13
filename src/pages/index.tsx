@@ -8,6 +8,7 @@ import { useStoreIsLoading } from "../store/state";
 
 export default function Home() {
   const { user } = useStoreUser();
+
   const { isLoading } = useStoreIsLoading();
 
   if (isLoading) {
@@ -38,7 +39,7 @@ export default function Home() {
     );
   }
 
-  if (user) {
+  if (user.id !== "") {
     return (
       <div className="bg-neutral-100 dark:bg-zinc-900">
         <Navigation />

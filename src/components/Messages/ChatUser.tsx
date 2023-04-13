@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { RiUserSmileLine } from "react-icons/ri";
-
 import Image from "next/image";
 import { graphQLClient } from "../../plugins/graphql.plugin";
-import { queryGetUser } from "../../graphql/user";
+import { queryGetUserByUsername } from "../../graphql/user";
 import { User } from "../../gql/graphql";
 
 interface IProps {
@@ -30,7 +29,7 @@ const ChatUser: React.FC<IProps> = ({
   useEffect(() => {
     const getUser = async () => {
       try {
-        const res = await graphQLClient.request(queryGetUser, {
+        const res = await graphQLClient.request(queryGetUserByUsername, {
           username: friend.username,
         });
         if (res.getUser.user) setUserData(res.getUser.user);
@@ -64,7 +63,7 @@ const ChatUser: React.FC<IProps> = ({
           )}
 
           {onlineUsers?.map((u) =>
-            u.id === friendOnline.id ? (
+            u.id === friendOnline?.id ? (
               <div
                 key={u.id}
                 className="absolute w-3 h-3 rounded-full bg-zinc-600 ring-2 ring-white dark:ring-black bottom-0 right-0"></div>
@@ -75,7 +74,7 @@ const ChatUser: React.FC<IProps> = ({
             )
           )}
         </div>
-        <div className="flex-1 min-w-0 hidden lg:block">
+        <div className="flex-1 min-w-0 lg:block">
           <a href="#" className="focus:outline-none">
             <span className="absolute inset-0" aria-hidden="true"></span>
             <p className="truncate text-base font-medium">
