@@ -4,24 +4,19 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import {
   BsX,
-  BsBell,
   BsGear,
   BsSun,
   BsChatSquare,
   BsChevronRight,
-  BsChevronDown,
   BsBookmark,
   BsHouse,
   BsMoon,
 } from "react-icons/bs";
 import { VscListSelection } from "react-icons/vsc";
-import { FiUsers, FiUser, FiLogOut, FiSearch } from "react-icons/fi";
-
-import axios from "axios";
+import { FiUsers, FiLogOut, FiSearch } from "react-icons/fi";
 
 import { useStoreUser } from "../../store/user";
 import { useStoreTheme } from "../../store/state";
-import { User } from "../../gql/graphql";
 
 const topCenterNavlinks = [
   {

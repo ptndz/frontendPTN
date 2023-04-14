@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build .env.local",
+    "server:build": "cross-env NODE_ENV=production next build",
+    "server:start": "cross-env NODE_ENV=production next start",
     "start": "next start",
     "lint": "next lint",
     "postbuild": "cross-env next-sitemap --config next-sitemap.js",
