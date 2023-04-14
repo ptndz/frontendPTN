@@ -1,12 +1,12 @@
 import React, { useEffect } from "react";
 import NProgress from "nprogress";
-import { Theme, ToastContainer, toast } from "react-toastify";
+import { Theme, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../styles/globals.css";
 import "nprogress/nprogress.css";
 import "../styles/globals.css";
 import "../styles/reaction.css";
-import Router, { useRouter } from "next/router";
+import Router from "next/router";
 import type { AppProps } from "next/app";
 import type { ReactElement, ReactNode } from "react";
 import type { NextPage } from "next";
@@ -23,10 +23,7 @@ import SEO from "../../next-seo.config";
 import { useStoreTheme } from "../store/state";
 import { getThemeC, setThemeC } from "../plugins/theme";
 import { setCookie } from "cookies-next";
-import { useStoreUser } from "../store/user";
 
-import { graphQLClient } from "../plugins/graphql.plugin";
-import { queryUser } from "../graphql/user";
 import axios from "axios";
 import { base64ToUint8Array } from "../plugins/notification";
 
@@ -41,26 +38,6 @@ Router.events.on("routeChangeError", () => NProgress.done());
 
 function MyApp({ Component, pageProps }: AppProps) {
   const { theme, setTheme } = useStoreTheme();
-  const { user, setUser } = useStoreUser();
-  const router = useRouter();
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const resUser = await graphQLClient.request(queryUser);
-
-        if (resUser.user.user) {
-          setUser(resUser.user.user);
-        }
-      } catch (error) {
-        console.warn(error);
-      }
-      if (!["/login", "/register"].includes(router.asPath)) {
-        fetchUser();
-      }
-    };
-  }, [router.asPath, setUser, theme, user.username]);
-
   useEffect(() => {
     const postSubscribe = async (sub: any) => {
       try {
@@ -147,5 +124,4 @@ function MyApp({ Component, pageProps }: AppProps) {
     </QueryClientProvider>
   );
 }
-
 export default MyApp;

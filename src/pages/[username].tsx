@@ -1,20 +1,27 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Navigation from "../components/Share/Navigation";
 import UserProfile from "../components/userProfile/UserProfile";
-
 import { User } from "../gql/graphql";
 import Error from "./404";
-import { queryGetUserByUsername } from "../graphql/user";
+import { queryGetUserByUsername, queryUser } from "../graphql/user";
 import { GetServerSideProps } from "next/types";
-
 import { graphQLServer } from "../plugins/graphql.plugin";
+import { getCookies } from "cookies-next";
+import { useStoreUser } from "../store/user";
 
 interface IProps {
   userData: User;
+  user: User;
 }
-const Profile: React.FC<IProps> = ({ userData }) => {
+const Profile: React.FC<IProps> = ({ userData, user }) => {
   const [updateUserData, setUpdateUserData] = useState(false);
+  const { setUser } = useStoreUser();
 
+  useEffect(() => {
+    if (user) {
+      setUser(user);
+    }
+  }, [setUser, user]);
   if (userData) {
     return (
       <>
@@ -36,16 +43,31 @@ export default Profile;
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { username } = context.query;
-
-  const res = await graphQLServer(context.req.headers.cookie).request(
-    queryGetUserByUsername,
-    {
-      username: username as string,
+  try {
+    const cookie = getCookies({ req: context.req });
+    if (cookie["ASP.NET_SessionId"]) {
+      const res = await graphQLServer(context.req.headers.cookie).request(
+        queryGetUserByUsername,
+        {
+          username: username as string,
+        }
+      );
+      const resUser = await graphQLServer(context.req.headers.cookie).request(
+        queryUser
+      );
+      return {
+        props: {
+          userData: res.getUser.user,
+          user: resUser.user.user,
+        },
+      };
     }
-  );
-  return {
-    props: {
-      userData: res.getUser.user,
-    },
-  };
+    return {
+      props: {},
+    };
+  } catch (error) {
+    return {
+      props: {},
+    };
+  }
 };
