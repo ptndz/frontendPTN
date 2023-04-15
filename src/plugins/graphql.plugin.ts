@@ -11,7 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { GraphQLClient } from "graphql-request";
 import { getCookie } from "cookies-next";
 const endpoint = process.env.NEXT_PUBLIC_URL_GRAPHQL as string;
-const token = getCookie("awt");
+const token = getCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string);
 const executor = buildHTTPExecutor({
   endpoint: endpoint,
   headers: {
@@ -40,13 +40,19 @@ export function useGraphQL<TResult, TVariables>(
   );
 }
 export const graphQLClient = new GraphQLClient(endpoint, {
-  credentials: "include",
-  mode: "cors",
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
 });
-export const graphQLServer = (cookie: string | undefined) => {
+
+export const graphQLServer = (
+  cookie: string | undefined,
+  token: string | undefined
+) => {
   return new GraphQLClient(endpoint, {
     headers: {
       cookie: cookie || "",
+      Authorization: `Bearer ${token}`,
     },
   });
 };

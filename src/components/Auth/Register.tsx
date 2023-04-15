@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { BsEyeSlash, BsEye } from "react-icons/bs";
 import Image from "next/image";
 import Link from "next/link";
@@ -60,7 +60,7 @@ const Register = () => {
       setCookies("uuid", res.register.user.id, {
         maxAge: 60 * 60 * 24 * 30,
       });
-      setCookies("accessToken", accessToken, {
+      setCookies(process.env.NEXT_PUBLIC_COOKIE_NAME as string, accessToken, {
         maxAge: 60 * 60 * 24 * 30,
       });
       setUser(res.register.user);

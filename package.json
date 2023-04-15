@@ -6,7 +6,7 @@
     "dev": "env-cmd -f .env.local next dev",
     "build": "env-cmd -f .env.local next build",
     "server:build": "env-cmd -f .env.production next build",
-    "server:start": "env-cmd -f .env.production next start",
+    "server:start": "env-cmd -f .env.production next start -p 3000",
     "server:dev": "env-cmd -f .env.production next dev",
     "start": "env-cmd -f .env.local next start",
     "lint": "next lint",

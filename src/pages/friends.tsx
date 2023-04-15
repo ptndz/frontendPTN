@@ -41,11 +41,12 @@ export default Friends;
 export const getServerSideProps: GetServerSideProps = async (context) => {
   try {
     const cookie = getCookies({ req: context.req });
-    if (cookie["ASP.NET_SessionId"]) {
-      const res = await graphQLServer(context.req.headers.cookie).request(
-        queryUser
-      );
-
+    const accessToken = cookie[process.env.NEXT_PUBLIC_COOKIE_NAME as string];
+    if (accessToken) {
+      const res = await graphQLServer(
+        context.req.headers.cookie,
+        accessToken
+      ).request(queryUser);
       if (res.user.user) {
         return {
           props: {

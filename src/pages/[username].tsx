@@ -45,16 +45,18 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const { username } = context.query;
   try {
     const cookie = getCookies({ req: context.req });
-    if (cookie["ASP.NET_SessionId"]) {
-      const res = await graphQLServer(context.req.headers.cookie).request(
-        queryGetUserByUsername,
-        {
-          username: username as string,
-        }
-      );
-      const resUser = await graphQLServer(context.req.headers.cookie).request(
-        queryUser
-      );
+    const accessToken = cookie[process.env.NEXT_PUBLIC_COOKIE_NAME as string];
+    if (accessToken) {
+      const res = await graphQLServer(
+        context.req.headers.cookie,
+        accessToken
+      ).request(queryGetUserByUsername, {
+        username: username as string,
+      });
+      const resUser = await graphQLServer(
+        context.req.headers.cookie,
+        accessToken
+      ).request(queryUser);
       return {
         props: {
           userData: res.getUser.user,

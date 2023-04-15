@@ -6,7 +6,6 @@ import ChatUserSearchOffcanvas from "./ChatUserSearchOffcanvas";
 import { FiSearch } from "react-icons/fi";
 import { RiSendPlaneLine } from "react-icons/ri";
 import { HiOutlineChatAlt2 } from "react-icons/hi";
-import { MdGroupAdd } from "react-icons/md";
 
 import axios from "axios";
 import { io } from "socket.io-client";
@@ -16,6 +15,7 @@ import UserListSkeleton from "../Loaders/UserListSkeleton";
 import OnlineUsers from "./OnlineUsers";
 import { useStoreUser } from "../../store/user";
 import { User } from "../../gql/graphql";
+import { getCookie } from "cookies-next";
 
 const MessagingMain = () => {
   const [isSearchOffcanvasOpen, setIsSearchOffcanvasOpen] = useState(false);
@@ -33,12 +33,14 @@ const MessagingMain = () => {
   const [onlineUsers, setOnlineUsers] = useState<User[]>();
   const scrollRef: any = useRef();
   const socket: any = useRef();
-
+  const token = getCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string);
   useEffect(() => {
     socket.current = io(process.env.NEXT_PUBLIC_BASE_URL_API as string, {
-      withCredentials: true,
+      auth: {
+        token: token,
+      },
     });
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     socket.current.on("conversations", (conversations: any) => {
@@ -60,8 +62,6 @@ const MessagingMain = () => {
   }, [user.id, currentChat]);
 
   useEffect(() => {
-    console.log(currentChat);
-
     const friend: User = currentChat?.users.find((u: User) => u.id !== user.id);
     if (friend) {
       socket.current.emit("joinConversation", friend.id);

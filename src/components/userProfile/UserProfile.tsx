@@ -89,7 +89,6 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
   useEffect(() => {
     const fetchFriends = async () => {
       const res = await axios.get(`/friends/status/${userData.id}`);
-      console.log("friends status", res.data);
 
       if (res.data.status) {
         setStatusFriends({

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import NProgress from "nprogress";
 import { Theme, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -38,6 +38,20 @@ Router.events.on("routeChangeError", () => NProgress.done());
 
 function MyApp({ Component, pageProps }: AppProps) {
   const { theme, setTheme } = useStoreTheme();
+
+  let interval = useRef<any>(null);
+  useEffect(() => {
+    interval.current = setInterval(async () => {
+      try {
+        const res = await axios.put("/user/online");
+        console.log("Last Online: ", res.data.lastOnline);
+      } catch (error) {
+        console.warn(error);
+      }
+    }, 300000);
+    return () => clearInterval(interval.current);
+  }, []);
+
   useEffect(() => {
     const postSubscribe = async (sub: any) => {
       try {

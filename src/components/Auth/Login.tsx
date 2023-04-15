@@ -46,7 +46,7 @@ const Login = () => {
       setCookies("uuid", res.login.user.id, {
         maxAge: 60 * 60 * 24 * 30,
       });
-      setCookies("accessToken", accessToken, {
+      setCookies(process.env.NEXT_PUBLIC_COOKIE_NAME as string, accessToken, {
         maxAge: 60 * 60 * 24 * 30,
       });
     } catch (error) {
@@ -91,8 +91,8 @@ const Login = () => {
                     <input
                       id="email"
                       {...register("email", { required: true })}
-                      type="email"
-                      autoComplete="email"
+                      type="text"
+                      autoComplete="text"
                       placeholder="Enter your email"
                       required
                       className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"

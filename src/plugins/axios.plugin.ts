@@ -7,7 +7,7 @@ axios.defaults.baseURL = process.env.NEXT_PUBLIC_BASE_URL_API;
 axios.interceptors.request.use(
   function (config) {
     if (config && config.headers) {
-      const token = getCookie("accessToken");
+      const token = getCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string);
       if (token) {
         config.headers["Authorization"] = `Bearer ${token}`;
       }

@@ -17,6 +17,9 @@ import { FiUsers, FiLogOut, FiSearch } from "react-icons/fi";
 
 import { useStoreUser } from "../../store/user";
 import { useStoreTheme } from "../../store/state";
+import { graphql } from "../../gql";
+import { graphQLClient } from "../../plugins/graphql.plugin";
+import { deleteCookie } from "cookies-next";
 
 const topCenterNavlinks = [
   {
@@ -55,7 +58,23 @@ const Navigation = () => {
   const { theme, setTheme } = useStoreTheme();
 
   useEffect(() => setMounted(true), []);
-
+  const handleLogout = async () => {
+    try {
+      const queryLogout = graphql(`
+        mutation logout {
+          logout
+        }
+      `);
+      const res = await graphQLClient.request(queryLogout);
+      if (res.logout) {
+        deleteCookie("accessToken");
+        deleteCookie("uuid");
+        router.push("/login");
+      }
+    } catch (error) {
+      console.warn(error);
+    }
+  };
   const renderThemeChanger = () => {
     if (!mounted) return null;
 
@@ -239,9 +258,7 @@ const Navigation = () => {
                 </div>
                 <div>
                   <button
-                    onClick={() => {
-                      closeProfileMenu();
-                    }}
+                    onClick={handleLogout}
                     className="mt-1 flex w-full items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg">
                     <p className="flex items-center gap-2">
                       <FiLogOut />

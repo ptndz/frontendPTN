@@ -553,6 +553,10 @@ export type CreateBookmarkQuery = {
   };
 };
 
+export type LogoutMutationVariables = Exact<{ [key: string]: never }>;
+
+export type LogoutMutation = { __typename?: "Mutation"; logout: boolean };
+
 export type BookmarkAllQueryVariables = Exact<{ [key: string]: never }>;
 
 export type BookmarkAllQuery = {
@@ -1668,6 +1672,22 @@ export const CreateBookmarkDocument = {
     },
   ],
 } as unknown as DocumentNode<CreateBookmarkQuery, CreateBookmarkQueryVariables>;
+export const LogoutDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "logout" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "logout" } },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<LogoutMutation, LogoutMutationVariables>;
 export const BookmarkAllDocument = {
   kind: "Document",
   definitions: [
