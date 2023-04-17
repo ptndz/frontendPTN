@@ -6,64 +6,35 @@ import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { graphQLClient } from "../../plugins/graphql.plugin";
-import { queryRegister } from "../../graphql/user";
-import { setCookies } from "cookies-next";
-import { useStoreUser } from "../../store/user";
+import { queryResetPassword } from "../../graphql/user";
+
 import { useRouter } from "next/router";
 
-const Register = () => {
+interface IProps {
+  token: string;
+}
+
+const ResetPassword: React.FC<IProps> = ({ token }) => {
   const router = useRouter();
   const [showPass, setShowPass] = useState(false);
-  const [sex, setSex] = useState(true);
+
   const [isLoading, setIsLoading] = useState(false);
   const [showPassConfirm, setShowPassConfirm] = useState(false);
-  const { setUser } = useStoreUser();
+
   const { register, handleSubmit } = useForm();
 
   const onSubmit = async (data: any) => {
     if (data.password === data.confirmPass) {
       setIsLoading(true);
-      const res = await graphQLClient.request(queryRegister, {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
+      const res = await graphQLClient.request(queryResetPassword, {
+        token: token,
         password: data.password,
-        phone: data.phone,
-        username: data.username,
-        fullName: `${data.firstName} ${data.lastName}`,
-        sex: sex,
-        birthday: data.birthday,
-        avatar: "https://i.ibb.co/5kdWHNN/user-12.png",
-        coverImage: "https://i.ibb.co/pWc2Ffd/u-bg.jpg",
       });
-      if (res.register.code != 200) {
-        toast.error(res.register.message);
-        if (res.register.errors) {
-          res.register.errors.forEach((err) => {
-            toast.error(err.message);
-          });
-        }
+      if (res.resetPassword) {
         setIsLoading(false);
-        return;
+        return router.push("/");
       }
-      const accessToken = res.register.accessToken;
-      if (!accessToken) {
-        toast.error("loi he thong");
-        setIsLoading(false);
-        return;
-      }
-      if (!res.register.user) {
-        toast.error("loi he thong");
-        setIsLoading(false);
-        return;
-      }
-      setCookies("uuid", res.register.user.id, {
-        maxAge: 60 * 60 * 24 * 30,
-      });
-      setCookies(process.env.NEXT_PUBLIC_COOKIE_NAME as string, accessToken, {
-        maxAge: 60 * 60 * 24 * 30,
-      });
-      setUser(res.register.user);
+
       setIsLoading(false);
       return router.push("/");
     } else {
@@ -96,97 +67,6 @@ const Register = () => {
             </div>
             <div className="rounded-lg px-4">
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                <div>
-                  <label
-                    htmlFor="firstName"
-                    className="block text-lg text-gray-900 dark:text-white">
-                    First Name<span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="firstName"
-                      {...register("firstName", { required: true })}
-                      type="text"
-                      autoComplete="given-name"
-                      required
-                      placeholder="Pham "
-                      className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label
-                    htmlFor="lastName"
-                    className="block text-lg text-gray-900 dark:text-white">
-                    Last Name<span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="lastName"
-                      {...register("lastName", { required: true })}
-                      type="text"
-                      autoComplete="given-name"
-                      required
-                      placeholder="Nam"
-                      className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-lg text-gray-900 dark:text-white">
-                    Email address<span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="email"
-                      {...register("email", { required: true })}
-                      type="email"
-                      autoComplete="email"
-                      required
-                      placeholder="example@mail.com"
-                      className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label
-                    htmlFor="phone"
-                    className="block text-lg text-gray-900 dark:text-white">
-                    Phone Number<span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="phone"
-                      {...register("phone", { required: true })}
-                      type="tel"
-                      pattern="^(0\W*\W*(?:\d\W*){9})$"
-                      autoComplete="phone"
-                      required
-                      placeholder="0987654321"
-                      className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label
-                    htmlFor="username"
-                    className="block text-lg text-gray-900 dark:text-white">
-                    User name<span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="username"
-                      {...register("username", { required: true })}
-                      type="text"
-                      autoComplete="given-name"
-                      required
-                      placeholder="Username"
-                      className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
                 <div>
                   <div className="flex items-center justify-between">
                     <label
@@ -239,47 +119,7 @@ const Register = () => {
                     />
                   </div>
                 </div>
-                <div>
-                  <label
-                    htmlFor="birthday"
-                    className="block text-lg text-gray-900 dark:text-white">
-                    Birth Day<span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="birthday"
-                      {...register("birthday", { required: true })}
-                      autoComplete="date"
-                      required
-                      className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      type="date"
-                      placeholder="dd-mm-yyyy"
-                      min="1970-01-01"
-                      max="2030-12-31"></input>
-                  </div>
-                </div>
 
-                <div>
-                  <label
-                    htmlFor="username"
-                    className="block text-lg text-gray-900 dark:text-white">
-                    Sex<span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <div className="mb-3 xl:w-96 ">
-                      <select
-                        data-te-select-init
-                        className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        <option value="true" onClick={() => setSex(true)}>
-                          Male
-                        </option>
-                        <option value="false" onClick={() => setSex(false)}>
-                          Female
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
                 <div>
                   {isLoading ? (
                     <button
@@ -350,4 +190,4 @@ const Register = () => {
   );
 };
 
-export default Register;
+export default ResetPassword;

@@ -30,7 +30,7 @@ class MyDocument extends Document {
     return (
       <Html lang="en">
         <Head>
-          <link rel="icon" href="/favicon.ico" />
+          <link rel="icon" href="/favicon/favicon.ico" />
           <link rel="manifest" href="/manifest.json" />
 
           {/* <script dangerouslySetInnerHTML={{ __html: injectGA }}></script> */}

@@ -41,6 +41,10 @@ const documents = {
     types.LoginDocument,
   "\n  mutation register(\n    $firstName: String!\n    $lastName: String!\n    $email: String!\n    $password: String!\n    $username: String!\n    $fullName: String!\n    $phone: String!\n    $birthday: String!\n    $sex: Boolean!\n    $avatar: String!\n    $coverImage: String!\n  ) {\n    register(\n      registerInput: {\n        firstName: $firstName\n        lastName: $lastName\n        email: $email\n        password: $password\n        username: $username\n        fullName: $fullName\n        phone: $phone\n        birthday: $birthday\n        sex: $sex\n        avatar: $avatar\n        coverImage: $coverImage\n      }\n    ) {\n      code\n      success\n      message\n      accessToken\n      user {\n        id\n        fullName\n        lastName\n        firstName\n        username\n        email\n        avatar\n        phone\n        birthday\n        sex\n        role\n        coverImage\n        createAt\n        updateAt\n      }\n      errors {\n        message\n        field\n      }\n    }\n  }\n":
     types.RegisterDocument,
+  "\n  mutation resetPassword($password: String!, $token: String!) {\n    resetPassword(password: $password, token: $token)\n  }\n":
+    types.ResetPasswordDocument,
+  "\n  query forgotPassword($email: String!) {\n    forgotPassword(email: $email)\n  }\n":
+    types.ForgotPasswordDocument,
 };
 
 /**
@@ -141,6 +145,18 @@ export function graphql(
 export function graphql(
   source: "\n  mutation register(\n    $firstName: String!\n    $lastName: String!\n    $email: String!\n    $password: String!\n    $username: String!\n    $fullName: String!\n    $phone: String!\n    $birthday: String!\n    $sex: Boolean!\n    $avatar: String!\n    $coverImage: String!\n  ) {\n    register(\n      registerInput: {\n        firstName: $firstName\n        lastName: $lastName\n        email: $email\n        password: $password\n        username: $username\n        fullName: $fullName\n        phone: $phone\n        birthday: $birthday\n        sex: $sex\n        avatar: $avatar\n        coverImage: $coverImage\n      }\n    ) {\n      code\n      success\n      message\n      accessToken\n      user {\n        id\n        fullName\n        lastName\n        firstName\n        username\n        email\n        avatar\n        phone\n        birthday\n        sex\n        role\n        coverImage\n        createAt\n        updateAt\n      }\n      errors {\n        message\n        field\n      }\n    }\n  }\n"
 ): (typeof documents)["\n  mutation register(\n    $firstName: String!\n    $lastName: String!\n    $email: String!\n    $password: String!\n    $username: String!\n    $fullName: String!\n    $phone: String!\n    $birthday: String!\n    $sex: Boolean!\n    $avatar: String!\n    $coverImage: String!\n  ) {\n    register(\n      registerInput: {\n        firstName: $firstName\n        lastName: $lastName\n        email: $email\n        password: $password\n        username: $username\n        fullName: $fullName\n        phone: $phone\n        birthday: $birthday\n        sex: $sex\n        avatar: $avatar\n        coverImage: $coverImage\n      }\n    ) {\n      code\n      success\n      message\n      accessToken\n      user {\n        id\n        fullName\n        lastName\n        firstName\n        username\n        email\n        avatar\n        phone\n        birthday\n        sex\n        role\n        coverImage\n        createAt\n        updateAt\n      }\n      errors {\n        message\n        field\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: "\n  mutation resetPassword($password: String!, $token: String!) {\n    resetPassword(password: $password, token: $token)\n  }\n"
+): (typeof documents)["\n  mutation resetPassword($password: String!, $token: String!) {\n    resetPassword(password: $password, token: $token)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: "\n  query forgotPassword($email: String!) {\n    forgotPassword(email: $email)\n  }\n"
+): (typeof documents)["\n  query forgotPassword($email: String!) {\n    forgotPassword(email: $email)\n  }\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

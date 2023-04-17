@@ -1,71 +1,41 @@
 import { useState } from "react";
-import { BsEye, BsEyeSlash } from "react-icons/bs";
+
 import Image from "next/image";
 import Link from "next/link";
-
 import { useForm } from "react-hook-form";
-import { queryLogin } from "../../graphql/user";
-import { graphQLClient } from "../../plugins/graphql.plugin";
-import { toast } from "react-toastify";
 
-import { useStoreUser } from "../../store/user";
+import "react-toastify/dist/ReactToastify.css";
+
 import { useRouter } from "next/router";
-import { setCookies } from "cookies-next";
+import { graphQLClient } from "../../plugins/graphql.plugin";
+import { queryForgotPassword } from "../../graphql/user";
 
-const Login = () => {
-  const [showPass, setShowPass] = useState(false);
+const ForgotPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [showText, setShowText] = useState(false);
 
   const { register, handleSubmit } = useForm();
 
-  const { setUser } = useStoreUser();
-  const router = useRouter();
   const onSubmit = async (data: any) => {
-    setIsLoading(true);
-    const res = await graphQLClient.request(queryLogin, {
-      email: data.email,
-      password: data.password,
-    });
-    if (res.login.code === 400) {
-      toast.error(res.login.message);
-      setIsLoading(false);
-      return;
-    }
-    const accessToken = res.login.accessToken;
-    if (!accessToken) {
-      toast.error("loi he thong");
-      setIsLoading(false);
-      return;
-    }
-    if (!res.login.user) {
-      toast.error("loi he thong");
-      setIsLoading(false);
-      return;
-    }
-    try {
-      setCookies("uuid", res.login.user.id, {
-        maxAge: 60 * 60 * 24 * 30,
+    if (data.email) {
+      const res = await graphQLClient.request(queryForgotPassword, {
+        email: data.email,
       });
-      setCookies(process.env.NEXT_PUBLIC_COOKIE_NAME as string, accessToken, {
-        maxAge: 60 * 60 * 24 * 30,
-      });
-    } catch (error) {
-      console.log(error);
+      if (res.forgotPassword) {
+        setShowText(true);
+      }
+      setIsLoading(false);
     }
-
-    setUser(res.login.user);
-    setIsLoading(false);
-    return router.push("/");
   };
 
   return (
     <section className="lg:py-10 lg:px-6">
       <div className="max-w-5xl mx-auto rounded-lg overflow-hidden grid min-h-screen lg:grid-cols-5 grid-cols-2">
-        <div className="hidden lg:flex col-span-2 dark:bg-black bg-white bg-pattern-login">
+        <div className="hidden lg:flex col-span-2 bg-white dark:bg-black bg-pattern-login">
           <div className="flex flex-col justify-start items-start py-10 pl-16"></div>
         </div>
-        <div className="bg-white dark:bg-black col-span-3 flex flex-col">
-          <div className="my-8 mx-auto w-full max-w-md">
+        <div className="bg-white dark:bg-black col-span-3 flex flex-col pb-20">
+          <div className="mt-8 mx-auto w-full max-w-md">
             <div className="flex flex-col justify-start items-start mb-10">
               <Link href="/">
                 <Image
@@ -76,7 +46,12 @@ const Login = () => {
                 />
               </Link>
               <h1 className="text-gray-900 dark:text-white font-bold text-3xl font-title pl-4">
-                Sign in to Socio Trend
+                Create an account
+              </h1>
+            </div>
+            <div className={`${showText ? "" : "hidden"}`}>
+              <h1 className="text-gray-900 dark:text-white font-bold text-3xl font-title pl-4">
+                We have sent a link to your email
               </h1>
             </div>
             <div className="rounded-lg px-4">
@@ -91,38 +66,10 @@ const Login = () => {
                     <input
                       id="email"
                       {...register("email", { required: true })}
-                      type="text"
-                      autoComplete="text"
-                      placeholder="Enter your email"
+                      type="email"
+                      autoComplete="email"
                       required
-                      className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between">
-                    <label
-                      htmlFor="password"
-                      className="block text-lg text-gray-900 dark:text-white">
-                      Password<span className="text-red-500">*</span>
-                    </label>
-                    <button
-                      type="button"
-                      className="mr-2"
-                      onClick={() => setShowPass(!showPass)}>
-                      {showPass ? <BsEye /> : <BsEyeSlash />}
-                    </button>
-                  </div>
-                  <div className="mt-1">
-                    <p>Aa@12345678</p>
-                    <input
-                      id="password"
-                      {...register("password", { required: true })}
-                      type={showPass ? "text" : "password"}
-                      autoComplete="current-password"
-                      placeholder="Enter your password"
-                      required
+                      placeholder="example@mail.com"
                       className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     />
                   </div>
@@ -133,7 +80,7 @@ const Login = () => {
                     <button
                       disabled
                       type="button"
-                      className="w-full flex justify-center py-2 px-4 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center mr-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 items-center">
+                      className="w-full flex justify-center py-2 px-4 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm text-center mr-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 items-center">
                       <svg
                         role="status"
                         className="inline mr-3 w-4 h-4 text-white animate-spin"
@@ -155,18 +102,9 @@ const Login = () => {
                     <button
                       type="submit"
                       className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium dark:text-black text-white dark:bg-white bg-black hover:bg-opacity-80 dark:hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white">
-                      Sign in
+                      Reset
                     </button>
                   )}
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="text-sm">
-                    <Link
-                      href="/forgotpassword"
-                      className="font-medium text-indigo-500 hover:text-indigo-600">
-                      Forgot your password?
-                    </Link>
-                  </div>
                 </div>
               </form>
 
@@ -182,20 +120,20 @@ const Login = () => {
                   </div>
                 </div>
 
-                <div className="mt-6">
-                  {/* <div>
+                {/* <div className="mt-6">
+                  <div>
                     <button className="w-full inline-flex justify-center items-center py-2 px-4 rounded-md shadow-sm bg-black dark:bg-white text-sm font-medium text-white dark:text-black hover:bg-opacity-90 dark:hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white">
                       <BsGoogle className="w-6 h-6" />
                       &nbsp;Sign in with Google
                     </button>
-                  </div> */}
-                </div>
+                  </div>
+                </div> */}
                 <p className="mt-6 text-center text-base font-medium text-gray-900 dark:text-white">
-                  New to Socio Trend?
+                  Have an account?
                   <Link
-                    href="/register"
+                    href="/login"
                     className="text-indigo-500 hover:text-indigo-600 font-medium">
-                    &nbsp;&nbsp;Sign up
+                    &nbsp;&nbsp;Sign in
                   </Link>
                 </p>
               </div>
@@ -207,4 +145,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default ForgotPassword;

@@ -5,7 +5,7 @@ self.addEventListener("push", function (event) {
   event.waitUntil(
     registration.showNotification(data.title, {
       body: data.message,
-      icon: "/android-chrome-192x192.png",
+      icon: "/favicon/android-chrome-192x192.png",
     })
   );
 });

@@ -22,7 +22,7 @@ import "../plugins/axios.plugin";
 import SEO from "../../next-seo.config";
 import { useStoreTheme } from "../store/state";
 import { getThemeC, setThemeC } from "../plugins/theme";
-import { setCookie } from "cookies-next";
+import { getCookie, setCookie } from "cookies-next";
 
 import axios from "axios";
 import { base64ToUint8Array } from "../plugins/notification";
@@ -38,59 +38,64 @@ Router.events.on("routeChangeError", () => NProgress.done());
 
 function MyApp({ Component, pageProps }: AppProps) {
   const { theme, setTheme } = useStoreTheme();
+  const cookie = getCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string);
 
   let interval = useRef<any>(null);
   useEffect(() => {
-    interval.current = setInterval(async () => {
-      try {
-        const res = await axios.put("/user/online");
-        console.log("Last Online: ", res.data.lastOnline);
-      } catch (error) {
-        console.warn(error);
-      }
-    }, 300000);
+    if (cookie) {
+      interval.current = setInterval(async () => {
+        try {
+          const res = await axios.put("/user/online");
+          console.log("Last Online: ", res.data.lastOnline);
+        } catch (error) {
+          console.warn(error);
+        }
+      }, 300000);
+    }
     return () => clearInterval(interval.current);
-  }, []);
+  }, [cookie]);
 
   useEffect(() => {
-    const postSubscribe = async (sub: any) => {
-      try {
-        const res = await axios.post("/user/notification/subscription", {
-          subscription: sub,
-          agent: window.navigator.userAgent,
-        });
-      } catch (error) {
-        console.warn(error);
-      }
-    };
-
-    const getSubscribe = async () => {
-      if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-        const reg = await navigator.serviceWorker.ready;
-        const sub: any = await reg.pushManager.getSubscription();
-        if (
-          sub &&
-          !(
-            sub.expirationTime &&
-            Date.now() > sub.expirationTime - 5 * 60 * 1000
-          )
-        ) {
-          postSubscribe(sub);
-          return;
-        } else {
-          const sub = await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: base64ToUint8Array(
-              process.env.NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY
-            ),
+    if (cookie) {
+      const postSubscribe = async (sub: any) => {
+        try {
+          const res = await axios.post("/user/notification/subscription", {
+            subscription: sub,
+            agent: window.navigator.userAgent,
           });
-          postSubscribe(sub);
-          return;
+        } catch (error) {
+          console.warn(error);
         }
-      }
-    };
-    getSubscribe();
-  }, []);
+      };
+
+      const getSubscribe = async () => {
+        if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+          const reg = await navigator.serviceWorker.ready;
+          const sub: any = await reg.pushManager.getSubscription();
+          if (
+            sub &&
+            !(
+              sub.expirationTime &&
+              Date.now() > sub.expirationTime - 5 * 60 * 1000
+            )
+          ) {
+            postSubscribe(sub);
+            return;
+          } else {
+            const sub = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: base64ToUint8Array(
+                process.env.NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY
+              ),
+            });
+            postSubscribe(sub);
+            return;
+          }
+        }
+      };
+      getSubscribe();
+    }
+  }, [cookie]);
   useEffect(() => {
     if (document) {
       const themeC = getThemeC();

@@ -163,6 +163,7 @@ export type Mutation = {
   login: UserMutationResponse;
   logout: Scalars["Boolean"];
   register: UserMutationResponse;
+  resetPassword: Scalars["Boolean"];
   updatePost: PostMutationResponse;
 };
 
@@ -202,6 +203,11 @@ export type MutationRegisterArgs = {
   registerInput: RegisterInput;
 };
 
+export type MutationResetPasswordArgs = {
+  password: Scalars["String"];
+  token: Scalars["String"];
+};
+
 export type MutationUpdatePostArgs = {
   updatePostInput: UpdatePostInput;
 };
@@ -239,6 +245,7 @@ export type Query = {
   __typename?: "Query";
   bookmarkAll: BookmarkResponse;
   createBookmark: BookmarkResponse;
+  forgotPassword: Scalars["Boolean"];
   friends: FriendQueryResponse;
   getCommentComment: CommentResponse;
   getCommentPost: CommentResponse;
@@ -256,6 +263,10 @@ export type Query = {
 
 export type QueryCreateBookmarkArgs = {
   postUuid: Scalars["String"];
+};
+
+export type QueryForgotPasswordArgs = {
+  email: Scalars["String"];
 };
 
 export type QueryGetCommentCommentArgs = {
@@ -879,6 +890,25 @@ export type RegisterMutation = {
       field: string;
     }> | null;
   };
+};
+
+export type ResetPasswordMutationVariables = Exact<{
+  password: Scalars["String"];
+  token: Scalars["String"];
+}>;
+
+export type ResetPasswordMutation = {
+  __typename?: "Mutation";
+  resetPassword: boolean;
+};
+
+export type ForgotPasswordQueryVariables = Exact<{
+  email: Scalars["String"];
+}>;
+
+export type ForgotPasswordQuery = {
+  __typename?: "Query";
+  forgotPassword: boolean;
 };
 
 export const CreatePostDocument = {
@@ -2975,3 +3005,118 @@ export const RegisterDocument = {
     },
   ],
 } as unknown as DocumentNode<RegisterMutation, RegisterMutationVariables>;
+export const ResetPasswordDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "resetPassword" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "password" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "token" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "resetPassword" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "password" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "password" },
+                },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "token" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "token" },
+                },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  ResetPasswordMutation,
+  ResetPasswordMutationVariables
+>;
+export const ForgotPasswordDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "forgotPassword" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "email" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "forgotPassword" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "email" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "email" },
+                },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ForgotPasswordQuery, ForgotPasswordQueryVariables>;

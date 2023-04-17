@@ -119,14 +119,14 @@ const Navigation = () => {
                   width="150"
                   height="55"
                   alt="Socio Trend"
-                  src="/android-chrome-192x192.png"
+                  src="/favicon/logo.png"
                 />
               ) : (
                 <Image
                   width="150"
                   height="55"
                   alt="Socio Trend"
-                  src="/android-chrome-192x192.png"
+                  src="/favicon/logo.png"
                 />
               )}
             </Link>
@@ -258,7 +258,9 @@ const Navigation = () => {
                 </div>
                 <div>
                   <button
-                    onClick={handleLogout}
+                    onClick={() => {
+                      handleLogout();
+                    }}
                     className="mt-1 flex w-full items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg">
                     <p className="flex items-center gap-2">
                       <FiLogOut />
@@ -283,7 +285,7 @@ const Navigation = () => {
               <div className="flex items-center justify-between">
                 <Link href="/" className="relative flex gap-3 items-center">
                   <Image
-                    src="/android-chrome-192x192.png"
+                    src="/favicon/logo.png"
                     width="150"
                     height="55"
                     alt="Socio Trend"

@@ -7,8 +7,8 @@ import UserListSkeleton from "../Loaders/UserListSkeleton";
 
 import { graphql } from "../../gql";
 import { graphQLClient } from "../../plugins/graphql.plugin";
-import { Theme, toast } from "react-toastify";
-import { useStoreTheme } from "../../store/state";
+import { toast } from "react-toastify";
+
 interface IUser {
   fullName: string;
   avatar: string;
@@ -17,7 +17,7 @@ interface IUser {
 const RightSideBar = () => {
   const [users, setUsers] = useState<IUser[]>([]);
   const [loading, setLoading] = useState(false);
-  const { theme } = useStoreTheme();
+
   const queryUsers = graphql(`
     query getUsers {
       getUsers {
@@ -39,24 +39,22 @@ const RightSideBar = () => {
   useEffect(() => {
     setLoading(true);
     const fetchData = async () => {
-      const res = await graphQLClient.request(queryUsers);
-      if (res.getUsers.code === 400) {
-        toast.error(res.getUsers.message, {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          theme: theme ? (theme as Theme) : "light",
-        });
+      try {
+        const res = await graphQLClient.request(queryUsers);
+        if (res.getUsers.code === 400) {
+          toast.error(res.getUsers.message);
+        }
+        if (res.getUsers.users) {
+          setUsers(res.getUsers.users);
+        }
+        setLoading(false);
+      } catch (error) {
+        setLoading(false);
+        console.warn(error);
       }
-      if (res.getUsers.users) {
-        setUsers(res.getUsers.users);
-      }
-      setLoading(false);
     };
     fetchData();
-  }, [queryUsers, theme]);
+  }, [queryUsers]);
   return (
     <div>
       <div className="bg-white dark:bg-black drop-shadow-sm p-3 rounded-lg">

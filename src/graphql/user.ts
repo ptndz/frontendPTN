@@ -143,3 +143,13 @@ export const queryRegister = graphql(`
     }
   }
 `);
+export const queryResetPassword = graphql(`
+  mutation resetPassword($password: String!, $token: String!) {
+    resetPassword(password: $password, token: $token)
+  }
+`);
+export const queryForgotPassword = graphql(`
+  query forgotPassword($email: String!) {
+    forgotPassword(email: $email)
+  }
+`);
