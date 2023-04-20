@@ -1,17 +1,19 @@
-import axios from "axios";
+
 import React from "react";
 import { useForm } from "react-hook-form";
 
 import Modal from "react-responsive-modal";
 import "react-responsive-modal/styles.css";
 import { toast } from "react-toastify";
-import { useStoreUser } from "../../store/user";
+import { ProfileUser } from "../../gql/graphql";
+import { graphQLClient } from "../../plugins/graphql.plugin";
+import { queryUpdateProfile } from "../../graphql/user";
 
 interface IProps {
-  data: any;
-  openDetailsModal: any;
-  setOpenDetailsModal: any;
-  setUpdateUserData: any;
+  data: ProfileUser;
+  openDetailsModal: boolean;
+  setOpenDetailsModal: (openDetailsModal: boolean) => void;
+  setUpdateUserData: (updateUserData: boolean) => void;
 }
 
 const AboutModal: React.FC<IProps> = ({
@@ -20,20 +22,21 @@ const AboutModal: React.FC<IProps> = ({
   setOpenDetailsModal,
   setUpdateUserData,
 }) => {
-  const { user } = useStoreUser();
   const { register, handleSubmit } = useForm();
 
-  const onSubmit = (data: any) => {
-    console.log(data);
-    axios
-      .put(`/api/user/updateAbout?email=${user.email}`, data)
-      .then((data) => {
-        if (data.status === 200) {
-          setUpdateUserData(true);
-          toast("Profile updated successfully");
-          setOpenDetailsModal(false);
-        }
-      });
+  const onSubmit = async (data: any) => {
+    const res = await graphQLClient.request(queryUpdateProfile, {
+      city: data.city,
+      education: data.education,
+      from: data.from,
+      relationship: data.relationship,
+      workplace: data.workplace,
+    });
+    if (res.updateProfile.code === 200) {
+      setUpdateUserData(true);
+      toast("Profile updated successfully");
+      setOpenDetailsModal(false);
+    }
   };
   return (
     <Modal
@@ -53,40 +56,40 @@ const AboutModal: React.FC<IProps> = ({
             className="w-full h-12 mb-3 bg-transparent rounded-lg px-2 dark:text-white"
             type="text"
             {...register("education")}
-            defaultValue={data.education}
-            placeholder={data.education}
+            defaultValue={data?.education}
+            placeholder={data?.education}
           />
           <label className="dark:text-white">Lives in </label>
           <input
             className="w-full h-12 mb-3 bg-transparent rounded-lg px-2 dark:text-white"
             type="text"
             {...register("city")}
-            defaultValue={data.city}
-            placeholder={data.city}
+            defaultValue={data?.city}
+            placeholder={data?.city}
           />
           <label className="dark:text-white">From</label>
           <input
             className="w-full h-12 mb-3 bg-transparent rounded-lg px-2 dark:text-white"
             type="text"
             {...register("from")}
-            defaultValue={data.from}
-            placeholder={data.from}
+            defaultValue={data?.from}
+            placeholder={data?.from}
           />
           <label className="dark:text-white">Workplace</label>
           <input
             className="w-full h-12 mb-3 bg-transparent rounded-lg px-2 dark:text-white"
             type="text"
             {...register("workplace")}
-            defaultValue={data.workplace}
-            placeholder={data.workplace}
+            defaultValue={data?.workplace}
+            placeholder={data?.workplace}
           />
           <label className="dark:text-white">Relationship</label>
           <select
             id=""
             className="w-full h-12 mb-3 dark:bg-zinc-900 rounded-lg dark:text-white px-3"
             {...register("relationship")}
-            placeholder={data.relationship}
-            defaultValue={data.education}>
+            placeholder={data?.relationship}
+            defaultValue={data?.relationship}>
             <option value="Single">Single</option>
             <option value="In a relationship">In a relationship </option>
             <option value="Engaged">Engaged </option>

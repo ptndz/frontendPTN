@@ -1,19 +1,23 @@
-import axios from "axios";
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import Modal from "react-responsive-modal";
 import "react-responsive-modal/styles.css";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useStoreUser } from "../../store/user";
+
 import { User } from "../../gql/graphql";
+import axios from "axios";
+import { graphQLClient } from "../../plugins/graphql.plugin";
+import { queryUpdateUser } from "../../graphql/user";
+import { useForm } from "react-hook-form";
+import { log } from "util";
 
 interface IProps {
-  data: any;
-  open: any;
-  setOpenProfileModal: any;
-  setUpdateUserData: any;
+  data: User;
+  open: boolean;
+  setOpenProfileModal: (openProfileModal: boolean) => void;
+  setUpdateUserData: (updateUserData: boolean) => void;
 }
 
 const ProfileModal: React.FC<IProps> = ({
@@ -22,34 +26,58 @@ const ProfileModal: React.FC<IProps> = ({
   setOpenProfileModal,
   setUpdateUserData,
 }) => {
-  const { user } = useStoreUser();
-  const [displayName, setDisplayName] = useState("");
-  const [preProfileImg, setPreProfileImg] = useState(null);
-  const [preCoverImg, setPreCoverImg] = useState(null);
+  const [preProfileImg, setPreProfileImg] = useState<any>();
+  const [preCoverImg, setPreCoverImg] = useState<any>();
 
-  const [profileImg, setProfileImg] = useState([]);
-  const [coverImg, setCoverImg] = useState(null);
+  const [profileImg, setProfileImg] = useState<File>();
+  const [coverImg, setCoverImg] = useState<File>();
 
-  const [updating, setUpdating] = useState(false);
+  const [profileLink, setProfileLink] = useState<string>();
+  const [coverLink, setCoverLink] = useState<string>();
 
-  // const handleProfileImg = (file) => {
-  //   setProfileImg(file);
-  //   setPreProfileImg(URL.createObjectURL(file));
-  // };
-  // const handleCoverImg = (file) => {
-  //   setCoverImg(file);
-  //   setPreCoverImg(URL.createObjectURL(file));
-  // };
-  let userData: User;
+  const { register, handleSubmit } = useForm();
 
-  const handleSubmit = async (e: any) => {
-    setUpdating(true);
+  const handleProfileImg = (file: File) => {
+    setProfileImg(file);
+    setPreProfileImg(URL.createObjectURL(file));
+  };
+  const handleCoverImg = (file: File) => {
+    setCoverImg(file);
+    setPreCoverImg(URL.createObjectURL(file));
+  };
+
+  const onSubmit = async (e: any) => {
     setOpenProfileModal(false);
-    e.preventDefault();
-    if (displayName) {
-      userData.avatar = displayName;
+
+    if (profileImg) {
+      let formData = new FormData();
+      formData.append("images", profileImg);
+      const resImages = await axios.post("/image/avatar", formData);
+      if (resImages.data.images) {
+        setProfileLink(resImages.data.images[0]);
+      }
     }
-    const formData = new FormData();
+
+    if (coverImg) {
+      let formData = new FormData();
+      formData.append("images", coverImg);
+      const resImages = await axios.post("/image/cover", formData);
+      if (resImages.data.images) {
+        setCoverLink(resImages.data.images[0]);
+      }
+    }
+
+    const res = await graphQLClient.request(queryUpdateUser, {
+      firstName: e.firstName,
+      lastName: e.lastName,
+      avatar: profileLink || data.avatar,
+      coverImage: coverLink || data.coverImage,
+      fullName: `${e.firstName} ${e.lastName}`,
+    });
+    if (res.updateUser.code === 200) {
+      setUpdateUserData(true);
+      toast("🦄 Profile updated!");
+    }
   };
   return (
     <>
@@ -64,7 +92,7 @@ const ProfileModal: React.FC<IProps> = ({
           <div className="flex justify-between items-center border-b-2 py-3 border-gray-500">
             <h4 className="text-lg font-bold dark:text-white">Edit profile</h4>
           </div>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit(onSubmit)}>
             <div className="flex justify-between items-center pt-5">
               <h4 className="text-lg font-bold dark:text-white">
                 Profile Picture
@@ -81,7 +109,10 @@ const ProfileModal: React.FC<IProps> = ({
                   id="files1"
                   accept="image/*"
                   className="hidden"
-                  // onChange={(e) => handleProfileImg(e.target.files[0])}
+                  onChange={(e) => {
+                    const files = e.target.files;
+                    if (files) handleProfileImg(files[0]);
+                  }}
                 />
               </div>
             </div>
@@ -90,7 +121,7 @@ const ProfileModal: React.FC<IProps> = ({
                 className="object-cover rounded-full border-2 bg-no-repeat"
                 src={
                   preProfileImg ||
-                  data.photoURL ||
+                  data.avatar ||
                   "https://i.ibb.co/5kdWHNN/user-12.png"
                 }
                 alt="profile image"
@@ -111,7 +142,10 @@ const ProfileModal: React.FC<IProps> = ({
                 id="files2"
                 accept="image/*"
                 className="hidden"
-                // onChange={(e) => handleCoverImg(e.target.files[0])}
+                onChange={(e) => {
+                  const files = e.target.files;
+                  if (files) handleCoverImg(files[0]);
+                }}
               />
             </div>
 
@@ -120,7 +154,7 @@ const ProfileModal: React.FC<IProps> = ({
                 className="object-cover"
                 src={
                   preCoverImg ||
-                  data.coverPicture ||
+                  data.coverImage ||
                   "https://i.ibb.co/pWc2Ffd/u-bg.jpg"
                 }
                 alt="profile image"
@@ -130,16 +164,26 @@ const ProfileModal: React.FC<IProps> = ({
             </div>
             <div className="flex flex-col space-y-1 py-6 px-2">
               <div className="text-lg font-medium dark:text-white">
-                Chenge Your Name:
+                Chenge First Name:
               </div>
               <input
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder={data.displayName}
-                defaultValue={data.displayName}
+                placeholder={data.firstName}
+                defaultValue={data.firstName}
                 className="w-full h-10  focus:outline-none dark:bg-transparent rounded-lg dark:text-white"
                 type="text"
-                name="name"
-                id="name"
+                {...register("firstName")}
+              />
+            </div>
+            <div className="flex flex-col space-y-1 py-6 px-2">
+              <div className="text-lg font-medium dark:text-white">
+                Chenge Last Name:
+              </div>
+              <input
+                placeholder={data.lastName}
+                defaultValue={data.lastName}
+                className="w-full h-10  focus:outline-none dark:bg-transparent rounded-lg dark:text-white"
+                type="text"
+                {...register("lastName")}
               />
             </div>
             <div className="mt-3 flex justify-end space-x-3 pb-5">

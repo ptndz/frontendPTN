@@ -8,6 +8,7 @@ import UserListSkeleton from "../Loaders/UserListSkeleton";
 import { graphql } from "../../gql";
 import { graphQLClient } from "../../plugins/graphql.plugin";
 import { toast } from "react-toastify";
+import { useStoreUser } from "../../store/user";
 
 interface IUser {
   fullName: string;
@@ -17,7 +18,7 @@ interface IUser {
 const RightSideBar = () => {
   const [users, setUsers] = useState<IUser[]>([]);
   const [loading, setLoading] = useState(false);
-
+  const { user } = useStoreUser();
   const queryUsers = graphql(`
     query getUsers {
       getUsers {
@@ -25,6 +26,7 @@ const RightSideBar = () => {
         success
         message
         users {
+          id
           fullName
           avatar
           username
@@ -45,7 +47,10 @@ const RightSideBar = () => {
           toast.error(res.getUsers.message);
         }
         if (res.getUsers.users) {
-          setUsers(res.getUsers.users);
+          const data = res.getUsers.users.filter((userData) => {
+            return userData.id !== user.id;
+          });
+          setUsers(data);
         }
         setLoading(false);
       } catch (error) {
@@ -54,7 +59,7 @@ const RightSideBar = () => {
       }
     };
     fetchData();
-  }, [queryUsers]);
+  }, [queryUsers, user.id]);
   return (
     <div>
       <div className="bg-white dark:bg-black drop-shadow-sm p-3 rounded-lg">

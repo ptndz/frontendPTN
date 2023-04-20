@@ -9,7 +9,7 @@ import { useRouter } from "next/router";
 import "react-responsive-modal/styles.css";
 import CreatePost from "../Home/CreatePost";
 import { useStoreUser } from "../../store/user";
-import { User } from "../../gql/graphql";
+import { User, ProfileUser } from "../../gql/graphql";
 import { graphQLClient } from "../../plugins/graphql.plugin";
 import { useInfiniteQuery } from "@tanstack/react-query";
 
@@ -17,15 +17,21 @@ import moment from "moment";
 import Link from "next/link";
 import { queryGetPostsUserByUserName } from "../../graphql/post";
 import { FriendRequestStatus } from "../../types/friends";
+import Head from "next/head";
 
 interface IProps {
   userData: User;
-  setUpdateUserData: any;
+  setUpdateUserData: (updateUserData: boolean) => void;
+  profileData: ProfileUser;
 }
 interface IFriendRequestStatus extends FriendRequestStatus {
   id: number;
 }
-const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
+const UserProfile: React.FC<IProps> = ({
+  userData,
+  setUpdateUserData,
+  profileData,
+}) => {
   const router = useRouter();
   const userName = router.query.username as string;
   const [deletePost, setDeletePost] = useState(false);
@@ -46,25 +52,22 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
     fetchData();
   }, []);
 
-  const getPost = async (pageParam: string) => {
+  const getPost = async (pageParam: number) => {
     const resPost = await graphQLClient.request(queryGetPostsUserByUserName, {
       username: userName,
+      page: pageParam,
+      limit: 10,
     });
 
     return resPost.getPostsUserByUserName;
   };
   const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =
-    useInfiniteQuery(
-      ["userPosts"],
-      ({ pageParam = "01-01-9999" }) => getPost(pageParam),
-      {
-        getNextPageParam: (lastPage, _allPages) => {
-          const time = lastPage;
-
-          return time;
-        },
-      }
-    );
+    useInfiniteQuery(["userPosts"], ({ pageParam = 1 }) => getPost(pageParam), {
+      getNextPageParam: (lastPage, _allPages) => {
+        const page = lastPage?.page ? lastPage.page + 1 : 1;
+        return page;
+      },
+    });
 
   const loadMoreRef = useRef() as React.RefObject<HTMLButtonElement>;
 
@@ -88,7 +91,7 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
 
   useEffect(() => {
     const fetchFriends = async () => {
-      const res = await axios.get(`/friends/status/${userData.id}`);
+      const res = await axios.get(`/friends/status/${userData?.id}`);
 
       if (res.data.status) {
         setStatusFriends({
@@ -97,7 +100,7 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
         });
       }
     };
-    if (userData.id !== user.id) {
+    if (userData?.id !== user.id) {
       fetchFriends();
     }
   }, [userData, user]);
@@ -209,11 +212,20 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
   };
   return (
     <>
+      <Head>
+        <link
+          rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+          integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
+          crossOrigin="anonymous"
+          referrerPolicy="no-referrer"
+        />
+      </Head>
       <div className="drop-shadow-sm p-5 bg-white dark:bg-black rounded-2xl">
         <div className="">
           <Image
             className="rounded-2xl object-content"
-            src={"https://i.ibb.co/pWc2Ffd/u-bg.jpg"}
+            src={userData?.coverImage || "https://i.ibb.co/pWc2Ffd/u-bg.jpg"}
             width={1000}
             objectFit="cover"
             height={300}
@@ -224,7 +236,7 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
           <div className=" flex ">
             <div className="-mt-12 ml-5">
               <Image
-                src={userData.avatar || "https://i.ibb.co/5kdWHNN/user-12.png"}
+                src={userData?.avatar || "https://i.ibb.co/5kdWHNN/user-12.png"}
                 alt="user profile photo"
                 width={100}
                 height={100}
@@ -234,7 +246,7 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
             </div>
             <div className="ml-6">
               <div className="font-bold text-lg text-center flex items-center justify-center">
-                {userData.fullName}&ensp;
+                {userData?.fullName}&ensp;
                 <a className="group relative inline-block">
                   <TiTick className="text-[20px] text-white rounded-full bg-sky-500" />
                   <span className="absolute hidden group-hover:flex -top-2 -right-3 translate-x-full w-48 px-2 py-1 bg-gray-700 rounded-lg text-center text-white text-sm before:content-[''] before:absolute before:top-1/2  before:right-[100%] before:-translate-y-1/2 before:border-8 before:border-y-transparent before:border-l-transparent before:border-r-gray-700">
@@ -244,12 +256,12 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
               </div>
 
               <div className="text-xs font-medium	text-gray-400 ">
-                <a href={`mailto:${userData.email}`}>{userData.email}</a>
+                <a href={`mailto:${userData?.email}`}>{userData?.email}</a>
               </div>
             </div>
           </div>
           <div className="">
-            {userData.id === user.id ? (
+            {userData?.id === user.id ? (
               <button
                 className="bg-green-500 hover:bg-green-700	text-white font-bold text-xs p-3 rounded-md "
                 onClick={() => setOpenProfileModal(true)}>
@@ -278,29 +290,39 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
         <div className="md:col-span-4 sm:col-span-12 col-span-12 ">
           <div className="drop-shadow-sm bg-white dark:bg-black p-5 rounded-xl">
             <h2 className="text-lg font-semibold pb-3">About</h2>
-            <div className="flex items-center">
-              <i className="fa-solid fa-graduation-cap"></i>
-              <span className="ml-3">Went to sss</span>
-            </div>
-            <div className="flex items-center py-3">
-              <i className="fa-solid fa-house-chimney"></i>
-              <span className="ml-3">Lives in sss</span>
-            </div>
-            <div className="flex items-center py-3">
-              <i className="fa-solid fa-location-dot" />
-              <span className="ml-3">From sss</span>
-            </div>
-            <div className="flex items-center py-3">
-              <i className="fa-solid fa-heart"></i>
-              <span className="ml-3">ssss</span>
-            </div>
+            {profileData?.education ? (
+              <div className="flex items-center">
+                <i className="fa-solid fa-graduation-cap"></i>
+                <span className="ml-3">Went to {profileData.education}</span>
+              </div>
+            ) : null}
+
+            {profileData?.city ? (
+              <div className="flex items-center py-3">
+                <i className="fa-solid fa-house-chimney"></i>
+                <span className="ml-3">Lives in {profileData.city}</span>
+              </div>
+            ) : null}
+            {profileData?.from ? (
+              <div className="flex items-center py-3">
+                <i className="fa-solid fa-location-dot" />
+                <span className="ml-3">From {profileData.from}</span>
+              </div>
+            ) : null}
+            {profileData?.relationship ? (
+              <div className="flex items-center py-3">
+                <i className="fa-solid fa-heart"></i>
+                <span className="ml-3">{profileData.relationship}</span>
+              </div>
+            ) : null}
+
             <div className="flex items-center py-3">
               <i className="fa-solid fa-clock"></i>
               <span className="ml-3">
                 Joined {moment(user.createAt).fromNow()}
               </span>
             </div>
-            {userData.id === user.id ? (
+            {userData?.id === user.id ? (
               <button
                 className="w-full bg-gray-200 dark:bg-zinc-800 hover:dark:bg-zinc-700 hover:bg-slate-300 font-semibold rounded-md text-gray-700 dark:text-white mt-3 py-2"
                 onClick={() => setOpenDetailsModal(true)}>
@@ -313,21 +335,21 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
         </div>
         <div className="md:col-span-8 sm:col-span-12 col-span-12 ">
           {/* create post */}
-          {userData.id === user.id && <CreatePost setNewPost={setNewPost} />}
+          {userData?.id === user.id && <CreatePost setNewPost={setNewPost} />}
           {data?.pages
             .map((data, i) => (
               <Fragment key={i}>
                 {data?.posts &&
                   data?.posts.map((post) => (
                     <SinglePost
-                      loading={undefined}
+                      loading={false}
                       bookmarkedPostsId={bookmarkedPostsId || []}
                       key={post.uuid}
                       post={post}
                       deletePost={deletePost}
                       setDeletePost={setDeletePost}
-                      isBookmarkPage={undefined}
-                      setRemovedBookmarked={undefined}
+                      isBookmarkPage={false}
+                    
                     />
                   ))}
               </Fragment>
@@ -358,7 +380,7 @@ const UserProfile: React.FC<IProps> = ({ userData, setUpdateUserData }) => {
       />
       {/* Edit About Modal */}
       <AboutModal
-        data={user}
+        data={profileData}
         openDetailsModal={openDetailsModal}
         setOpenDetailsModal={setOpenDetailsModal}
         setUpdateUserData={setUpdateUserData}

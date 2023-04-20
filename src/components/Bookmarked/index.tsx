@@ -9,7 +9,6 @@ import { queryBookmarkPost } from "../../graphql/bookmark";
 
 const BookmarkedPosts = () => {
 
-  const [removedBookmarked, setRemovedBookmarked] = useState(false);
   const [bookmarkedPostsId, setBookmarkedPostsId] = useState<string[]>();
   const [bookmarkedPosts, setBookmarkedPosts] = useState<IBookmark[]>();
   const [loading, setLoading] = useState(false);
@@ -61,8 +60,8 @@ const BookmarkedPosts = () => {
                 deletePost={deletePost}
                 setDeletePost={setDeletePost}
                 
-                isBookmarkPage={undefined}
-                setRemovedBookmarked={undefined}
+                isBookmarkPage={false}
+               
               />
             ))
             .reverse()

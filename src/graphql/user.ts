@@ -153,3 +153,113 @@ export const queryForgotPassword = graphql(`
     forgotPassword(email: $email)
   }
 `);
+export const queryProfile = graphql(`
+  query profile {
+    profile {
+      profile {
+        id
+        city
+        education
+        relationship
+        from
+        workplace
+        updateAt
+      }
+    }
+  }
+`);
+export const queryProfileByUser = graphql(`
+  query profileByUser($username: String!) {
+    profileByUser(username: $username) {
+      profile {
+        id
+        city
+        education
+        relationship
+        from
+        workplace
+        updateAt
+      }
+    }
+  }
+`);
+export const queryUpdateProfile = graphql(`
+  mutation updateProfile(
+    $city: String!
+    $education: String!
+    $relationship: String!
+    $from: String!
+    $workplace: String!
+  ) {
+    updateProfile(
+      profileInput: {
+        city: $city
+        education: $education
+        relationship: $relationship
+        from: $from
+        workplace: $workplace
+      }
+    ) {
+      code
+      success
+      message
+      errors {
+        message
+        field
+      }
+      profile {
+        id
+        city
+        education
+        relationship
+        from
+        workplace
+        updateAt
+      }
+    }
+  }
+`);
+export const queryUpdateUser = graphql(`
+  mutation updateUser(
+    $firstName: String!
+    $lastName: String!
+    $fullName: String!
+    $avatar: String!
+    $coverImage: String!
+  ) {
+    updateUser(
+      updateUserInput: {
+        firstName: $firstName
+        lastName: $lastName
+        avatar: $avatar
+        coverImage: $coverImage
+        fullName: $fullName
+      }
+    ) {
+      code
+      success
+      message
+      accessToken
+      user {
+        id
+        fullName
+        lastName
+        firstName
+        username
+        email
+        avatar
+        phone
+        birthday
+        sex
+        role
+        coverImage
+        createAt
+        updateAt
+      }
+      errors {
+        message
+        field
+      }
+    }
+  }
+`);

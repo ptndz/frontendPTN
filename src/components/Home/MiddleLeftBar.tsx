@@ -16,23 +16,21 @@ const MiddleLeftBar = () => {
   const [deletePost, setDeletePost] = useState<boolean>(false);
   const [newPost, setNewPost] = useState<boolean>(false);
 
-  const getPost = async (pageParam: string) => {
-    const resPost = await graphQLClient.request(queryPosts);
+  const getPost = async (pageParam: number) => {
+    const resPost = await graphQLClient.request(queryPosts, {
+      page: pageParam,
+      limit: 10,
+    });
 
     return resPost.posts;
   };
   const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =
-    useInfiniteQuery(
-      ["posts"],
-      ({ pageParam = "01-01-9999" }) => getPost(pageParam),
-      {
-        getNextPageParam: (lastPage, _allPages) => {
-          const time = lastPage;
-
-          return time;
-        },
-      }
-    );
+    useInfiniteQuery(["posts"], ({ pageParam = 1 }) => getPost(pageParam), {
+      getNextPageParam: (lastPage, _allPages) => {
+        const page = lastPage?.page ? lastPage.page + 1 : 1;
+        return page;
+      },
+    });
 
   const loadMoreRef = useRef() as React.RefObject<HTMLButtonElement>;
   const router = useRouter();
@@ -40,7 +38,7 @@ const MiddleLeftBar = () => {
   useEffect(() => {
     fetchNextPage();
   }, [fetchNextPage, newPost]);
-  
+
   useEffect(() => {
     if (!hasNextPage) {
       return;

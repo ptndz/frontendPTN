@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import moment from "moment";
 import { FaArrowUp, FaRegSurprise } from "react-icons/fa";
-import { FiTrash } from "react-icons/fi";
+import { FiTrash, FiBookOpen } from "react-icons/fi";
 import { BiShare } from "react-icons/bi";
 import { AiOutlineLike } from "react-icons/ai";
 import { TbMoodCry } from "react-icons/tb";
@@ -26,13 +26,11 @@ import { CgSmileMouthOpen } from "react-icons/cg";
 
 interface IProps {
   post: IPost;
-
   setDeletePost: (deletePost: boolean) => void;
   bookmarkedPostsId: string[];
   deletePost: boolean;
-  isBookmarkPage: any;
-  loading: any;
-  setRemovedBookmarked: any;
+  isBookmarkPage: boolean;
+  loading: boolean;
 }
 
 const SinglePost: React.FC<IProps> = ({
@@ -42,7 +40,6 @@ const SinglePost: React.FC<IProps> = ({
   deletePost,
   isBookmarkPage,
   loading,
-  setRemovedBookmarked,
 }) => {
   const [alreadyBookmarked, setAlreadyBookmarked] = useState(
     bookmarkedPostsId?.some((p: string) => p === post.uuid)
@@ -51,8 +48,6 @@ const SinglePost: React.FC<IProps> = ({
   const [isSeeMore, setIsSeeMore] = useState<boolean>(false);
   const [dbComments, setDbComments] = useState<IComment[]>([]);
   const [comment, setComment] = useState("");
-
-  const [status, setStatus] = useState("");
   const [menu, setMenu] = useState("hidden");
   const ref = useRef<HTMLInputElement>(null);
   const { user } = useStoreUser();
@@ -385,6 +380,11 @@ const SinglePost: React.FC<IProps> = ({
                 <FiTrash className="mr-2" /> Delete posts
               </li>
             )}
+            <li className="py-1 flex items-center cursor-pointer hover:bg-white dark:hover:bg-zinc-600 px-3">
+              <Link href={`/post/${post.uuid}`}>
+                <FiBookOpen className="mr-2" />
+              </Link>
+            </li>
           </ul>
         </div>
       </div>

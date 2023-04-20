@@ -83,16 +83,7 @@ const CreatePost: React.FC<IProps> = ({ setNewPost }) => {
       return;
     }
     if (resPost.createPost.code === 200) {
-      toast.success(resPost.createPost.message, {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-      });
+      toast.success(resPost.createPost.message);
       setPostContents("");
       setPostImages(undefined);
       setPostImagePreview(undefined);
@@ -165,7 +156,7 @@ const CreatePost: React.FC<IProps> = ({ setNewPost }) => {
         ) : (
           ""
         )}
-       
+
         <div className="border m-2 rounded-lg overflow-hidden border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-black grid divide-gray-200 dark:divide-zinc-700 grid-cols-2 divide-y-0 divide-x">
           <button
             type="button"
