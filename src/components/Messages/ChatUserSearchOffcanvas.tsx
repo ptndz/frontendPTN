@@ -138,7 +138,9 @@ const ChatUserSearchOffCanvas: React.FC<IProps> = ({
                                 <div className="flex items-center">
                                   {user.avatar ? (
                                     <Image
-                                      src={user.avatar}
+                                      src={
+                                        user.avatar || "/images/user-avatar.png"
+                                      }
                                       width={40}
                                       height={40}
                                       alt={user.fullName}
@@ -161,40 +163,10 @@ const ChatUserSearchOffCanvas: React.FC<IProps> = ({
                               </li>
                             ))
                           : null}
-                        {/* {allUsers &&
-                        allUsers.map((user, i) => (
-                          <li key={i}>
-                            <div className="relative px-6 py-5 flex items-center space-x-3 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-pink-500">
-                              <div className="flex-shrink-0 relative">
-                                {user.photoURL && (
-                                  <Image
-                                    layout="fill"
-                                    objectFit="cover"
-                                    className="h-10 w-10 rounded-full"
-                                    src={user.photoURL}
-                                    alt=""
-                                  />
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <a href="#" className="focus:outline-none">
-                                  <span
-                                    className="absolute inset-0"
-                                    aria-hidden="true"
-                                  ></span>
-                                  <p className="text-sm font-medium dark:text-white text-gray-900">
-                                    {user.displayName}
-                                  </p>
-                                </a>
-                              </div>
-                            </div>
-                          </li>
-                        ))} */}
                       </ul>
                     </div>
                   </nav>
                 )}
-                {/* {activeTab === 'likes' ? <Likes /> : <Comments />} */}
               </div>
             </div>
           </div>

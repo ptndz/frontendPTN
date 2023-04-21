@@ -21,7 +21,7 @@ const Chat: React.FC<IProps> = ({ message, own }) => {
                 layout="fill"
                 objectFit="cover"
                 className="h-full w-full rounded-full object-cover mr-2"
-                src={user?.avatar}
+                src={user?.avatar || "/images/user-avatar.png"}
                 alt={user?.fullName}
               />
             ) : (
@@ -48,7 +48,7 @@ const Chat: React.FC<IProps> = ({ message, own }) => {
                 layout="fill"
                 objectFit="cover"
                 className="h-full w-full rounded-full object-cover mr-2"
-                src={user?.avatar}
+                src={user?.avatar || "/images/user-avatar.png"}
                 alt={user?.fullName}
               />
             ) : (

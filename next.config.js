@@ -9,14 +9,8 @@ const withPWA = require("next-pwa")({
 module.exports = withPWA({
   reactStrictMode: true,
   swcMinify: true,
+  experimental: { appDir: true },
   images: {
-    domains: [
-      "images.unsplash.com",
-      "static.xx.fbcdn.net",
-      "random.imagecdn.app",
-      "i.ibb.co",
-      "localhost",
-      "encrypted-tbn0.gstatic.com",
-    ],
+    domains: ["localhost", "api.phamthanhnam.com"],
   },
 });

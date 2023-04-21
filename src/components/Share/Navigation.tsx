@@ -134,7 +134,7 @@ const Navigation = () => {
             <button className="lg:hidden whitespace-nowrap text-lg md:text-2xl p-3 flex gap-1.5 items-center justify-between rounded-lg dark:bg-zinc-700 dark:bg-opacity-50 dark:hover:bg-opacity-90 bg-white dark:text-white bg-opacity-50 hover:bg-opacity-90 focus:outline-none focus:ring-1 focus:ring-offset-0 focus:ring-teal-400">
               <FiSearch />
             </button>
-            <div className="max-w-lg w-full lg:max-w-xs hidden lg:block">
+            <div className="max-w-lg w-full lg:max-w-xs hidden lg:inline-flex">
               <label htmlFor="search" className="sr-only">
                 Search
               </label>
@@ -154,7 +154,7 @@ const Navigation = () => {
           </div>
           {/* end of Logo & search */}
           {/* Navigations */}
-          <nav className="hidden lg:flex lg:flex-1 lg:justify-center lg:items-center space-x-2">
+          <nav className="hidden lg:flex lg:flex-1 lg:justify-start lg:items-center space-x-4 ml-11">
             {topCenterNavlinks.map((navlink, index) => (
               <Link
                 href={navlink.href}
@@ -182,7 +182,7 @@ const Navigation = () => {
                   className="whitespace-nowrap relative h-11 w-11 border border-gray-300 dark:border-zinc-600 dark:hover:bg-zinc-900 hover:bg-gray-100 rounded-full text-lg focus:outline-none focus:ring-offset-0">
                   {user?.avatar ? (
                     <Image
-                      src={user?.avatar}
+                      src={user?.avatar || "/images/user-avatar.png"}
                       alt={user?.fullName}
                       layout="fill"
                       objectFit="cover"
@@ -208,7 +208,7 @@ const Navigation = () => {
                   <div className="flex-shrink-0 relative w-11 h-11 rounded-full overflow-hidden">
                     {user?.avatar ? (
                       <Image
-                        src={user?.avatar}
+                        src={user?.avatar || "/images/user-avatar.png"}
                         alt={user?.fullName}
                         layout="fill"
                         objectFit="cover"

@@ -39,10 +39,7 @@ const Comments: React.FC<IProps> = ({ comment }) => {
         <Link href={`/${userData?.username}`} passHref>
           <Image
             className="rounded-full cursor-pointer"
-            src={
-              userData?.avatar ||
-              "https://i.ibb.co/MVbC3v6/114-1149878-setting-user-avatar-in-specific-size-w.png"
-            }
+            src={userData?.avatar || "/images/user-avatar.png"}
             alt=""
             height={32}
             width={32}

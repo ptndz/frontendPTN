@@ -102,7 +102,7 @@ const CreatePost: React.FC<IProps> = ({ setNewPost }) => {
             <div className="flex-shrink-0 relative mx-auto sm:h-14 sm:w-14 h-12 w-12 rounded-full overflow-hidden bg-gray-300 dark:bg-zinc-800">
               {user?.avatar && (
                 <Image
-                  src={user.avatar}
+                  src={user.avatar || "/images/user-avatar.png"}
                   alt={user.fullName}
                   layout="fill"
                   objectFit="cover"

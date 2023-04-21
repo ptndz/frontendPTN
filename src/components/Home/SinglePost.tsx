@@ -6,7 +6,6 @@ import { FiTrash, FiBookOpen } from "react-icons/fi";
 import { BiShare } from "react-icons/bi";
 import { AiOutlineLike } from "react-icons/ai";
 import { TbMoodCry } from "react-icons/tb";
-
 import Comments from "./Comments";
 import Link from "next/link";
 import {
@@ -23,6 +22,7 @@ import { useStoreUser } from "../../store/user";
 import { graphql } from "../../gql";
 import { graphQLClient } from "../../plugins/graphql.plugin";
 import { CgSmileMouthOpen } from "react-icons/cg";
+import Carousel from "./Carousel";
 
 interface IProps {
   post: IPost;
@@ -323,7 +323,7 @@ const SinglePost: React.FC<IProps> = ({
           <Link href={`/${post.user.username}`} passHref>
             <div className="relative">
               <Image
-                src={post.user.avatar}
+                src={post.user.avatar || "/images/user-avatar.png"}
                 className="rounded-full cursor-pointer"
                 alt={post.user.fullName}
                 height={45}
@@ -380,11 +380,13 @@ const SinglePost: React.FC<IProps> = ({
                 <FiTrash className="mr-2" /> Delete posts
               </li>
             )}
-            <li className="py-1 flex items-center cursor-pointer hover:bg-white dark:hover:bg-zinc-600 px-3">
-              <Link href={`/post/${post.uuid}`}>
+
+            <Link href={`/post/${post.uuid}`}>
+              <li className="py-1 flex items-center cursor-pointer hover:bg-white dark:hover:bg-zinc-600 px-3">
                 <FiBookOpen className="mr-2" />
-              </Link>
-            </li>
+                Open post
+              </li>
+            </Link>
           </ul>
         </div>
       </div>
@@ -417,7 +419,7 @@ const SinglePost: React.FC<IProps> = ({
           </button>
         )}
       </div>
-      {post.images
+      {/* {post.images
         ? post.images.map((image: string, index: number) => (
             <div
               key={index}
@@ -425,7 +427,8 @@ const SinglePost: React.FC<IProps> = ({
               <Image src={image} layout="fill" objectFit="cover" alt="" />
             </div>
           ))
-        : ""}
+        : ""} */}
+      {post.images ? <Carousel images={post.images} /> : null}
       <div className="flex justify-between items-center">
         <div className="pt-3 flex items-center">
           <div className="box pt-2 pb-0 px-1.5">
@@ -490,7 +493,7 @@ const SinglePost: React.FC<IProps> = ({
         <div className="flex gap-2 items-center pt-5">
           <div className="relative">
             <Image
-              src={user.avatar || "/user-8.png"}
+              src={user.avatar || "/images/user-avatar.png"}
               alt=""
               height="50"
               width="50"

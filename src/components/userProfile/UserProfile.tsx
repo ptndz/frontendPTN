@@ -23,6 +23,7 @@ interface IProps {
   userData: User;
   setUpdateUserData: (updateUserData: boolean) => void;
   profileData: ProfileUser;
+  username: string;
 }
 interface IFriendRequestStatus extends FriendRequestStatus {
   id: number;
@@ -31,9 +32,10 @@ const UserProfile: React.FC<IProps> = ({
   userData,
   setUpdateUserData,
   profileData,
+  username,
 }) => {
   const router = useRouter();
-  const userName = router.query.username as string;
+
   const [deletePost, setDeletePost] = useState(false);
   const { user } = useStoreUser();
   const [bookmarkedPostsId, setBookmarkedPostsId] = useState<string[]>();
@@ -54,7 +56,7 @@ const UserProfile: React.FC<IProps> = ({
 
   const getPost = async (pageParam: number) => {
     const resPost = await graphQLClient.request(queryGetPostsUserByUserName, {
-      username: userName,
+      username: username,
       page: pageParam,
       limit: 10,
     });
@@ -91,7 +93,7 @@ const UserProfile: React.FC<IProps> = ({
 
   useEffect(() => {
     const fetchFriends = async () => {
-      const res = await axios.get(`/friends/status/${userData?.id}`);
+      const res = await axios.get(`/friends/status/${userData.id}`);
 
       if (res.data.status) {
         setStatusFriends({
@@ -225,7 +227,7 @@ const UserProfile: React.FC<IProps> = ({
         <div className="">
           <Image
             className="rounded-2xl object-content"
-            src={userData?.coverImage || "https://i.ibb.co/pWc2Ffd/u-bg.jpg"}
+            src={userData?.coverImage || "/images/user-avatar.png"}
             width={1000}
             objectFit="cover"
             height={300}
@@ -236,7 +238,7 @@ const UserProfile: React.FC<IProps> = ({
           <div className=" flex ">
             <div className="-mt-12 ml-5">
               <Image
-                src={userData?.avatar || "https://i.ibb.co/5kdWHNN/user-12.png"}
+                src={userData?.avatar || "/images/user-avatar.png"}
                 alt="user profile photo"
                 width={100}
                 height={100}
@@ -349,7 +351,6 @@ const UserProfile: React.FC<IProps> = ({
                       deletePost={deletePost}
                       setDeletePost={setDeletePost}
                       isBookmarkPage={false}
-                    
                     />
                   ))}
               </Fragment>

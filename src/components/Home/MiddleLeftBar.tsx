@@ -84,8 +84,7 @@ const MiddleLeftBar = () => {
                   post={post}
                   deletePost={deletePost}
                   setDeletePost={setDeletePost}
-                  isBookmarkPage={undefined}
-                  setRemovedBookmarked={undefined}
+                  isBookmarkPage={false}
                 />
               ))}
           </Fragment>

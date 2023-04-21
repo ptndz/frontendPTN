@@ -9,9 +9,10 @@ import {
   queryUser,
 } from "../graphql/user";
 import { GetServerSideProps } from "next/types";
-import { graphQLClient, graphQLServer } from "../plugins/graphql.plugin";
+import { graphQLServer } from "../plugins/graphql.plugin";
 import { getCookies } from "cookies-next";
 import { useStoreUser } from "../store/user";
+
 import { useRouter } from "next/router";
 
 interface IProps {
@@ -28,49 +29,30 @@ const Profile: React.FC<IProps> = ({
 }) => {
   const [updateUserData, setUpdateUserData] = useState(false);
   const { setUser } = useStoreUser();
-  const [dataProfile, setDataProfile] = useState<ProfileUser>();
-  const [dataUser, setDataUser] = useState<User>();
-  useEffect(() => {
-    if (userData) {
-      setDataUser(userData);
-    }
-    if (profileData) {
-      setDataProfile(profileData);
-    }
-  }, [setUser, userData, profileData]);
-
+  const router = useRouter();
   useEffect(() => {
     if (user) {
       setUser(user);
     }
   }, [setUser, user]);
   useEffect(() => {
-    const fetchData = async () => {
-      const res = await graphQLClient.request(queryGetUserByUsername, {
-        username: username as string,
-      });
-
-      const resProfile = await graphQLClient.request(queryProfileByUser, {
-        username: username as string,
-      });
-      if (res.getUser.user && resProfile.profileByUser.profile) {
-        setDataProfile(resProfile.profileByUser.profile);
-        setDataUser(res.getUser.user);
-      }
-    };
-    fetchData();
-  }, [username, updateUserData]);
+    if (updateUserData) {
+      router.reload();
+    }
+  }, [router, updateUserData]);
   if (userData) {
     return (
       <>
         <Navigation />
         <div className="max-w-4xl mx-auto gap-4 bg-gray-100 dark:bg-zinc-900 pt-2 w-full ">
           <UserProfile
-            userData={dataUser as User}
-            profileData={dataProfile as ProfileUser}
+            userData={userData}
+            username={username}
+            profileData={profileData}
             setUpdateUserData={setUpdateUserData}
           />
         </div>
+
       </>
     );
   } else {

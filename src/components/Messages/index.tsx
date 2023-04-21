@@ -1,6 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import Image from "next/image";
-
 import Navigation from "../Share/Navigation";
 import ChatUserSearchOffcanvas from "./ChatUserSearchOffcanvas";
 import { FiSearch } from "react-icons/fi";

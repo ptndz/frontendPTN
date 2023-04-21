@@ -14,14 +14,21 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "typeRoots": ["../../node_modules", "../../node_modules/@types"]
+    "typeRoots": ["../../node_modules", "../../node_modules/@types"],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
   "include": [
     "next-env.d.ts",
+
     "**/*.ts",
     "**/*.tsx",
     "next-seo.config.ts",
-    "src/**/*.ts"
+    "src/**/*.ts",
+    ".next/types/**/*.ts"
   ],
   "exclude": ["node_modules"]
 }

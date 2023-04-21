@@ -5,12 +5,11 @@ import {
   BsChatLeftFill,
   BsGear,
   BsChat,
-  BsChevronDown,
   BsFillBookmarksFill,
   BsFillBookmarkFill,
 } from "react-icons/bs";
 import { CgScreen } from "react-icons/cg";
-import React, { useEffect, useState } from "react";
+import React from "react";
 
 import Image from "next/image";
 import { useStoreUser } from "../../store/user";
@@ -56,37 +55,7 @@ const LeftSideBar = () => {
             </Link>
           </div>
         </div>
-        {/* <div className="my-5 bg-white dark:bg-black p-5 rounded-lg drop-shadow-sm">
-          <p>More pages</p>
-          <ul className="left-second-sidebar">
-            <li>
-              <Link href="https://gmail.com">
-                <a target="_blank">
-                  <i className="fa-solid fa-inbox p-3 text-indigo-500 text-2xl"></i>{" "}
-                  Email Box
-                </a>
-              </Link>
-            </li>
-            <li>
-              <a href="">
-                <i className="fa-solid fa-home p-3 text-indigo-500 text-2xl"></i>{" "}
-                Near Hotel
-              </a>
-            </li>
-            <li>
-              <a href="">
-                <i className="fa-solid fa-location-dot p-3 text-indigo-500 text-2xl"></i>{" "}
-                Latest Event
-              </a>
-            </li>
-            <li>
-              <a href="">
-                <i className="fa-brands fa-youtube p-3 text-indigo-500 text-2xl"></i>{" "}
-                Live Stream
-              </a>
-            </li>
-          </ul>
-        </div> */}
+
         <div className="bg-white font-medium dark:bg-black p-5 rounded-lg drop-shadow-sm space-y-3">
           <div className="left-sidebar space-y-2">
             <Link href={`/${user?.username}`} passHref>
@@ -95,14 +64,13 @@ const LeftSideBar = () => {
                   {user?.avatar && (
                     <Image
                       alt={user && user.fullName}
-                      src={user && user.avatar}
+                      src={user.avatar || "/images/user-avatar.png"}
                       layout="fill"
                       objectFit="cover"
                     />
                   )}
                 </div>
                 <p>{user?.fullName}</p>
-                <BsChevronDown className="ml-auto" />
               </div>
             </Link>
             <Link
@@ -112,7 +80,7 @@ const LeftSideBar = () => {
               Settings
             </Link>
             <Link
-              href="/friends"
+              href="/messenger"
               className="flex items-center gap-2 hover:bg-gray-200 dark:hover:bg-zinc-900 p-1.5 rounded-md">
               <BsChat className="bg-lime-400 p-2 w-10 h-10 text-white rounded-md" />
               Chat

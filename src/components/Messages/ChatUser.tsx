@@ -53,7 +53,7 @@ const ChatUser: React.FC<IProps> = ({
               layout="fill"
               objectFit="cover"
               className="h-full w-full rounded-full object-cover mr-2"
-              src={userData?.avatar}
+              src={userData?.avatar || "/images/user-avatar.png"}
               alt={userData?.fullName}
             />
           ) : (

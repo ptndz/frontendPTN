@@ -11,7 +11,7 @@ import axios from "axios";
 import { graphQLClient } from "../../plugins/graphql.plugin";
 import { queryUpdateUser } from "../../graphql/user";
 import { useForm } from "react-hook-form";
-import { log } from "util";
+
 
 interface IProps {
   data: User;
@@ -32,9 +32,6 @@ const ProfileModal: React.FC<IProps> = ({
   const [profileImg, setProfileImg] = useState<File>();
   const [coverImg, setCoverImg] = useState<File>();
 
-  const [profileLink, setProfileLink] = useState<string>();
-  const [coverLink, setCoverLink] = useState<string>();
-
   const { register, handleSubmit } = useForm();
 
   const handleProfileImg = (file: File) => {
@@ -48,25 +45,24 @@ const ProfileModal: React.FC<IProps> = ({
 
   const onSubmit = async (e: any) => {
     setOpenProfileModal(false);
-
+    let profileLink = "";
+    let coverLink = "";
     if (profileImg) {
       let formData = new FormData();
       formData.append("images", profileImg);
-      const resImages = await axios.post("/image/avatar", formData);
+      let resImages = await axios.post("/image/avatar", formData);
       if (resImages.data.images) {
-        setProfileLink(resImages.data.images[0]);
+        profileLink = resImages.data.images[0];
       }
     }
-
     if (coverImg) {
       let formData = new FormData();
       formData.append("images", coverImg);
-      const resImages = await axios.post("/image/cover", formData);
+      let resImages = await axios.post("/image/cover", formData);
       if (resImages.data.images) {
-        setCoverLink(resImages.data.images[0]);
+        coverLink = resImages.data.images[0];
       }
     }
-
     const res = await graphQLClient.request(queryUpdateUser, {
       firstName: e.firstName,
       lastName: e.lastName,
@@ -122,7 +118,7 @@ const ProfileModal: React.FC<IProps> = ({
                 src={
                   preProfileImg ||
                   data.avatar ||
-                  "https://i.ibb.co/5kdWHNN/user-12.png"
+                  "/images/user-avatar.png"
                 }
                 alt="profile image"
                 width="120"
@@ -155,7 +151,7 @@ const ProfileModal: React.FC<IProps> = ({
                 src={
                   preCoverImg ||
                   data.coverImage ||
-                  "https://i.ibb.co/pWc2Ffd/u-bg.jpg"
+                  "/images/user-avatar.png"
                 }
                 alt="profile image"
                 width="500"

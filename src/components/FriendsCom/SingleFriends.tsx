@@ -14,7 +14,7 @@ const SingleFriends: React.FC<IProps> = ({ user }) => {
     <div className="md:col-span-3 lg:col-span-3 sm:col-span-4 xs:col-span-6 text-center rounded bg-white dark:bg-black">
       <div className="mt-5 ml-16">
         <Image
-          src={user.avatar || "http://uitheme.net/sociala/images/profile-4.png"}
+          src={user.avatar || "/images/user-avatar.png"}
           height={100}
           width={100}
           className="rounded-full"

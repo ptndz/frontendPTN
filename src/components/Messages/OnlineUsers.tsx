@@ -28,7 +28,7 @@ const OnlineUsers: React.FC<IProps> = ({ onlineUser, setCurrentChat }) => {
               layout="fill"
               objectFit="cover"
               className="h-full w-full rounded-full object-cover mr-2"
-              src={onlineUser?.avatar}
+              src={onlineUser?.avatar || "/images/user-avatar.png"}
               alt=""
             />
           ) : (

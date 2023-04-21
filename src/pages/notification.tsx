@@ -64,8 +64,8 @@ const Notification = () => {
             <div className="w-10/12  flex p-2 ">
               <div style={{ height: "50px" }} className="relative">
                 <Image
-                  className=""
-                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQqkUYrITWyI8OhPNDHoCDUjGjhg8w10_HRqg&usqp=CAU"
+                  className="relative"
+                  src="/images/user-avatar.png"
                   height={50}
                   width={50}
                   alt="img"
@@ -109,7 +109,7 @@ const Notification = () => {
               <div style={{ height: "50px" }} className="relative h-25">
                 <Image
                   className="relative"
-                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQqkUYrITWyI8OhPNDHoCDUjGjhg8w10_HRqg&usqp=CAU"
+                  src="/images/user-avatar.png"
                   height={50}
                   width={50}
                   alt="img"

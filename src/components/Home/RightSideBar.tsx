@@ -73,7 +73,7 @@ const RightSideBar = () => {
                   <Image
                     src={
                       user.avatar ||
-                      "http://uitheme.net/sociala/images/profile-4.png"
+                      "/images/user-avatar.png"
                     }
                     width="40"
                     height="40"

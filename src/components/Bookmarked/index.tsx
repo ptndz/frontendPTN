@@ -8,7 +8,6 @@ import { graphQLClient } from "../../plugins/graphql.plugin";
 import { queryBookmarkPost } from "../../graphql/bookmark";
 
 const BookmarkedPosts = () => {
-
   const [bookmarkedPostsId, setBookmarkedPostsId] = useState<string[]>();
   const [bookmarkedPosts, setBookmarkedPosts] = useState<IBookmark[]>();
   const [loading, setLoading] = useState(false);
@@ -26,6 +25,8 @@ const BookmarkedPosts = () => {
   useEffect(() => {
     const fetchBookmarkedPosts = async () => {
       const res = await graphQLClient.request(queryBookmarkPost);
+      console.log(res.bookmarkAll);
+
       if (res.bookmarkAll.code === 200) {
         if (res.bookmarkAll.bookmarks) {
           setBookmarkedPosts(res.bookmarkAll.bookmarks);
@@ -59,9 +60,7 @@ const BookmarkedPosts = () => {
                 post={bookmark.post}
                 deletePost={deletePost}
                 setDeletePost={setDeletePost}
-                
                 isBookmarkPage={false}
-               
               />
             ))
             .reverse()
