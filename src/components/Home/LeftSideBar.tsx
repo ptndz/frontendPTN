@@ -13,10 +13,31 @@ import React from "react";
 
 import Image from "next/image";
 import { useStoreUser } from "../../store/user";
+import { graphql } from "../../gql";
+import { graphQLClient } from "../../plugins/graphql.plugin";
+import { deleteCookie } from "cookies-next";
+import { useRouter } from "next/router";
 
 const LeftSideBar = () => {
   const { user } = useStoreUser();
-
+  const router = useRouter();
+  const handleLogout = async () => {
+    try {
+      const queryLogout = graphql(`
+        mutation logout {
+          logout
+        }
+      `);
+      const res = await graphQLClient.request(queryLogout);
+      if (res.logout) {
+        deleteCookie("accessToken");
+        deleteCookie("uuid");
+        router.push("/login");
+      }
+    } catch (error) {
+      console.warn(error);
+    }
+  };
   return (
     <div>
       <div className="w-full space-y-4">
@@ -91,7 +112,9 @@ const LeftSideBar = () => {
               <BsFillBookmarksFill className="bg-sky-400 p-2 w-10 h-10 text-white rounded-md" />
               Saved posts
             </Link>
-            <button className="flex items-center w-full gap-2 hover:bg-gray-200 dark:hover:bg-zinc-900 p-1.5 rounded-md">
+            <button
+              onClick={handleLogout}
+              className="flex items-center w-full gap-2 hover:bg-gray-200 dark:hover:bg-zinc-900 p-1.5 rounded-md">
               <FiLogOut className="bg-rose-400 p-2 w-10 h-10 text-white rounded-md" />
               Sign out
             </button>

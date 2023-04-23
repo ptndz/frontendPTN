@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import Error from "../404";
 import { queryUser } from "../../graphql/user";
 import { useStoreUser } from "../../store/user";
-import { NextSeo } from "next-seo";
+import { ArticleJsonLd } from "next-seo";
 interface IProps {
   postData: IPost;
 }
@@ -30,24 +30,15 @@ const Post: React.FC<IProps> = ({ postData }) => {
   if (postData) {
     return (
       <>
-        <NextSeo
+        <ArticleJsonLd
+          type="BlogPosting"
+          url={`${process.env.NEXT_PUBLIC_URL_APP}post/${postData.uuid}`}
           title={postData.content}
           description={postData.content}
-          canonical={`${process.env.NEXT_PUBLIC_URL_APP}/post/${postData.uuid}`}
-          openGraph={{
-            url: `${process.env.NEXT_PUBLIC_URL_APP}/post/${postData.uuid}`,
-            title: postData.content,
-            description: postData.content,
-            images: postData.images?.map((image) => ({
-              url: image,
-            })),
-            siteName: "SiteName",
-          }}
-          twitter={{
-            handle: "@handle",
-            site: "@site",
-            cardType: "summary_large_image",
-          }}
+          images={postData.images as string[]}
+          datePublished={postData.createAt}
+          dateModified={postData.updateAt}
+          authorName={postData.user.username}
         />
         {user.id !== "" ? <Navigation /> : null}
         <div className="max-w-4xl mx-auto gap-4 bg-gray-100 dark:bg-zinc-900 pt-2 w-full ">

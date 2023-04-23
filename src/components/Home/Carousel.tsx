@@ -37,39 +37,44 @@ const Carousel: React.FC<IProps> = ({ images }) => {
   const arrowStyle =
     "absolute text-white text-2xl z-10 h-10 w-20 rounded-full opacity-75 flex items-center justify-center";
 
-  const sliderControl = (isLeft: boolean) => (
-    <button
-      type="button"
-      onClick={isLeft ? previousImage : nextImage}
-      className={`${arrowStyle} ${isLeft ? "left-2" : "right-2"} inset-y-72`}>
-      <span role="img" aria-label={`Arrow ${isLeft ? "left" : "right"}`}>
-        {isLeft ? <MdOutlineArrowBackIosNew /> : <FcNext />}
-      </span>
-    </button>
-  );
   return (
     <>
       <ul ref={refsView} className="hidden"></ul>
-      {images.length > 1 ? sliderControl(true) : null}
-      {images.length > 0 ? (
-        <ul
-          ref={refsImg}
-          className="pt-3 relative h-96 rounded-lg overflow-hidden w-full">
-          {images.map((img, i) => (
-            <li key={i}>
-              <Image
-                layout="fill"
-                objectFit="cover"
-                src={img}
-                className="w-full object-contain"
-                alt="Pham Thanh Nam"
-              />
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      <div className="relative w-full max-w-4xl">
+        {images.length > 0 ? (
+          <ul
+            ref={refsImg}
+            className="pt-3 relative h-96 rounded-lg overflow-hidden w-full">
+            {images.map((img, i) => (
+              <li key={i}>
+                <Image
+                  layout="fill"
+                  objectFit="cover"
+                  src={img}
+                  className="w-full object-contain"
+                  alt="Pham Thanh Nam"
+                />
+              </li>
+            ))}
+          </ul>
+        ) : null}
 
-      {images.length > 1 ? sliderControl(false) : null}
+        {images.length > 1 ? (
+          <div className="absolute bottom-0 left-0 right-0 flex justify-center mb-6">
+            <button
+              onClick={previousImage}
+              className="bg-inherit rounded-full shadow-lg px-28 py-2 ml-2 text-white font-medium hover:bg-white hover:text-blue-500 transition duration-300 ease-in-out focus:outline-none">
+              &#8249;
+            </button>
+
+            <button
+              onClick={nextImage}
+              className="bg-inherit rounded-full shadow-lg px-28 py-2 ml-2 text-white font-medium hover:bg-white hover:text-blue-500 transition duration-300 ease-in-out focus:outline-none">
+              &#8250;
+            </button>
+          </div>
+        ) : null}
+      </div>
     </>
   );
 };

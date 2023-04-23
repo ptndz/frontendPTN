@@ -1,9 +1,11 @@
 import Link from "next/link";
 import styles from "../styles/Error.module.css";
+import { NextSeo } from "next-seo";
 
 const Error = () => {
   return (
     <>
+      <NextSeo title="404" canonical="https://phamthanhnam.com/404" />
       <div style={{ textAlign: "center", marginTop: "20vh" }}>
         <div className={styles.errorText}>
           <p className={styles.errorTitle}>
