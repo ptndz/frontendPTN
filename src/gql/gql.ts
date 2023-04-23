@@ -13,6 +13,10 @@ import { TypedDocumentNode as DocumentNode } from "@graphql-typed-document-node/
  * Therefore it is highly recommended to use the babel or swc plugin for production.
  */
 const documents = {
+  "\n    query getUsersYouMayKnow {\n      getUsersYouMayKnow {\n        code\n        success\n        message\n        users {\n          id\n          fullName\n          avatar\n          username\n        }\n        errors {\n          message\n          field\n        }\n      }\n    }\n  ":
+    types.GetUsersYouMayKnowDocument,
+  "\n    query friendRequest {\n      friendRequest {\n        code\n        success\n        message\n        users {\n          id\n          fullName\n          avatar\n          username\n        }\n        errors {\n          message\n          field\n        }\n      }\n    }\n  ":
+    types.FriendRequestDocument,
   "\n    mutation createPost($content: String!, $images: [String!]!) {\n      createPost(createPostInput: { content: $content, images: $images }) {\n        code\n        success\n        message\n        post {\n          uuid\n          content\n          createAt\n          updateAt\n          images\n        }\n        errors {\n          field\n          message\n        }\n      }\n    }\n  ":
     types.CreatePostDocument,
   "\n    query getUsers {\n      getUsers {\n        code\n        success\n        message\n        users {\n          id\n          fullName\n          avatar\n          username\n        }\n        errors {\n          message\n          field\n        }\n      }\n    }\n  ":
@@ -35,6 +39,8 @@ const documents = {
     types.PostDocument,
   "\n  query getPostsUserByUserName(\n    $username: String!\n    $page: Float!\n    $limit: Float!\n  ) {\n    getPostsUserByUserName(username: $username, page: $page, limit: $limit) {\n      code\n      success\n      message\n      page\n      limit\n      posts {\n        uuid\n        content\n        createAt\n        updateAt\n        shares\n        images\n        user {\n          id\n          avatar\n          username\n          fullName\n        }\n        likes {\n          id\n          reactions\n          user {\n            id\n            avatar\n            username\n            fullName\n          }\n        }\n        comments {\n          id\n          content\n          user {\n            id\n            avatar\n            username\n            fullName\n          }\n        }\n      }\n    }\n  }\n":
     types.GetPostsUserByUserNameDocument,
+  "\n  query getAllPostIds {\n    getAllPostIds\n  }\n":
+    types.GetAllPostIdsDocument,
   "\n  query user {\n    user {\n      code\n      success\n      message\n      user {\n        id\n        fullName\n        lastName\n        firstName\n        username\n        email\n        avatar\n        coverImage\n        phone\n        birthday\n        sex\n        role\n        createAt\n        updateAt\n      }\n      errors {\n        message\n        field\n      }\n    }\n  }\n":
     types.UserDocument,
   "\n  query getUser($username: String!) {\n    getUser(username: $username) {\n      code\n      success\n      message\n      user {\n        id\n        fullName\n        lastName\n        firstName\n        username\n        email\n        avatar\n        coverImage\n        phone\n        birthday\n        sex\n        role\n        createAt\n        updateAt\n      }\n      errors {\n        message\n        field\n      }\n    }\n  }\n":
@@ -71,6 +77,18 @@ const documents = {
  */
 export function graphql(source: string): unknown;
 
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: "\n    query getUsersYouMayKnow {\n      getUsersYouMayKnow {\n        code\n        success\n        message\n        users {\n          id\n          fullName\n          avatar\n          username\n        }\n        errors {\n          message\n          field\n        }\n      }\n    }\n  "
+): (typeof documents)["\n    query getUsersYouMayKnow {\n      getUsersYouMayKnow {\n        code\n        success\n        message\n        users {\n          id\n          fullName\n          avatar\n          username\n        }\n        errors {\n          message\n          field\n        }\n      }\n    }\n  "];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: "\n    query friendRequest {\n      friendRequest {\n        code\n        success\n        message\n        users {\n          id\n          fullName\n          avatar\n          username\n        }\n        errors {\n          message\n          field\n        }\n      }\n    }\n  "
+): (typeof documents)["\n    query friendRequest {\n      friendRequest {\n        code\n        success\n        message\n        users {\n          id\n          fullName\n          avatar\n          username\n        }\n        errors {\n          message\n          field\n        }\n      }\n    }\n  "];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -137,6 +155,12 @@ export function graphql(
 export function graphql(
   source: "\n  query getPostsUserByUserName(\n    $username: String!\n    $page: Float!\n    $limit: Float!\n  ) {\n    getPostsUserByUserName(username: $username, page: $page, limit: $limit) {\n      code\n      success\n      message\n      page\n      limit\n      posts {\n        uuid\n        content\n        createAt\n        updateAt\n        shares\n        images\n        user {\n          id\n          avatar\n          username\n          fullName\n        }\n        likes {\n          id\n          reactions\n          user {\n            id\n            avatar\n            username\n            fullName\n          }\n        }\n        comments {\n          id\n          content\n          user {\n            id\n            avatar\n            username\n            fullName\n          }\n        }\n      }\n    }\n  }\n"
 ): (typeof documents)["\n  query getPostsUserByUserName(\n    $username: String!\n    $page: Float!\n    $limit: Float!\n  ) {\n    getPostsUserByUserName(username: $username, page: $page, limit: $limit) {\n      code\n      success\n      message\n      page\n      limit\n      posts {\n        uuid\n        content\n        createAt\n        updateAt\n        shares\n        images\n        user {\n          id\n          avatar\n          username\n          fullName\n        }\n        likes {\n          id\n          reactions\n          user {\n            id\n            avatar\n            username\n            fullName\n          }\n        }\n        comments {\n          id\n          content\n          user {\n            id\n            avatar\n            username\n            fullName\n          }\n        }\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: "\n  query getAllPostIds {\n    getAllPostIds\n  }\n"
+): (typeof documents)["\n  query getAllPostIds {\n    getAllPostIds\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

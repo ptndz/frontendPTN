@@ -1,24 +1,61 @@
 import React, { useEffect, useState } from "react";
 import SingleFriends from "./SingleFriends";
 
-import { User } from "../../gql/graphql";
+import { User, IUser } from "../../gql/graphql";
 import axios from "axios";
-
-interface IMembers {
-  avatar: string;
-  fullName: string;
-  id: string;
-  username: string;
-}
+import { graphql } from "../../gql";
+import { graphQLClient } from "../../plugins/graphql.plugin";
+import { useStoreUser } from "../../store/user";
 
 const AllFrends = () => {
   const [searchText, setSearchText] = useState("");
   const [users, setUsers] = useState<User[]>([]);
+  const { user } = useStoreUser();
+  const [usersYouMayKnow, setUsersYouMayKnow] = useState<IUser[]>([]);
+  const [friendRequest, setFriendRequest] = useState<IUser[]>([]);
   const handleSubmit = (e: any) => {
     e.preventDefault();
     if (searchText !== "") {
     }
   };
+  const queryGetUsersYouMayKnow = graphql(`
+    query getUsersYouMayKnow {
+      getUsersYouMayKnow {
+        code
+        success
+        message
+        users {
+          id
+          fullName
+          avatar
+          username
+        }
+        errors {
+          message
+          field
+        }
+      }
+    }
+  `);
+  const queryFriendRequest = graphql(`
+    query friendRequest {
+      friendRequest {
+        code
+        success
+        message
+        users {
+          id
+          fullName
+          avatar
+          username
+        }
+        errors {
+          message
+          field
+        }
+      }
+    }
+  `);
   useEffect(() => {
     const getReceived = async () => {
       const res = await axios.get("/friends/me/received-requests");
@@ -30,16 +67,29 @@ const AllFrends = () => {
       if (res.data.success) {
         setUsers(res.data.friends);
       }
+      const resUsers = await graphQLClient.request(queryGetUsersYouMayKnow);
+      if (resUsers.getUsersYouMayKnow.users) {
+        const data = resUsers.getUsersYouMayKnow.users.filter((userData) => {
+          return userData.id !== user.id;
+        });
+        setUsersYouMayKnow(data as IUser[]);
+      }
+      const resFriendRequest = await graphQLClient.request(queryFriendRequest);
+      if (resFriendRequest.friendRequest.users) {
+        const data = resFriendRequest.friendRequest.users.filter((userData) => {
+          return userData.id !== user.id;
+        });
+        setFriendRequest(data as IUser[]);
+      }
     };
     myFriends();
-  }, []);
+  }, [queryGetUsersYouMayKnow, queryFriendRequest, user.id]);
   return (
     <div className=" pb-20">
       <div className="mx-8 md:mx-18 sm:mx-11 xs:mx-8 lg:mx-1 pt-5">
         <div className="bg-white dark:bg-black my-5 flex flex-col xs:flex-col sm:flex-row justify-between justify-items-center py-8 px-8 rounded-md">
           <div className="text-2xl font-bold pt-1.5 text-center mb-4 lg:mb-0 md:mb-0 sm:mb-0">
-            {" "}
-            Friends{" "}
+            Friends
           </div>
 
           <div className="flex justify-center justify-items-center">
@@ -59,17 +109,38 @@ const AllFrends = () => {
                 </button>
               </form>
             </div>
-            {/* <div className="text-center bg-gray-100 border dark:border-zinc-600 dark:bg-zinc-900 w-12 ml-4 rounded-lg">
-              <h1 className="text-2xl pt-2.5 ">
-                <i className="fa-solid fa-filter dark:text-white text-black "></i>
-              </h1>
-            </div> */}
           </div>
         </div>
         <div className="grid grid-cols-1 xs:grid-cols-12 sm:grid-cols-12 md:grid-cols-12 gap-3">
           {users &&
             users.map((user) => (
               <SingleFriends key={user.username} user={user} />
+            ))}
+        </div>
+      </div>
+      <div className="mx-8 md:mx-18 sm:mx-11 xs:mx-8 lg:mx-1 pt-5">
+        <div className="bg-white dark:bg-black my-5 flex flex-col xs:flex-col sm:flex-row justify-between justify-items-center py-8 px-8 rounded-md">
+          <div className="text-2xl font-bold pt-1.5 text-center mb-4 lg:mb-0 md:mb-0 sm:mb-0">
+            Friend Request
+          </div>
+        </div>
+        <div className="grid grid-cols-1 xs:grid-cols-12 sm:grid-cols-12 md:grid-cols-12 gap-3">
+          {friendRequest &&
+            friendRequest.map((user) => (
+              <SingleFriends key={user.username} user={user as User} />
+            ))}
+        </div>
+      </div>
+      <div className="mx-8 md:mx-18 sm:mx-11 xs:mx-8 lg:mx-1 pt-5">
+        <div className="bg-white dark:bg-black my-5 flex flex-col xs:flex-col sm:flex-row justify-between justify-items-center py-8 px-8 rounded-md">
+          <div className="text-2xl font-bold pt-1.5 text-center mb-4 lg:mb-0 md:mb-0 sm:mb-0">
+            You may know
+          </div>
+        </div>
+        <div className="grid grid-cols-1 xs:grid-cols-12 sm:grid-cols-12 md:grid-cols-12 gap-3">
+          {usersYouMayKnow &&
+            usersYouMayKnow.map((user) => (
+              <SingleFriends key={user.username} user={user as User} />
             ))}
         </div>
       </div>

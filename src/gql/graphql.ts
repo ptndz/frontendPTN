@@ -295,7 +295,9 @@ export type Query = {
   bookmarkAll: BookmarkResponse;
   createBookmark: BookmarkResponse;
   forgotPassword: Scalars["Boolean"];
+  friendRequest: UserQueryResponse;
   friends: FriendQueryResponse;
+  getAllPostIds: Array<Scalars["String"]>;
   getCommentComment: CommentResponse;
   getCommentPost: CommentResponse;
   getLikeComment: LikeResponse;
@@ -304,6 +306,7 @@ export type Query = {
   getPostsUserByUserName?: Maybe<PostsQueryResponse>;
   getUser: UserMutationResponse;
   getUsers: UserQueryResponse;
+  getUsersYouMayKnow: UserQueryResponse;
   hello: Scalars["String"];
   post?: Maybe<PostQueryResponse>;
   posts: PostsQueryResponse;
@@ -428,6 +431,54 @@ export type UserQueryResponse = IMutationResponse & {
   message?: Maybe<Scalars["String"]>;
   success: Scalars["Boolean"];
   users?: Maybe<Array<User>>;
+};
+
+export type GetUsersYouMayKnowQueryVariables = Exact<{ [key: string]: never }>;
+
+export type GetUsersYouMayKnowQuery = {
+  __typename?: "Query";
+  getUsersYouMayKnow: {
+    __typename?: "UserQueryResponse";
+    code: number;
+    success: boolean;
+    message?: string | null;
+    users?: Array<{
+      __typename?: "User";
+      id: string;
+      fullName: string;
+      avatar: string;
+      username: string;
+    }> | null;
+    errors?: Array<{
+      __typename?: "FieldError";
+      message: string;
+      field: string;
+    }> | null;
+  };
+};
+
+export type FriendRequestQueryVariables = Exact<{ [key: string]: never }>;
+
+export type FriendRequestQuery = {
+  __typename?: "Query";
+  friendRequest: {
+    __typename?: "UserQueryResponse";
+    code: number;
+    success: boolean;
+    message?: string | null;
+    users?: Array<{
+      __typename?: "User";
+      id: string;
+      fullName: string;
+      avatar: string;
+      username: string;
+    }> | null;
+    errors?: Array<{
+      __typename?: "FieldError";
+      message: string;
+      field: string;
+    }> | null;
+  };
 };
 
 export type CreatePostMutationVariables = Exact<{
@@ -871,6 +922,13 @@ export type GetPostsUserByUserNameQuery = {
   } | null;
 };
 
+export type GetAllPostIdsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type GetAllPostIdsQuery = {
+  __typename?: "Query";
+  getAllPostIds: Array<string>;
+};
+
 export type UserQueryVariables = Exact<{ [key: string]: never }>;
 
 export type UserQuery = {
@@ -1159,6 +1217,135 @@ export type UpdateUserMutation = {
   };
 };
 
+export const GetUsersYouMayKnowDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "getUsersYouMayKnow" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "getUsersYouMayKnow" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "code" } },
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "users" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "fullName" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "avatar" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "username" },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "message" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "field" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  GetUsersYouMayKnowQuery,
+  GetUsersYouMayKnowQueryVariables
+>;
+export const FriendRequestDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "friendRequest" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "friendRequest" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "code" } },
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "users" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "fullName" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "avatar" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "username" },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "message" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "field" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<FriendRequestQuery, FriendRequestQueryVariables>;
 export const CreatePostDocument = {
   kind: "Document",
   definitions: [
@@ -2820,6 +3007,22 @@ export const GetPostsUserByUserNameDocument = {
   GetPostsUserByUserNameQuery,
   GetPostsUserByUserNameQueryVariables
 >;
+export const GetAllPostIdsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "getAllPostIds" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "getAllPostIds" } },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<GetAllPostIdsQuery, GetAllPostIdsQueryVariables>;
 export const UserDocument = {
   kind: "Document",
   definitions: [

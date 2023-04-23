@@ -23,7 +23,6 @@ interface IProps {
   userData: User;
   setUpdateUserData: (updateUserData: boolean) => void;
   profileData: ProfileUser;
-  username: string;
 }
 interface IFriendRequestStatus extends FriendRequestStatus {
   id: number;
@@ -32,7 +31,6 @@ const UserProfile: React.FC<IProps> = ({
   userData,
   setUpdateUserData,
   profileData,
-  username,
 }) => {
   const router = useRouter();
 
@@ -55,6 +53,7 @@ const UserProfile: React.FC<IProps> = ({
   }, []);
 
   const getPost = async (pageParam: number) => {
+    const username = userData.username;
     const resPost = await graphQLClient.request(queryGetPostsUserByUserName, {
       username: username,
       page: pageParam,
@@ -63,13 +62,23 @@ const UserProfile: React.FC<IProps> = ({
 
     return resPost.getPostsUserByUserName;
   };
-  const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =
-    useInfiniteQuery(["userPosts"], ({ pageParam = 1 }) => getPost(pageParam), {
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetching,
+    isFetchingNextPage,
+    remove,
+  } = useInfiniteQuery(
+    ["userPosts"],
+    ({ pageParam = 1 }) => getPost(pageParam),
+    {
       getNextPageParam: (lastPage, _allPages) => {
         const page = lastPage?.page ? lastPage.page + 1 : 1;
         return page;
       },
-    });
+    }
+  );
 
   const loadMoreRef = useRef() as React.RefObject<HTMLButtonElement>;
 
@@ -106,7 +115,12 @@ const UserProfile: React.FC<IProps> = ({
       fetchFriends();
     }
   }, [userData, user]);
-
+  useEffect(() => {
+    remove();
+    return () => {
+      remove();
+    };
+  }, [router.pathname, remove]);
   const renderFriendsButton = () => {
     const componentStatus = [
       {
@@ -124,7 +138,7 @@ const UserProfile: React.FC<IProps> = ({
                 });
               }
             }}>
-            Thêm bạn bè
+            Add Friends
           </button>
         ),
       },
@@ -147,16 +161,23 @@ const UserProfile: React.FC<IProps> = ({
                 });
               }
             }}>
-            Thu hồi
+            Cancel
           </button>
         ),
       },
       {
         status: "accepted",
         component: (
-          <button className="bg-green-300 hover:bg-green-700	text-white font-bold text-xs p-3 rounded-md ">
-            Bạn bè
-          </button>
+          <div className="flex flex-row justify-center space-x-4">
+            <Link
+              href="/messenger"
+              className="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50">
+              Messages
+            </Link>
+            <button className="px-4 py-2 text-blue-500 bg-white border border-blue-500 rounded hover:text-white hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50">
+              Friends
+            </button>
+          </div>
         ),
       },
       {
@@ -178,7 +199,7 @@ const UserProfile: React.FC<IProps> = ({
                 });
               }
             }}>
-            Thêm bạn bè
+            Add Friends
           </button>
         ),
       },
@@ -201,7 +222,7 @@ const UserProfile: React.FC<IProps> = ({
                 });
               }
             }}>
-            Chấp nhận yêu cầu
+            Accept requests
           </button>
         ),
       },
@@ -338,24 +359,22 @@ const UserProfile: React.FC<IProps> = ({
         <div className="md:col-span-8 sm:col-span-12 col-span-12 ">
           {/* create post */}
           {userData?.id === user.id && <CreatePost setNewPost={setNewPost} />}
-          {data?.pages
-            .map((data, i) => (
-              <Fragment key={i}>
-                {data?.posts &&
-                  data?.posts.map((post) => (
-                    <SinglePost
-                      loading={false}
-                      bookmarkedPostsId={bookmarkedPostsId || []}
-                      key={post.uuid}
-                      post={post}
-                      deletePost={deletePost}
-                      setDeletePost={setDeletePost}
-                      isBookmarkPage={false}
-                    />
-                  ))}
-              </Fragment>
-            ))
-            .reverse()}
+          {data?.pages.map((data) => (
+            <Fragment key={data?.page}>
+              {data?.posts &&
+                data?.posts.map((post) => (
+                  <SinglePost
+                    loading={false}
+                    bookmarkedPostsId={bookmarkedPostsId || []}
+                    key={post.uuid}
+                    post={post}
+                    deletePost={deletePost}
+                    setDeletePost={setDeletePost}
+                    isBookmarkPage={false}
+                  />
+                ))}
+            </Fragment>
+          ))}
 
           <div>
             <button

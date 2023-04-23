@@ -19,7 +19,7 @@ const MiddleLeftBar = () => {
   const getPost = async (pageParam: number) => {
     const resPost = await graphQLClient.request(queryPosts, {
       page: pageParam,
-      limit: 10,
+      limit: 20,
     });
 
     return resPost.posts;
@@ -72,24 +72,22 @@ const MiddleLeftBar = () => {
       <CreatePost setNewPost={setNewPost} />
       {loading && Array(3).map((_, i) => <PostSkeleton key={i} />)}
 
-      {data?.pages
-        .map((data, i) => (
-          <Fragment key={i}>
-            {data?.posts &&
-              data?.posts.map((post) => (
-                <SinglePost
-                  loading={loading}
-                  bookmarkedPostsId={bookmarkedPostsId || []}
-                  key={post.uuid}
-                  post={post}
-                  deletePost={deletePost}
-                  setDeletePost={setDeletePost}
-                  isBookmarkPage={false}
-                />
-              ))}
-          </Fragment>
-        ))
-        .reverse()}
+      {data?.pages.map((data, i) => (
+        <Fragment key={data.page}>
+          {data?.posts &&
+            data?.posts.map((post) => (
+              <SinglePost
+                loading={loading}
+                bookmarkedPostsId={bookmarkedPostsId || []}
+                key={post.uuid}
+                post={post}
+                deletePost={deletePost}
+                setDeletePost={setDeletePost}
+                isBookmarkPage={false}
+              />
+            ))}
+        </Fragment>
+      ))}
 
       <div>
         <button

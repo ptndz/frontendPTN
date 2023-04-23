@@ -33,8 +33,10 @@ const Register = () => {
         fullName: `${data.firstName} ${data.lastName}`,
         sex: sex,
         birthday: data.birthday,
-        avatar: "https://i.ibb.co/5kdWHNN/user-12.png",
-        coverImage: "https://i.ibb.co/pWc2Ffd/u-bg.jpg",
+        avatar:
+          "https://api.phamthanhnam.com/image/n/20230423-useravatar-1682214795690.png",
+        coverImage:
+          "https://api.phamthanhnam.com/image/n/20230423-backgroundlogin-1682214873268.png",
       });
       if (res.register.code != 200) {
         toast.error(res.register.message);

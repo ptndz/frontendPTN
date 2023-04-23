@@ -11,7 +11,8 @@
     "start": "env-cmd -f .env.local next start",
     "lint": "next lint",
     "postbuild": "cross-env next-sitemap --config next-sitemap.js",
-    "codegen": "graphql-codegen --config codegen.ts --watch"
+    "codegen": "graphql-codegen --config codegen.ts --watch",
+    "test:user": "ts-node ./test/userFke.ts"
   },
   "dependencies": {
     "@ptndev/json": "^1.0.5",

@@ -1,33 +1,55 @@
-import { getCookies } from "cookies-next";
-import { IPost, User } from "../../gql/graphql";
-import { GetServerSideProps } from "next";
-import { graphQLServer } from "../../plugins/graphql.plugin";
-import { queryPostByUuid } from "../../graphql/post";
+import { IPost } from "../../gql/graphql";
+import { GetStaticPaths, GetStaticProps } from "next";
+import { graphQLClient, graphQLServer } from "../../plugins/graphql.plugin";
+import { queryGetAllPostIds, queryPostByUuid } from "../../graphql/post";
 import Navigation from "../../components/Share/Navigation";
 import SinglePost from "../../components/Home/SinglePost";
 import { useEffect, useState } from "react";
 import Error from "../404";
 import { queryUser } from "../../graphql/user";
 import { useStoreUser } from "../../store/user";
+import { NextSeo } from "next-seo";
 interface IProps {
   postData: IPost;
-  userData: User;
 }
 
-const Post: React.FC<IProps> = ({ postData, userData }) => {
+const Post: React.FC<IProps> = ({ postData }) => {
   const [deletePost, setDeletePost] = useState<boolean>(false);
-  const { setUser } = useStoreUser();
+  const { user, setUser } = useStoreUser();
 
   useEffect(() => {
-    if (userData) {
-      setUser(userData);
-    }
-  }, [setUser, userData]);
+    const fetchUser = async () => {
+      const res = await graphQLClient.request(queryUser);
+      if (res.user.user) {
+        setUser(res.user.user);
+      }
+    };
+    fetchUser();
+  }, [setUser]);
 
   if (postData) {
     return (
       <>
-        {userData ? <Navigation /> : null}
+        <NextSeo
+          title={postData.content}
+          description={postData.content}
+          canonical={`${process.env.NEXT_PUBLIC_URL_APP}/post/${postData.uuid}`}
+          openGraph={{
+            url: `${process.env.NEXT_PUBLIC_URL_APP}/post/${postData.uuid}`,
+            title: postData.content,
+            description: postData.content,
+            images: postData.images?.map((image) => ({
+              url: image,
+            })),
+            siteName: "SiteName",
+          }}
+          twitter={{
+            handle: "@handle",
+            site: "@site",
+            cardType: "summary_large_image",
+          }}
+        />
+        {user ? <Navigation /> : null}
         <div className="max-w-4xl mx-auto gap-4 bg-gray-100 dark:bg-zinc-900 pt-2 w-full ">
           <SinglePost
             post={postData}
@@ -46,33 +68,26 @@ const Post: React.FC<IProps> = ({ postData, userData }) => {
 };
 export default Post;
 
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const { uuid } = context.query;
-  const cookie = getCookies({ req: context.req });
-  const accessToken = cookie[process.env.NEXT_PUBLIC_COOKIE_NAME as string];
-  const res = await graphQLServer(
-    context.req.headers.cookie,
-    accessToken
-  ).request(queryPostByUuid, {
-    uuid: uuid as string,
+export const getStaticPaths: GetStaticPaths = async () => {
+  const postsId = await graphQLServer("", "").request(queryGetAllPostIds);
+  const paths = postsId.getAllPostIds.map((id) => ({
+    params: {
+      uuid: id,
+    },
+  }));
+
+  return { paths, fallback: "blocking" };
+};
+
+export const getStaticProps: GetStaticProps = async ({ params }) => {
+  const res = await graphQLServer("", "").request(queryPostByUuid, {
+    uuid: params?.uuid as string,
   });
-  try {
-    const resUser = await graphQLServer(
-      context.req.headers.cookie,
-      accessToken
-    ).request(queryUser);
-    return {
-      props: {
-        postData: res.post?.post,
-        userData: resUser.user.user,
-      },
-    };
-  } catch (error) {
-    return {
-      props: {
-        postData: res.post?.post,
-        userData: null,
-      },
-    };
-  }
+
+  return {
+    props: {
+      postData: res.post?.post,
+    },
+    revalidate: 10,
+  };
 };

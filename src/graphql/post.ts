@@ -137,3 +137,9 @@ export const queryGetPostsUserByUserName = graphql(`
     }
   }
 `);
+
+export const queryGetAllPostIds = graphql(`
+  query getAllPostIds {
+    getAllPostIds
+  }
+`);

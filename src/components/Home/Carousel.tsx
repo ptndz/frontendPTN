@@ -51,21 +51,24 @@ const Carousel: React.FC<IProps> = ({ images }) => {
     <>
       <ul ref={refsView} className="hidden"></ul>
       {images.length > 1 ? sliderControl(true) : null}
-      <ul
-        ref={refsImg}
-        className="pt-3 relative h-96 rounded-lg overflow-hidden w-full">
-        {images.map((img, i) => (
-          <li key={i}>
-            <Image
-              layout="fill"
-              objectFit="cover"
-              src={img}
-              className="w-full object-contain"
-              alt=""
-            />
-          </li>
-        ))}
-      </ul>
+      {images.length > 0 ? (
+        <ul
+          ref={refsImg}
+          className="pt-3 relative h-96 rounded-lg overflow-hidden w-full">
+          {images.map((img, i) => (
+            <li key={i}>
+              <Image
+                layout="fill"
+                objectFit="cover"
+                src={img}
+                className="w-full object-contain"
+                alt=""
+              />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
       {images.length > 1 ? sliderControl(false) : null}
     </>
   );

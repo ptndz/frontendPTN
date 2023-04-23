@@ -9,6 +9,7 @@ import { GetServerSideProps } from "next";
 import { queryUser } from "../graphql/user";
 import { graphQLServer } from "../plugins/graphql.plugin";
 import { User } from "../gql/graphql";
+import Head from "next/head";
 interface IProps {
   userData: User;
 }
@@ -24,6 +25,15 @@ const Friends: React.FC<IProps> = ({ userData }) => {
   if (userData) {
     return (
       <>
+        <Head>
+          <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+            integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
+            crossOrigin="anonymous"
+            referrerPolicy="no-referrer"
+          />
+        </Head>
         <Navigation />
         <div className="pt-2 w-full ">
           <div className="max-w-5xl w-full mx-auto">

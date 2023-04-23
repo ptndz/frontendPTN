@@ -19,14 +19,8 @@ interface IProps {
   userData: User;
   user: User;
   profileData: ProfileUser;
-  username: string;
 }
-const Profile: React.FC<IProps> = ({
-  userData,
-  user,
-  profileData,
-  username,
-}) => {
+const Profile: React.FC<IProps> = ({ userData, user, profileData }) => {
   const [updateUserData, setUpdateUserData] = useState(false);
   const { setUser } = useStoreUser();
   const router = useRouter();
@@ -40,6 +34,7 @@ const Profile: React.FC<IProps> = ({
       router.reload();
     }
   }, [router, updateUserData]);
+
   if (userData) {
     return (
       <>
@@ -47,12 +42,10 @@ const Profile: React.FC<IProps> = ({
         <div className="max-w-4xl mx-auto gap-4 bg-gray-100 dark:bg-zinc-900 pt-2 w-full ">
           <UserProfile
             userData={userData}
-            username={username}
             profileData={profileData}
             setUpdateUserData={setUpdateUserData}
           />
         </div>
-
       </>
     );
   } else {
@@ -89,7 +82,6 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
           userData: res.getUser.user,
           user: resUser.user.user,
           profileData: resProfile.profileByUser.profile,
-          username: username,
         },
       };
     }
