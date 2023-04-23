@@ -252,7 +252,7 @@ const UserProfile: React.FC<IProps> = ({
             width={1000}
             objectFit="cover"
             height={300}
-            alt="user cover photo"
+            alt={userData.fullName}
           />
         </div>
         <div className="flex justify-between pt-2 pb-5">
@@ -260,7 +260,7 @@ const UserProfile: React.FC<IProps> = ({
             <div className="-mt-12 ml-5">
               <Image
                 src={userData?.avatar || "/images/user-avatar.png"}
-                alt="user profile photo"
+                alt={userData.fullName}
                 width={100}
                 height={100}
                 objectFit="cover"

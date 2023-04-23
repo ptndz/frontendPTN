@@ -77,7 +77,7 @@ const RightSideBar = () => {
                     }
                     width="40"
                     height="40"
-                    alt="user"
+                    alt={user.fullName}
                     className="rounded-full"
                   />
                   <span className="ml-3 contact-users" title={user.fullName}>

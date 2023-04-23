@@ -494,7 +494,7 @@ const SinglePost: React.FC<IProps> = ({
           <div className="relative">
             <Image
               src={user.avatar || "/images/user-avatar.png"}
-              alt=""
+              alt={user.fullName}
               height="50"
               width="50"
               className="rounded-full"

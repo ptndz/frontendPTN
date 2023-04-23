@@ -70,13 +70,13 @@ const Login = () => {
               <Link href="/">
                 <Image
                   src="/favicon/logo.png"
-                  alt="logo"
+                  alt="Pham Thanh Nam"
                   width={300}
                   height={100}
                 />
               </Link>
               <h1 className="text-gray-900 dark:text-white font-bold text-3xl font-title pl-4">
-                Sign in to Socio Trend
+                Sign in to Pham Thanh Nam
               </h1>
             </div>
             <div className="rounded-lg px-4">
@@ -191,7 +191,7 @@ const Login = () => {
                   </div> */}
                 </div>
                 <p className="mt-6 text-center text-base font-medium text-gray-900 dark:text-white">
-                  New to Socio Trend?
+                  New to Pham Thanh Nam?
                   <Link
                     href="/register"
                     className="text-indigo-500 hover:text-indigo-600 font-medium">

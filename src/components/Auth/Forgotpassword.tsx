@@ -40,7 +40,7 @@ const ForgotPassword = () => {
               <Link href="/">
                 <Image
                   src="/favicon/logo.png"
-                  alt="logo"
+                  alt="Pham Thanh Nam"
                   width={300}
                   height={100}
                 />

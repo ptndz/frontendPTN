@@ -49,7 +49,7 @@ const Post: React.FC<IProps> = ({ postData }) => {
             cardType: "summary_large_image",
           }}
         />
-        {user.id === "" ? <Navigation /> : null}
+        {user.id !== "" ? <Navigation /> : null}
         <div className="max-w-4xl mx-auto gap-4 bg-gray-100 dark:bg-zinc-900 pt-2 w-full ">
           <SinglePost
             post={postData}

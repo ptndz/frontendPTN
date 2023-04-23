@@ -62,7 +62,7 @@ const Carousel: React.FC<IProps> = ({ images }) => {
                 objectFit="cover"
                 src={img}
                 className="w-full object-contain"
-                alt=""
+                alt="Pham Thanh Nam"
               />
             </li>
           ))}

@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import styles from "../styles/Error.module.css";
 
@@ -6,9 +5,6 @@ const Error = () => {
   return (
     <>
       <div style={{ textAlign: "center", marginTop: "20vh" }}>
-        {/* <div>
-          <Image src="/errorImg.png" width={200} height={250} alt=""></Image>
-        </div> */}
         <div className={styles.errorText}>
           <p className={styles.errorTitle}>
             Oops! It looks like <br />

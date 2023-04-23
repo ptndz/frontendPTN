@@ -45,7 +45,12 @@ const EmailLeftBar = () => {
       <div className="block md:hidden lg:hidden">
         <div className="bg-yellow-500 fixed flex h-20 inset-x-0 items-center justify-between px-4 text-white top-0">
           <div>
-            <Image src="/logo.png" alt="Socio Trend" width={200} height={66} />
+            <Image
+              src="/logo.png"
+              alt="Pham Thanh Nam"
+              width={200}
+              height={66}
+            />
           </div>
           <button
             className="p-2 rounded-full transition hover:bg-blue-400"

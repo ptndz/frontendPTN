@@ -135,7 +135,7 @@ const CreatePost: React.FC<IProps> = ({ setNewPost }) => {
                 <div className="relative h-72 w-full sm:rounded-lg overflow-hidden border border-gray-300 dark:border-zinc-600">
                   <Image
                     src={image}
-                    alt="image01"
+                    alt="Pham Thanh Nam"
                     layout="fill"
                     objectFit="cover"
                   />

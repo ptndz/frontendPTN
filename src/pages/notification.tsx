@@ -68,7 +68,7 @@ const Notification = () => {
                   src="/images/user-avatar.png"
                   height={50}
                   width={50}
-                  alt="img"
+                  alt="Pham Thanh Nam"
                 />
                 <span className="bg-orange-600 m-0  font-normal text-white text-base rounded-full h-7 w-7 absolute bottom-0 right-0 p-1">
                   23
@@ -112,7 +112,7 @@ const Notification = () => {
                   src="/images/user-avatar.png"
                   height={50}
                   width={50}
-                  alt="img"
+                  alt="Pham Thanh Nam"
                 />
                 <span className="bg-orange-600 m-0  font-normal text-white text-base rounded-full h-7 w-7 absolute bottom-0 right-0 p-1">
                   23

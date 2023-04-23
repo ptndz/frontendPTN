@@ -118,14 +118,14 @@ const Navigation = () => {
                 <Image
                   width="150"
                   height="55"
-                  alt="Socio Trend"
+                  alt="Pham Thanh Nam"
                   src="/favicon/logo.png"
                 />
               ) : (
                 <Image
                   width="150"
                   height="55"
-                  alt="Socio Trend"
+                  alt="Pham Thanh Nam"
                   src="/favicon/logo.png"
                 />
               )}
@@ -288,7 +288,7 @@ const Navigation = () => {
                     src="/favicon/logo.png"
                     width="150"
                     height="55"
-                    alt="Socio Trend"
+                    alt="Pham Thanh Nam"
                   />
                 </Link>
                 {/* close mobile menu button */}

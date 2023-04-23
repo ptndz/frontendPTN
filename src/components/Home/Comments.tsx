@@ -40,7 +40,7 @@ const Comments: React.FC<IProps> = ({ comment }) => {
           <Image
             className="rounded-full cursor-pointer"
             src={userData?.avatar || "/images/user-avatar.png"}
-            alt=""
+            alt={`${userData?.username}`}
             height={32}
             width={32}
           />
