@@ -293,6 +293,7 @@ export type ProfileUser = {
 export type Query = {
   __typename?: "Query";
   bookmarkAll: BookmarkResponse;
+  confirmation: Scalars["Boolean"];
   createBookmark: BookmarkResponse;
   forgotPassword: Scalars["Boolean"];
   friendRequest: UserQueryResponse;
@@ -313,6 +314,10 @@ export type Query = {
   profile: ProfileResponse;
   profileByUser: ProfileResponse;
   user: UserMutationResponse;
+};
+
+export type QueryConfirmationArgs = {
+  token: Scalars["String"];
 };
 
 export type QueryCreateBookmarkArgs = {
@@ -410,6 +415,7 @@ export type User = {
   phone: Scalars["String"];
   role: Scalars["String"];
   sex: Scalars["Boolean"];
+  statusEmail: Scalars["String"];
   updateAt: Scalars["DateTime"];
   username: Scalars["String"];
 };
@@ -508,6 +514,10 @@ export type CreatePostMutation = {
     }> | null;
   };
 };
+
+export type LogoutMutationVariables = Exact<{ [key: string]: never }>;
+
+export type LogoutMutation = { __typename?: "Mutation"; logout: boolean };
 
 export type GetUsersQueryVariables = Exact<{ [key: string]: never }>;
 
@@ -685,10 +695,6 @@ export type CreateBookmarkQuery = {
     }> | null;
   };
 };
-
-export type LogoutMutationVariables = Exact<{ [key: string]: never }>;
-
-export type LogoutMutation = { __typename?: "Mutation"; logout: boolean };
 
 export type BookmarkAllQueryVariables = Exact<{ [key: string]: never }>;
 
@@ -952,6 +958,7 @@ export type UserQuery = {
       birthday: string;
       sex: boolean;
       role: string;
+      statusEmail: string;
       createAt: any;
       updateAt: any;
     } | null;
@@ -988,6 +995,7 @@ export type GetUserQuery = {
       birthday: string;
       sex: boolean;
       role: string;
+      statusEmail: string;
       createAt: any;
       updateAt: any;
     } | null;
@@ -1025,6 +1033,7 @@ export type LoginMutation = {
       birthday: string;
       sex: boolean;
       role: string;
+      statusEmail: string;
       coverImage: string;
       createAt: any;
       updateAt: any;
@@ -1072,6 +1081,7 @@ export type RegisterMutation = {
       birthday: string;
       sex: boolean;
       role: string;
+      statusEmail: string;
       coverImage: string;
       createAt: any;
       updateAt: any;
@@ -1208,6 +1218,7 @@ export type UpdateUserMutation = {
       coverImage: string;
       createAt: any;
       updateAt: any;
+      statusEmail: string;
     } | null;
     errors?: Array<{
       __typename?: "FieldError";
@@ -1216,6 +1227,12 @@ export type UpdateUserMutation = {
     }> | null;
   };
 };
+
+export type ConfirmationQueryVariables = Exact<{
+  token: Scalars["String"];
+}>;
+
+export type ConfirmationQuery = { __typename?: "Query"; confirmation: boolean };
 
 export const GetUsersYouMayKnowDocument = {
   kind: "Document",
@@ -1476,6 +1493,22 @@ export const CreatePostDocument = {
     },
   ],
 } as unknown as DocumentNode<CreatePostMutation, CreatePostMutationVariables>;
+export const LogoutDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "logout" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          { kind: "Field", name: { kind: "Name", value: "logout" } },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<LogoutMutation, LogoutMutationVariables>;
 export const GetUsersDocument = {
   kind: "Document",
   definitions: [
@@ -2138,22 +2171,6 @@ export const CreateBookmarkDocument = {
     },
   ],
 } as unknown as DocumentNode<CreateBookmarkQuery, CreateBookmarkQueryVariables>;
-export const LogoutDocument = {
-  kind: "Document",
-  definitions: [
-    {
-      kind: "OperationDefinition",
-      operation: "mutation",
-      name: { kind: "Name", value: "logout" },
-      selectionSet: {
-        kind: "SelectionSet",
-        selections: [
-          { kind: "Field", name: { kind: "Name", value: "logout" } },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<LogoutMutation, LogoutMutationVariables>;
 export const BookmarkAllDocument = {
   kind: "Document",
   definitions: [
@@ -3083,6 +3100,10 @@ export const UserDocument = {
                       { kind: "Field", name: { kind: "Name", value: "role" } },
                       {
                         kind: "Field",
+                        name: { kind: "Name", value: "statusEmail" },
+                      },
+                      {
+                        kind: "Field",
                         name: { kind: "Name", value: "createAt" },
                       },
                       {
@@ -3198,6 +3219,10 @@ export const GetUserDocument = {
                       },
                       { kind: "Field", name: { kind: "Name", value: "sex" } },
                       { kind: "Field", name: { kind: "Name", value: "role" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "statusEmail" },
+                      },
                       {
                         kind: "Field",
                         name: { kind: "Name", value: "createAt" },
@@ -3343,6 +3368,10 @@ export const LoginDocument = {
                       },
                       { kind: "Field", name: { kind: "Name", value: "sex" } },
                       { kind: "Field", name: { kind: "Name", value: "role" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "statusEmail" },
+                      },
                       {
                         kind: "Field",
                         name: { kind: "Name", value: "coverImage" },
@@ -3687,6 +3716,10 @@ export const RegisterDocument = {
                       },
                       { kind: "Field", name: { kind: "Name", value: "sex" } },
                       { kind: "Field", name: { kind: "Name", value: "role" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "statusEmail" },
+                      },
                       {
                         kind: "Field",
                         name: { kind: "Name", value: "coverImage" },
@@ -4348,6 +4381,10 @@ export const UpdateUserDocument = {
                         kind: "Field",
                         name: { kind: "Name", value: "updateAt" },
                       },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "statusEmail" },
+                      },
                     ],
                   },
                 },
@@ -4373,3 +4410,48 @@ export const UpdateUserDocument = {
     },
   ],
 } as unknown as DocumentNode<UpdateUserMutation, UpdateUserMutationVariables>;
+export const ConfirmationDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "confirmation" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "token" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "confirmation" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "token" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "token" },
+                },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ConfirmationQuery, ConfirmationQueryVariables>;

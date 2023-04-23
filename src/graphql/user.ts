@@ -18,6 +18,7 @@ export const queryUser = graphql(`
         birthday
         sex
         role
+        statusEmail
         createAt
         updateAt
       }
@@ -47,6 +48,7 @@ export const queryGetUserByUsername = graphql(`
         birthday
         sex
         role
+        statusEmail
         createAt
         updateAt
       }
@@ -76,6 +78,7 @@ export const queryLogin = graphql(`
         birthday
         sex
         role
+        statusEmail
         coverImage
         createAt
         updateAt
@@ -132,6 +135,7 @@ export const queryRegister = graphql(`
         birthday
         sex
         role
+        statusEmail
         coverImage
         createAt
         updateAt
@@ -255,6 +259,7 @@ export const queryUpdateUser = graphql(`
         coverImage
         createAt
         updateAt
+        statusEmail
       }
       errors {
         message
