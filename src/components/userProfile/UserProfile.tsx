@@ -314,7 +314,7 @@ const UserProfile: React.FC<IProps> = ({
           <div className="drop-shadow-sm bg-white dark:bg-black p-5 rounded-xl">
             <h2 className="text-lg font-semibold pb-3">About</h2>
             {profileData?.education ? (
-              <div className="flex items-center">
+              <div className="flex items-center py-3">
                 <i className="fa-solid fa-graduation-cap"></i>
                 <span className="ml-3">Went to {profileData.education}</span>
               </div>
