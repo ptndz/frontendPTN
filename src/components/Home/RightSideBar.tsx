@@ -6,7 +6,10 @@ import Link from "next/link";
 import UserListSkeleton from "../Loaders/UserListSkeleton";
 
 import { graphql } from "../../gql";
-import { graphQLClient } from "../../plugins/graphql.plugin";
+import {
+  graphQLClient,
+  graphQLClientErrorCheck,
+} from "../../plugins/graphql.plugin";
 import { toast } from "react-toastify";
 import { useStoreUser } from "../../store/user";
 
@@ -46,11 +49,13 @@ const RightSideBar = () => {
         if (res.getUsers.code === 400) {
           toast.error(res.getUsers.message);
         }
-        if (res.getUsers.users) {
-          const data = res.getUsers.users.filter((userData) => {
-            return userData.id !== user.id;
-          });
-          setUsers(data);
+        if (graphQLClientErrorCheck(res)) {
+          if (res.getUsers.users) {
+            const data = res.getUsers.users.filter((userData) => {
+              return userData.id !== user.id;
+            });
+            setUsers(data);
+          }
         }
         setLoading(false);
       } catch (error) {
@@ -71,10 +76,7 @@ const RightSideBar = () => {
               <li className="dark:hover:bg-zinc-900 hover:bg-gray-200 p-2 rounded-md">
                 <span className="flex items-center cursor-pointer">
                   <Image
-                    src={
-                      user.avatar ||
-                      "/images/user-avatar.png"
-                    }
+                    src={user.avatar || "/images/user-avatar.png"}
                     width="40"
                     height="40"
                     alt={user.fullName}

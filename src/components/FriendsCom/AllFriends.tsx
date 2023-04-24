@@ -4,7 +4,10 @@ import SingleFriends from "./SingleFriends";
 import { User, IUser } from "../../gql/graphql";
 import axios from "axios";
 import { graphql } from "../../gql";
-import { graphQLClient } from "../../plugins/graphql.plugin";
+import {
+  graphQLClient,
+  graphQLClientErrorCheck,
+} from "../../plugins/graphql.plugin";
 import { useStoreUser } from "../../store/user";
 
 const AllFrends = () => {
@@ -68,18 +71,25 @@ const AllFrends = () => {
         setUsers(res.data.friends);
       }
       const resUsers = await graphQLClient.request(queryGetUsersYouMayKnow);
-      if (resUsers.getUsersYouMayKnow.users) {
-        const data = resUsers.getUsersYouMayKnow.users.filter((userData) => {
-          return userData.id !== user.id;
-        });
-        setUsersYouMayKnow(data as IUser[]);
+      if (graphQLClientErrorCheck(resUsers)) {
+        if (resUsers.getUsersYouMayKnow.users) {
+          const data = resUsers.getUsersYouMayKnow.users.filter((userData) => {
+            return userData.id !== user.id;
+          });
+          setUsersYouMayKnow(data as IUser[]);
+        }
       }
+
       const resFriendRequest = await graphQLClient.request(queryFriendRequest);
-      if (resFriendRequest.friendRequest.users) {
-        const data = resFriendRequest.friendRequest.users.filter((userData) => {
-          return userData.id !== user.id;
-        });
-        setFriendRequest(data as IUser[]);
+      if (graphQLClientErrorCheck(resFriendRequest)) {
+        if (resFriendRequest.friendRequest.users) {
+          const data = resFriendRequest.friendRequest.users.filter(
+            (userData) => {
+              return userData.id !== user.id;
+            }
+          );
+          setFriendRequest(data as IUser[]);
+        }
       }
     };
     myFriends();

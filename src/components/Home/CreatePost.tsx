@@ -10,7 +10,10 @@ import { toast } from "react-toastify";
 import jsonP from "@ptndev/json";
 import { useStoreUser } from "../../store/user";
 import { graphql } from "../../gql";
-import { graphQLClient } from "../../plugins/graphql.plugin";
+import {
+  graphQLClient,
+  graphQLClientErrorCheck,
+} from "../../plugins/graphql.plugin";
 
 interface IProps {
   setNewPost: (newPost: boolean) => void;
@@ -82,7 +85,7 @@ const CreatePost: React.FC<IProps> = ({ setNewPost }) => {
       toast(resPost.createPost.message);
       return;
     }
-    if (resPost.createPost.code === 200) {
+    if (graphQLClientErrorCheck(resPost)) {
       toast.success(resPost.createPost.message);
       setPostContents("");
       setPostImages(undefined);

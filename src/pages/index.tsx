@@ -61,6 +61,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         context.req.headers.cookie,
         accessToken
       ).request(queryUser);
+
       if (res.user.user) {
         return {
           props: {

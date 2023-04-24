@@ -20,7 +20,10 @@ import { toast } from "react-toastify";
 import { IComment, IPost } from "../../gql/graphql";
 import { useStoreUser } from "../../store/user";
 import { graphql } from "../../gql";
-import { graphQLClient } from "../../plugins/graphql.plugin";
+import {
+  graphQLClient,
+  graphQLClientErrorCheck,
+} from "../../plugins/graphql.plugin";
 import { CgSmileMouthOpen } from "react-icons/cg";
 import Carousel from "./Carousel";
 
@@ -131,7 +134,7 @@ const SinglePost: React.FC<IProps> = ({
       postUuid: post.uuid,
       content: comment,
     });
-    if (res.commentPost.code === 200) {
+    if (graphQLClientErrorCheck(res)) {
       if (res.commentPost.comments) {
         setDbComments(res.commentPost.comments);
       }
@@ -164,7 +167,7 @@ const SinglePost: React.FC<IProps> = ({
       postUuid: post.uuid,
       typeReact: typeReact,
     });
-    if (res.likePost.code === 200) {
+    if (graphQLClientErrorCheck(res)) {
       if (res.likePost.like) {
         setLike(res.likePost.like.reactions);
       }
@@ -195,7 +198,7 @@ const SinglePost: React.FC<IProps> = ({
       uuid: uuid,
     });
 
-    if (res.deletePost.code === 200) {
+    if (graphQLClientErrorCheck(res)) {
       setDeletePost(!deletePost);
     }
   };
@@ -240,7 +243,7 @@ const SinglePost: React.FC<IProps> = ({
       const res = await graphQLClient.request(queryBookmarkPost, {
         postUuid: uuid,
       });
-      if (res.createBookmark.code === 200) {
+      if (graphQLClientErrorCheck(res)) {
         setAlreadyBookmarked(true);
       }
     } catch (error) {

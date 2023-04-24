@@ -37,6 +37,12 @@ const Login = () => {
       setIsLoading(false);
       return;
     }
+    const refreshToken = res.login.refreshToken;
+    if (!refreshToken) {
+      toast.error("loi he thong");
+      setIsLoading(false);
+      return;
+    }
     if (!res.login.user) {
       toast.error("loi he thong");
       setIsLoading(false);
@@ -47,8 +53,15 @@ const Login = () => {
         maxAge: 60 * 60 * 24 * 30,
       });
       setCookies(process.env.NEXT_PUBLIC_COOKIE_NAME as string, accessToken, {
-        maxAge: 60 * 60 * 24 * 30,
+        maxAge: 60 * 60 * 24,
       });
+      setCookies(
+        process.env.NEXT_PUBLIC_REFRESH_TOKEN_COOKIE_NAME as string,
+        refreshToken,
+        {
+          maxAge: 60 * 60 * 24 * 30,
+        }
+      );
     } catch (error) {
       console.log(error);
     }

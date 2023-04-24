@@ -66,6 +66,7 @@ export const queryLogin = graphql(`
       success
       message
       accessToken
+      refreshToken
       user {
         id
         fullName
@@ -123,6 +124,7 @@ export const queryRegister = graphql(`
       success
       message
       accessToken
+      refreshToken
       user {
         id
         fullName

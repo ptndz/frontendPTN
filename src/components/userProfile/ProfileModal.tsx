@@ -8,7 +8,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 import { User } from "../../gql/graphql";
 import axios from "axios";
-import { graphQLClient } from "../../plugins/graphql.plugin";
+import { graphQLClient, graphQLClientErrorCheck } from "../../plugins/graphql.plugin";
 import { queryUpdateUser } from "../../graphql/user";
 import { useForm } from "react-hook-form";
 
@@ -70,7 +70,7 @@ const ProfileModal: React.FC<IProps> = ({
       coverImage: coverLink || data.coverImage,
       fullName: `${e.firstName} ${e.lastName}`,
     });
-    if (res.updateUser.code === 200) {
+    if (graphQLClientErrorCheck(res)) {
       setUpdateUserData(true);
       toast("🦄 Profile updated!");
     }

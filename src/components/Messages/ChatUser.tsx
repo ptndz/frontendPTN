@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { RiUserSmileLine } from "react-icons/ri";
 import Image from "next/image";
-import { graphQLClient } from "../../plugins/graphql.plugin";
+import {
+  graphQLClient,
+  graphQLClientErrorCheck,
+} from "../../plugins/graphql.plugin";
 import { queryGetUserByUsername } from "../../graphql/user";
 import { User } from "../../gql/graphql";
 
@@ -32,7 +35,9 @@ const ChatUser: React.FC<IProps> = ({
         const res = await graphQLClient.request(queryGetUserByUsername, {
           username: friend.username,
         });
-        if (res.getUser.user) setUserData(res.getUser.user);
+        if (graphQLClientErrorCheck(res)) {
+          if (res.getUser.user) setUserData(res.getUser.user);
+        }
       } catch (err) {
         console.log(err);
       }

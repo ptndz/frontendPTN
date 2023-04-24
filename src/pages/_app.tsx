@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import NProgress from "nprogress";
 import { Theme, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -38,11 +38,12 @@ Router.events.on("routeChangeError", () => NProgress.done());
 
 function MyApp({ Component, pageProps }: AppProps) {
   const { theme, setTheme } = useStoreTheme();
-  const cookie = getCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string);
+
+  const cookieToken = getCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string);
 
   let interval = useRef<any>(null);
   useEffect(() => {
-    if (cookie) {
+    if (cookieToken) {
       interval.current = setInterval(async () => {
         try {
           const res = await axios.put("/user/online");
@@ -53,16 +54,19 @@ function MyApp({ Component, pageProps }: AppProps) {
       }, 300000);
     }
     return () => clearInterval(interval.current);
-  }, [cookie]);
+  }, [cookieToken]);
 
   useEffect(() => {
-    if (cookie) {
+    console.log("Cookie: ", cookieToken);
+
+    if (cookieToken) {
       const postSubscribe = async (sub: any) => {
         try {
           const res = await axios.post("/user/notification/subscription", {
             subscription: sub,
             agent: window.navigator.userAgent,
           });
+          console.log(res.data);
         } catch (error) {
           console.warn(error);
         }
@@ -95,7 +99,7 @@ function MyApp({ Component, pageProps }: AppProps) {
       };
       getSubscribe();
     }
-  }, [cookie]);
+  }, [cookieToken]);
   useEffect(() => {
     if (document) {
       const themeC = getThemeC();

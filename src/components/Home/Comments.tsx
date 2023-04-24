@@ -2,7 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { IComment, User } from "../../gql/graphql";
-import { graphQLClient } from "../../plugins/graphql.plugin";
+import {
+  graphQLClient,
+  graphQLClientErrorCheck,
+} from "../../plugins/graphql.plugin";
 import { queryGetUserByUsername } from "../../graphql/user";
 
 interface IProps {
@@ -20,7 +23,7 @@ const Comments: React.FC<IProps> = ({ comment }) => {
             username: comment.user.username,
           });
 
-          if (res.getUser.code === 200) {
+          if (graphQLClientErrorCheck(res)) {
             if (res.getUser.user) {
               setUserData(res.getUser.user);
             }

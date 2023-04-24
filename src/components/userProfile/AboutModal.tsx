@@ -6,7 +6,7 @@ import Modal from "react-responsive-modal";
 import "react-responsive-modal/styles.css";
 import { toast } from "react-toastify";
 import { ProfileUser } from "../../gql/graphql";
-import { graphQLClient } from "../../plugins/graphql.plugin";
+import { graphQLClient, graphQLClientErrorCheck } from "../../plugins/graphql.plugin";
 import { queryUpdateProfile } from "../../graphql/user";
 
 interface IProps {
@@ -32,7 +32,7 @@ const AboutModal: React.FC<IProps> = ({
       relationship: data.relationship,
       workplace: data.workplace,
     });
-    if (res.updateProfile.code === 200) {
+    if (graphQLClientErrorCheck(res)) {
       setUpdateUserData(true);
       toast("Profile updated successfully");
       setOpenDetailsModal(false);

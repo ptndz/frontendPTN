@@ -7,7 +7,10 @@ import { useForm } from "react-hook-form";
 import "react-toastify/dist/ReactToastify.css";
 
 import { useRouter } from "next/router";
-import { graphQLClient } from "../../plugins/graphql.plugin";
+import {
+  graphQLClient,
+  graphQLClientErrorCheck,
+} from "../../plugins/graphql.plugin";
 import { queryForgotPassword } from "../../graphql/user";
 
 const ForgotPassword = () => {
@@ -21,7 +24,7 @@ const ForgotPassword = () => {
       const res = await graphQLClient.request(queryForgotPassword, {
         email: data.email,
       });
-      if (res.forgotPassword) {
+      if (graphQLClientErrorCheck(res)) {
         setShowText(true);
       }
       setIsLoading(false);

@@ -9,13 +9,16 @@ import {
 } from "graphql";
 import { useQuery } from "@tanstack/react-query";
 import { GraphQLClient } from "graphql-request";
-import { getCookie } from "cookies-next";
+import { deleteCookie, getCookie } from "cookies-next";
+
+import { refreshToken } from "./axios.plugin";
 const endpoint = process.env.NEXT_PUBLIC_URL_GRAPHQL as string;
-const token = getCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string);
+const aToken = getCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string);
+
 const executor = buildHTTPExecutor({
   endpoint: endpoint,
   headers: {
-    Authorization: `Bearer ${token}`,
+    Authorization: `Bearer ${aToken}`,
   },
 });
 
@@ -41,8 +44,9 @@ export function useGraphQL<TResult, TVariables>(
 }
 export const graphQLClient = new GraphQLClient(endpoint, {
   headers: {
-    Authorization: `Bearer ${token}`,
+    Authorization: `Bearer ${aToken}`,
   },
+  credentials: "include",
 });
 
 export const graphQLServer = (
@@ -55,4 +59,22 @@ export const graphQLServer = (
       Authorization: `Bearer ${token}`,
     },
   });
+};
+
+export const graphQLClientErrorCheck = (response: any) => {
+  if (response.errors) {
+    const error = response.errors[0];
+    switch (error.extensions.code) {
+      case "JWT_EXPIRED":
+        refreshToken();
+        break;
+      default:
+        deleteCookie("accessToken");
+        deleteCookie("uuid");
+        deleteCookie("awt");
+        break;
+    }
+    return false;
+  }
+  return true;
 };

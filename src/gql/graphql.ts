@@ -426,6 +426,7 @@ export type UserMutationResponse = IMutationResponse & {
   code: Scalars["Float"];
   errors?: Maybe<Array<FieldError>>;
   message?: Maybe<Scalars["String"]>;
+  refreshToken?: Maybe<Scalars["String"]>;
   success: Scalars["Boolean"];
   user?: Maybe<User>;
 };
@@ -1020,6 +1021,7 @@ export type LoginMutation = {
     success: boolean;
     message?: string | null;
     accessToken?: string | null;
+    refreshToken?: string | null;
     user?: {
       __typename?: "User";
       id: string;
@@ -1068,6 +1070,7 @@ export type RegisterMutation = {
     success: boolean;
     message?: string | null;
     accessToken?: string | null;
+    refreshToken?: string | null;
     user?: {
       __typename?: "User";
       id: string;
@@ -3335,6 +3338,10 @@ export const LoginDocument = {
                 { kind: "Field", name: { kind: "Name", value: "accessToken" } },
                 {
                   kind: "Field",
+                  name: { kind: "Name", value: "refreshToken" },
+                },
+                {
+                  kind: "Field",
                   name: { kind: "Name", value: "user" },
                   selectionSet: {
                     kind: "SelectionSet",
@@ -3681,6 +3688,10 @@ export const RegisterDocument = {
                 { kind: "Field", name: { kind: "Name", value: "success" } },
                 { kind: "Field", name: { kind: "Name", value: "message" } },
                 { kind: "Field", name: { kind: "Name", value: "accessToken" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "refreshToken" },
+                },
                 {
                   kind: "Field",
                   name: { kind: "Name", value: "user" },

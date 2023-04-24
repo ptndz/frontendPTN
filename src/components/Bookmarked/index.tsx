@@ -4,7 +4,10 @@ import { BsBookmarkX } from "react-icons/bs";
 import SinglePost from "../Home/SinglePost";
 import Navigation from "../Share/Navigation";
 import { IBookmark } from "../../gql/graphql";
-import { graphQLClient } from "../../plugins/graphql.plugin";
+import {
+  graphQLClient,
+  graphQLClientErrorCheck,
+} from "../../plugins/graphql.plugin";
 import { queryBookmarkPost } from "../../graphql/bookmark";
 
 const BookmarkedPosts = () => {
@@ -25,9 +28,8 @@ const BookmarkedPosts = () => {
   useEffect(() => {
     const fetchBookmarkedPosts = async () => {
       const res = await graphQLClient.request(queryBookmarkPost);
-      console.log(res.bookmarkAll);
 
-      if (res.bookmarkAll.code === 200) {
+      if (graphQLClientErrorCheck(res)) {
         if (res.bookmarkAll.bookmarks) {
           setBookmarkedPosts(res.bookmarkAll.bookmarks);
         }

@@ -10,7 +10,10 @@ import "react-responsive-modal/styles.css";
 import CreatePost from "../Home/CreatePost";
 import { useStoreUser } from "../../store/user";
 import { User, ProfileUser } from "../../gql/graphql";
-import { graphQLClient } from "../../plugins/graphql.plugin";
+import {
+  graphQLClient,
+  graphQLClientErrorCheck,
+} from "../../plugins/graphql.plugin";
 import { useInfiniteQuery } from "@tanstack/react-query";
 
 import moment from "moment";
@@ -59,7 +62,9 @@ const UserProfile: React.FC<IProps> = ({
       page: pageParam,
       limit: 10,
     });
-
+    if (graphQLClientErrorCheck(resPost)) {
+      return resPost.getPostsUserByUserName;
+    }
     return resPost.getPostsUserByUserName;
   };
   const {

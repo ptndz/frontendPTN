@@ -4,7 +4,10 @@ import CreatePost from "./CreatePost";
 import SinglePost from "./SinglePost";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter } from "next/router";
-import { graphQLClient } from "../../plugins/graphql.plugin";
+import {
+  graphQLClient,
+  graphQLClientErrorCheck,
+} from "../../plugins/graphql.plugin";
 import axios from "axios";
 import { queryPosts } from "../../graphql/post";
 
@@ -21,7 +24,9 @@ const MiddleLeftBar = () => {
       page: pageParam,
       limit: 20,
     });
-
+    if (graphQLClientErrorCheck(resPost)) {
+      return resPost.posts;
+    }
     return resPost.posts;
   };
   const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =

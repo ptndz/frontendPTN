@@ -54,6 +54,12 @@ const Register = () => {
         setIsLoading(false);
         return;
       }
+      const refreshToken = res.register.refreshToken;
+      if (!refreshToken) {
+        toast.error("loi he thong");
+        setIsLoading(false);
+        return;
+      }
       if (!res.register.user) {
         toast.error("loi he thong");
         setIsLoading(false);
@@ -63,8 +69,15 @@ const Register = () => {
         maxAge: 60 * 60 * 24 * 30,
       });
       setCookies(process.env.NEXT_PUBLIC_COOKIE_NAME as string, accessToken, {
-        maxAge: 60 * 60 * 24 * 30,
+        maxAge: 60 * 60 * 24,
       });
+      setCookies(
+        process.env.NEXT_PUBLIC_REFRESH_TOKEN_COOKIE_NAME as string,
+        refreshToken,
+        {
+          maxAge: 60 * 60 * 24 * 30,
+        }
+      );
       setUser(res.register.user);
       setIsLoading(false);
       return router.push("/");
