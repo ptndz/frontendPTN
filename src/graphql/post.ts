@@ -40,6 +40,16 @@ export const queryPosts = graphql(`
             username
             fullName
           }
+          likes {
+            id
+            user {
+              id
+              username
+              fullName
+              avatar
+            }
+            reactions
+          }
         }
       }
     }
@@ -82,6 +92,16 @@ export const queryPostByUuid = graphql(`
             avatar
             username
             fullName
+          }
+          likes {
+            id
+            user {
+              id
+              username
+              fullName
+              avatar
+            }
+            reactions
           }
         }
       }
@@ -141,5 +161,32 @@ export const queryGetPostsUserByUserName = graphql(`
 export const queryGetAllPostIds = graphql(`
   query getAllPostIds {
     getAllPostIds
+  }
+`);
+export const queryCommentByCommentId = graphql(`
+  query getCommentComment($commentId: Float!) {
+    getCommentComment(commentId: $commentId) {
+      code
+      comments {
+        id
+        content
+        likes {
+          id
+          reactions
+          user {
+            id
+            username
+            avatar
+            fullName
+          }
+        }
+        user {
+          id
+          username
+          avatar
+          fullName
+        }
+      }
+    }
   }
 `);

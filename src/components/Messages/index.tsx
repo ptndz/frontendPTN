@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import Navigation from "../Share/Navigation";
-import ChatUserSearchOffcanvas from "./ChatUserSearchOffcanvas";
+import ChatUserSearchOffCanvas from "./ChatUserSearchOffcanvas";
 import { FiSearch } from "react-icons/fi";
 import { RiSendPlaneLine } from "react-icons/ri";
 import { HiOutlineChatAlt2 } from "react-icons/hi";
@@ -16,9 +16,9 @@ import { User } from "../../gql/graphql";
 import { getCookie } from "cookies-next";
 
 const MessagingMain = () => {
-  const [isSearchOffcanvasOpen, setIsSearchOffcanvasOpen] = useState(false);
-  const closeSearchOffcanvas = () => setIsSearchOffcanvasOpen(false);
-  const openSearchOffcanvas = () => setIsSearchOffcanvasOpen(true);
+  const [isSearchOffCanvasOpen, setIsSearchOffCanvasOpen] = useState(false);
+  const closeSearchOffCanvas = () => setIsSearchOffCanvasOpen(false);
+  const openSearchOffCanvas = () => setIsSearchOffCanvasOpen(true);
 
   const { user } = useStoreUser();
   const [conversations, setConversations] = useState<any>([]);
@@ -118,13 +118,13 @@ const MessagingMain = () => {
     <div className="relative h-screen flex overflow-hidden bg-white dark:bg-black mx-auto shadow-md">
       {/* <!-- Static sidebar for desktop --> */}
       {allUsers && (
-        <ChatUserSearchOffcanvas
+        <ChatUserSearchOffCanvas
           setCurrentChat={setCurrentChat}
           currentId={user.id}
           allUsers={allUsers}
           onlineUsers={onlineUsers}
-          closeOffcanvas={closeSearchOffcanvas}
-          isOffcanvasOpen={isSearchOffcanvasOpen}
+          closeOffCanvas={closeSearchOffCanvas}
+          isOffCanvasOpen={isSearchOffCanvasOpen}
         />
       )}
 
@@ -139,7 +139,7 @@ const MessagingMain = () => {
             {/* search */}
             <div className="flex gap-2 flex-col px-2 pt-2 lg:flex-row w-full">
               <div
-                onClick={openSearchOffcanvas}
+                onClick={openSearchOffCanvas}
                 className="cursor-pointer hover:bg-opacity-60 dark:hover:bg-opacity-60 relative overflow-hidden w-full px-2 py-4 rounded-lg flex items-center bg-gray-100 dark:bg-zinc-800 focus-within:ring-1 focus-within:ring-inset focus-within:ring-white">
                 <div className="w-full flex items-center justify-center">
                   <FiSearch className="h-5 w-5" />

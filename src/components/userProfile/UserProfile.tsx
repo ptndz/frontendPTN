@@ -273,14 +273,14 @@ const UserProfile: React.FC<IProps> = ({
               />
             </div>
             <div className="ml-6">
-              <div className="font-bold text-lg text-center flex items-center justify-center">
+              <div className="font-bold text-lg text-center flex items-center justify-center mr-11">
                 {userData?.fullName}&ensp;
-                <a className="group relative inline-block">
+                {/* <a className="group relative inline-block">
                   <TiTick className="text-[20px] text-white rounded-full bg-sky-500" />
                   <span className="absolute hidden group-hover:flex -top-2 -right-3 translate-x-full w-48 px-2 py-1 bg-gray-700 rounded-lg text-center text-white text-sm before:content-[''] before:absolute before:top-1/2  before:right-[100%] before:-translate-y-1/2 before:border-8 before:border-y-transparent before:border-l-transparent before:border-r-gray-700">
                     day la tich xanh ne
                   </span>
-                </a>
+                </a> */}
               </div>
 
               <div className="text-xs font-medium	text-gray-400 ">

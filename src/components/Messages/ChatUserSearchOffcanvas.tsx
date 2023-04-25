@@ -8,16 +8,16 @@ import axios from "axios";
 import UserListSkeleton from "../Loaders/UserListSkeleton";
 import { User } from "../../gql/graphql";
 interface IProps {
-  isOffcanvasOpen?: boolean;
-  closeOffcanvas: () => void;
+  isOffCanvasOpen?: boolean;
+  closeOffCanvas: () => void;
   setCurrentChat: (chat: any) => void;
   currentId?: string;
   allUsers: User[];
   onlineUsers?: User[];
 }
 const ChatUserSearchOffCanvas: React.FC<IProps> = ({
-  isOffcanvasOpen,
-  closeOffcanvas,
+  isOffCanvasOpen,
+  closeOffCanvas,
   setCurrentChat,
   currentId,
   allUsers,
@@ -60,19 +60,19 @@ const ChatUserSearchOffCanvas: React.FC<IProps> = ({
   return (
     <div
       className={`${
-        !isOffcanvasOpen && "pointer-events-none"
+        !isOffCanvasOpen && "pointer-events-none"
       } fixed inset-0 overflow-hidden scrollbar-hide z-50`}>
       <div className="absolute inset-0 overflow-hidden scrollbar-hide">
         <div
-          onClick={closeOffcanvas}
+          onClick={closeOffCanvas}
           className={`${
-            isOffcanvasOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+            isOffCanvasOpen ? "opacity-100" : "opacity-0 pointer-events-none"
           } fixed inset-0 bg-clip-padding backdrop-filter backdrop-blur-md bg-opacity-30 transition-opacity`}></div>
 
         <div className="fixed inset-y-0 left-0 max-w-full flex">
           <div
             className={`${
-              isOffcanvasOpen ? "translate-x-0" : "-translate-x-full"
+              isOffCanvasOpen ? "translate-x-0" : "-translate-x-full"
             } transform transition ease-in-out duration-300 w-screen max-w-md`}>
             <div className="h-full flex flex-col bg-white dark:bg-black md:border-r border-gray-300 dark:border-zinc-700">
               <div className="min-h-0 flex-1 flex flex-col">
@@ -82,7 +82,7 @@ const ChatUserSearchOffCanvas: React.FC<IProps> = ({
                     <h2 className="text-xl tracking-wider">Search users</h2>
                     <div className="ml-3 h-7 flex items-center">
                       <button
-                        onClick={closeOffcanvas}
+                        onClick={closeOffCanvas}
                         className="bg-gray-100 dark:bg-zinc-800 hover:bg-opacity-60 dark:hover:bg-opacity-60 rounded-full p-3 focus:outline-none">
                         <BsXLg />
                       </button>
@@ -132,7 +132,7 @@ const ChatUserSearchOffCanvas: React.FC<IProps> = ({
                                 key={user.id}
                                 onClick={() => {
                                   handleClick(user);
-                                  closeOffcanvas();
+                                  closeOffCanvas();
                                 }}
                                 className="px-4 py-4 flex items-center justify-between hover:bg-gray-200 dark:hover:bg-zinc-800 cursor-pointer">
                                 <div className="flex items-center">

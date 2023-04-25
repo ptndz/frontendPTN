@@ -57,16 +57,13 @@ function MyApp({ Component, pageProps }: AppProps) {
   }, [cookieToken]);
 
   useEffect(() => {
-    console.log("Cookie: ", cookieToken);
-
     if (cookieToken) {
       const postSubscribe = async (sub: any) => {
         try {
-          const res = await axios.post("/user/notification/subscription", {
+          await axios.post("/user/notification/subscription", {
             subscription: sub,
             agent: window.navigator.userAgent,
           });
-          console.log(res.data);
         } catch (error) {
           console.warn(error);
         }

@@ -53,6 +53,7 @@ const SinglePost: React.FC<IProps> = ({
   const [comment, setComment] = useState("");
   const [menu, setMenu] = useState("hidden");
   const ref = useRef<HTMLInputElement>(null);
+
   const { user } = useStoreUser();
 
   useEffect(() => {
@@ -234,6 +235,16 @@ const SinglePost: React.FC<IProps> = ({
                 comments {
                   id
                   content
+                  likes {
+                    id
+                    reactions
+                  }
+                  user {
+                    id
+                    username
+                    avatar
+                    fullName
+                  }
                 }
               }
             }
@@ -521,9 +532,9 @@ const SinglePost: React.FC<IProps> = ({
           </div>
         </div>
       </form>
-      {dbComments?.map((comment, index) => (
-        <Comments key={index} comment={comment} />
-      ))}
+      {dbComments
+        ?.map((comment) => <Comments key={comment.id} comment={comment} />)
+        .reverse()}
     </div>
   );
 };
