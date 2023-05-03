@@ -10,7 +10,7 @@ import {
 } from "../../plugins/graphql.plugin";
 import { useStoreUser } from "../../store/user";
 
-const AllFrends = () => {
+const AllFriends = () => {
   const [searchText, setSearchText] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const { user } = useStoreUser();
@@ -66,30 +66,38 @@ const AllFrends = () => {
     };
 
     const myFriends = async () => {
-      const res = await axios.get("/friends/my");
-      if (res.data.success) {
-        setUsers(res.data.friends);
-      }
-      const resUsers = await graphQLClient.request(queryGetUsersYouMayKnow);
-      if (graphQLClientErrorCheck(resUsers)) {
-        if (resUsers.getUsersYouMayKnow.users) {
-          const data = resUsers.getUsersYouMayKnow.users.filter((userData) => {
-            return userData.id !== user.id;
-          });
-          setUsersYouMayKnow(data as IUser[]);
+      try {
+        const res = await axios.get("/friends/my");
+        if (res.data.success) {
+          setUsers(res.data.friends);
         }
-      }
+        const resUsers = await graphQLClient.request(queryGetUsersYouMayKnow);
+        if (graphQLClientErrorCheck(resUsers)) {
+          if (resUsers.getUsersYouMayKnow.users) {
+            const data = resUsers.getUsersYouMayKnow.users.filter(
+              (userData) => {
+                return userData.id !== user.id;
+              }
+            );
+            setUsersYouMayKnow(data as IUser[]);
+          }
+        }
 
-      const resFriendRequest = await graphQLClient.request(queryFriendRequest);
-      if (graphQLClientErrorCheck(resFriendRequest)) {
-        if (resFriendRequest.friendRequest.users) {
-          const data = resFriendRequest.friendRequest.users.filter(
-            (userData) => {
-              return userData.id !== user.id;
-            }
-          );
-          setFriendRequest(data as IUser[]);
+        const resFriendRequest = await graphQLClient.request(
+          queryFriendRequest
+        );
+        if (graphQLClientErrorCheck(resFriendRequest)) {
+          if (resFriendRequest.friendRequest.users) {
+            const data = resFriendRequest.friendRequest.users.filter(
+              (userData) => {
+                return userData.id !== user.id;
+              }
+            );
+            setFriendRequest(data as IUser[]);
+          }
         }
+      } catch (error) {
+        console.log(error);
       }
     };
     myFriends();
@@ -102,7 +110,7 @@ const AllFrends = () => {
             Friends
           </div>
 
-          <div className="flex justify-center justify-items-center">
+          {/* <div className="flex justify-center justify-items-center">
             <div className=" bg-gray-100 w-72 h-12 rounded-lg relative">
               <form onSubmit={handleSubmit}>
                 <input
@@ -119,7 +127,7 @@ const AllFrends = () => {
                 </button>
               </form>
             </div>
-          </div>
+          </div> */}
         </div>
         <div className="grid grid-cols-1 xs:grid-cols-12 sm:grid-cols-12 md:grid-cols-12 gap-3">
           {users &&
@@ -141,6 +149,7 @@ const AllFrends = () => {
             ))}
         </div>
       </div>
+
       <div className="mx-8 md:mx-18 sm:mx-11 xs:mx-8 lg:mx-1 pt-5">
         <div className="bg-white dark:bg-black my-5 flex flex-col xs:flex-col sm:flex-row justify-between justify-items-center py-8 px-8 rounded-md">
           <div className="text-2xl font-bold pt-1.5 text-center mb-4 lg:mb-0 md:mb-0 sm:mb-0">
@@ -158,4 +167,4 @@ const AllFrends = () => {
   );
 };
 
-export default AllFrends;
+export default AllFriends;

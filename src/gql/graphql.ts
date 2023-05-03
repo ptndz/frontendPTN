@@ -306,6 +306,7 @@ export type Query = {
   getListImageUser: ImageResponse;
   getPostsUserByUserName?: Maybe<PostsQueryResponse>;
   getUser: UserMutationResponse;
+  getUserByUuid: UserMutationResponse;
   getUsers: UserQueryResponse;
   getUsersYouMayKnow: UserQueryResponse;
   hello: Scalars["String"];
@@ -358,6 +359,10 @@ export type QueryGetPostsUserByUserNameArgs = {
 
 export type QueryGetUserArgs = {
   username: Scalars["String"];
+};
+
+export type QueryGetUserByUuidArgs = {
+  userUuid: Scalars["String"];
 };
 
 export type QueryPostArgs = {
@@ -1110,6 +1115,43 @@ export type GetUserQueryVariables = Exact<{
 export type GetUserQuery = {
   __typename?: "Query";
   getUser: {
+    __typename?: "UserMutationResponse";
+    code: number;
+    success: boolean;
+    message?: string | null;
+    user?: {
+      __typename?: "User";
+      id: string;
+      fullName: string;
+      lastName: string;
+      firstName: string;
+      username: string;
+      email: string;
+      avatar: string;
+      coverImage: string;
+      phone: string;
+      birthday: string;
+      sex: boolean;
+      role: string;
+      statusEmail: string;
+      createAt: any;
+      updateAt: any;
+    } | null;
+    errors?: Array<{
+      __typename?: "FieldError";
+      message: string;
+      field: string;
+    }> | null;
+  };
+};
+
+export type GetUserByUuidQueryVariables = Exact<{
+  userUuid: Scalars["String"];
+}>;
+
+export type GetUserByUuidQuery = {
+  __typename?: "Query";
+  getUserByUuid: {
     __typename?: "UserMutationResponse";
     code: number;
     success: boolean;
@@ -3938,6 +3980,127 @@ export const GetUserDocument = {
     },
   ],
 } as unknown as DocumentNode<GetUserQuery, GetUserQueryVariables>;
+export const GetUserByUuidDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "getUserByUuid" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "userUuid" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "String" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "getUserByUuid" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "userUuid" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "userUuid" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "code" } },
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "user" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "fullName" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "lastName" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "firstName" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "username" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "email" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "avatar" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "coverImage" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "phone" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "birthday" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "sex" } },
+                      { kind: "Field", name: { kind: "Name", value: "role" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "statusEmail" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "createAt" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "updateAt" },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "errors" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "message" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "field" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<GetUserByUuidQuery, GetUserByUuidQueryVariables>;
 export const LoginDocument = {
   kind: "Document",
   definitions: [

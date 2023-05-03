@@ -12,11 +12,13 @@ interface IProps {
   comment: IComment;
   isOpenComment: boolean;
   setNewComment: (comment: IComment) => void;
+  setIsComment: (isComment: boolean) => void;
 }
 const AddComment: React.FC<IProps> = ({
   comment,
   isOpenComment,
   setNewComment,
+  setIsComment
 }) => {
   const { user } = useStoreUser();
   const [commentValue, setCommentValue] = useState("");
@@ -59,6 +61,7 @@ const AddComment: React.FC<IProps> = ({
       if (res.commentComment.comment) {
         setNewComment(res.commentComment.comment);
         setCommentValue("");
+        setIsComment(false);
       }
     }
   };
@@ -79,6 +82,13 @@ const AddComment: React.FC<IProps> = ({
             <input
               onChange={(e) => setCommentValue(e.target.value)}
               value={commentValue}
+              onKeyPress={(e) => {
+                if (commentValue.length > 0) {
+                  if (e.charCode === 13) {
+                    handleSubmit();
+                  }
+                }
+              }}
               className="w-full h-10 dark:bg-zinc-800 bg-gray-200 rounded-full p-2 resize-none scrollbar-hide"
               placeholder="Wright a comment ..."
             />

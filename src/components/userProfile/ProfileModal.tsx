@@ -8,10 +8,12 @@ import "react-toastify/dist/ReactToastify.css";
 
 import { User } from "../../gql/graphql";
 import axios from "axios";
-import { graphQLClient, graphQLClientErrorCheck } from "../../plugins/graphql.plugin";
+import {
+  graphQLClient,
+  graphQLClientErrorCheck,
+} from "../../plugins/graphql.plugin";
 import { queryUpdateUser } from "../../graphql/user";
 import { useForm } from "react-hook-form";
-
 
 interface IProps {
   data: User;
@@ -63,12 +65,14 @@ const ProfileModal: React.FC<IProps> = ({
         coverLink = resImages.data.images[0];
       }
     }
+    const newFirstName = e.firstName || data.firstName;
+    const newLastName = e.lastName || data.lastName;
     const res = await graphQLClient.request(queryUpdateUser, {
-      firstName: e.firstName,
-      lastName: e.lastName,
+      firstName: newFirstName,
+      lastName: newLastName,
       avatar: profileLink || data.avatar,
       coverImage: coverLink || data.coverImage,
-      fullName: `${e.firstName} ${e.lastName}`,
+      fullName: `${newFirstName} ${newLastName}`,
     });
     if (graphQLClientErrorCheck(res)) {
       setUpdateUserData(true);
@@ -115,11 +119,7 @@ const ProfileModal: React.FC<IProps> = ({
             <div className="flex justify-center">
               <Image
                 className="object-cover rounded-full border-2 bg-no-repeat"
-                src={
-                  preProfileImg ||
-                  data.avatar ||
-                  "/images/user-avatar.png"
-                }
+                src={preProfileImg || data.avatar || "/images/user-avatar.png"}
                 alt="profile image"
                 width="120"
                 height="120"
@@ -149,9 +149,7 @@ const ProfileModal: React.FC<IProps> = ({
               <Image
                 className="object-cover"
                 src={
-                  preCoverImg ||
-                  data.coverImage ||
-                  "/images/user-avatar.png"
+                  preCoverImg || data.coverImage || "/images/user-avatar.png"
                 }
                 alt="profile image"
                 width="500"

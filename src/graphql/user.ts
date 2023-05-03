@@ -59,6 +59,36 @@ export const queryGetUserByUsername = graphql(`
     }
   }
 `);
+export const queryGetUserByUuid = graphql(`
+  query getUserByUuid($userUuid: String!) {
+    getUserByUuid(userUuid: $userUuid) {
+      code
+      success
+      message
+      user {
+        id
+        fullName
+        lastName
+        firstName
+        username
+        email
+        avatar
+        coverImage
+        phone
+        birthday
+        sex
+        role
+        statusEmail
+        createAt
+        updateAt
+      }
+      errors {
+        message
+        field
+      }
+    }
+  }
+`);
 export const queryLogin = graphql(`
   mutation login($email: String!, $password: String!) {
     login(loginInput: { usernameOrEmail: $email, password: $password }) {

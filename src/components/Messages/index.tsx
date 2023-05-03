@@ -28,18 +28,44 @@ const MessagingMain = () => {
 
   const [scroll, setScroll] = useState<string>("");
   const [allUsers, setAllUsers] = useState<User[]>();
-  const [onlineUsers, setOnlineUsers] = useState<User[]>();
+  // const [onlineUsers, setOnlineUsers] = useState<string[]>();
+  const [onlineUsers, setOnlineUsers] = useState(new Set<string>());
   const scrollRef: any = useRef();
   const socket: any = useRef();
   const token = getCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string);
   useEffect(() => {
     socket.current = io(process.env.NEXT_PUBLIC_BASE_URL_API as string, {
+      autoConnect: true,
       auth: {
         token: token,
       },
     });
   }, [token]);
 
+  useEffect(() => {
+    socket.current.on("onlineFriends", (friendList: any) => {
+      const newOnlineUsers = new Set<string>(friendList);
+      setOnlineUsers(newOnlineUsers);
+    });
+    socket.current.on("connected", (userid: string) => {
+      if (onlineUsers instanceof Set) {
+        if (!onlineUsers.has(userid)) {
+          const newOnlineUsers = new Set<string>(onlineUsers);
+          newOnlineUsers.add(userid);
+          setOnlineUsers(newOnlineUsers);
+        }
+      }
+    });
+    socket.current.on("disconnected", (userid: string) => {
+      if (onlineUsers instanceof Set) {
+        if (onlineUsers.has(userid)) {
+          const newOnlineUsers = new Set<string>(onlineUsers);
+          newOnlineUsers.delete(userid);
+          setOnlineUsers(newOnlineUsers);
+        }
+      }
+    });
+  }, [onlineUsers]);
   useEffect(() => {
     socket.current.on("conversations", (conversations: any) => {
       setConversations(conversations);
@@ -104,7 +130,6 @@ const MessagingMain = () => {
       const res = await axios.get("/friends/my");
       if (res.data.success) {
         setAllUsers(res.data.friends);
-        setOnlineUsers(res.data.friends);
       }
     };
     fetchFriends();
@@ -114,6 +139,26 @@ const MessagingMain = () => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, scroll]);
 
+  const renderUserOnline = () => {
+    return (
+      <div>
+        {onlineUsers.size > 0 && (
+          <div className="py-3 overflow-x-scroll	scrollbar flex">
+            {Array.from(onlineUsers).map((u: any) => (
+              <div className={`px-2 relative cursor-pointer`} key={u}>
+                <OnlineUsers
+                  key={u}
+                  onlineUser={u}
+                  setCurrentChat={setCurrentChat}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="relative h-screen flex overflow-hidden bg-white dark:bg-black mx-auto shadow-md">
       {/* <!-- Static sidebar for desktop --> */}
@@ -122,7 +167,6 @@ const MessagingMain = () => {
           setCurrentChat={setCurrentChat}
           currentId={user.id}
           allUsers={allUsers}
-          onlineUsers={onlineUsers}
           closeOffCanvas={closeSearchOffCanvas}
           isOffCanvasOpen={isSearchOffCanvasOpen}
         />
@@ -149,19 +193,7 @@ const MessagingMain = () => {
             </div>
             {/* online user list */}
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
-              {onlineUsers && onlineUsers.length > 0 && (
-                <div className="py-3 overflow-x-scroll	scrollbar flex">
-                  {onlineUsers?.map((u) => (
-                    <div className={`px-2 relative cursor-pointer`} key={u.id}>
-                      <OnlineUsers
-                        key={u.id}
-                        onlineUser={u}
-                        setCurrentChat={setCurrentChat}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
+              {renderUserOnline()}
               <ul className="relative py-2 space-y-1">
                 {conversations.length === 0 ? (
                   <UserListSkeleton />

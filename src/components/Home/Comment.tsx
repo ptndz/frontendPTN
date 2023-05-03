@@ -50,6 +50,7 @@ const Comment: React.FC<IProps> = ({ comment }) => {
           setNewComment={setNewComment}
           isOpenComment={isComment}
           comment={comment}
+          setIsComment={setIsComment}
         />
         <CommentChild comment={comment}></CommentChild>
         {newComment ? (

@@ -7,13 +7,13 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import UserListSkeleton from "../Loaders/UserListSkeleton";
 import { User } from "../../gql/graphql";
+
 interface IProps {
   isOffCanvasOpen?: boolean;
   closeOffCanvas: () => void;
   setCurrentChat: (chat: any) => void;
   currentId?: string;
   allUsers: User[];
-  onlineUsers?: User[];
 }
 const ChatUserSearchOffCanvas: React.FC<IProps> = ({
   isOffCanvasOpen,
@@ -21,7 +21,6 @@ const ChatUserSearchOffCanvas: React.FC<IProps> = ({
   setCurrentChat,
   currentId,
   allUsers,
-  onlineUsers,
 }) => {
   const [search, setSearch] = useState("");
   const [searchResult, setSearchResult] = useState<User[]>();

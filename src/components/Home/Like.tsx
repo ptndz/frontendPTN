@@ -10,7 +10,7 @@ import {
 } from "../../plugins/graphql.plugin";
 import { BsEmojiAngry, BsHeart } from "react-icons/bs";
 import { CgSmileMouthOpen } from "react-icons/cg";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useStoreUser } from "../../store/user";
 interface IProps {
   comment: IComment;
@@ -18,7 +18,7 @@ interface IProps {
 const Like: React.FC<IProps> = ({ comment }) => {
   const { user } = useStoreUser();
   const [like, setLike] = useState<string>("");
-
+  const idLike = useId();
   useEffect(() => {
     const isLikePost = comment?.likes?.find((item) => item.user.id === user.id);
     setLike(isLikePost ? isLikePost.reactions : "");
@@ -54,15 +54,15 @@ const Like: React.FC<IProps> = ({ comment }) => {
   const renderHover = () => {
     return (
       <div className="box pt-2 pb-0 px-1.5">
-        <input type="checkbox" id="like" className="field-reactions" />
-        <label htmlFor="like" className="label-reactions">
+        <input type="checkbox" id={idLike} className="field-reactions" />
+        <label htmlFor={idLike} className="label-reactions">
           Like
         </label>
         <span className="text-desc">
           Press space and after tab key to navigation
         </span>
         <div className="toolbox"></div>
-        <label className="overlay" htmlFor="like"></label>
+        <label className="overlay" htmlFor={idLike}></label>
         <div
           key="LIKE"
           className="reaction-like"

@@ -12,7 +12,7 @@ interface IProps {
   conversation: any;
   currentUser: User;
   currentChat: any;
-  onlineUsers?: User[];
+  onlineUsers: any;
 }
 
 const ChatUser: React.FC<IProps> = ({
@@ -22,13 +22,10 @@ const ChatUser: React.FC<IProps> = ({
   onlineUsers,
 }) => {
   const [userData, setUserData] = useState<User>();
-
   const friend: User = conversation.users.find(
     (u: User) => u.id !== currentUser.id
   );
-  const friendOnline: User = conversation.users.find(
-    (u: User) => u.id === currentUser.id
-  );
+  const [isOnline, setIsOnline] = useState(false);
   useEffect(() => {
     const getUser = async () => {
       try {
@@ -44,6 +41,14 @@ const ChatUser: React.FC<IProps> = ({
     };
     getUser();
   }, [currentUser, conversation, friend]);
+
+  useEffect(() => {
+    if (onlineUsers.size > 0) {
+      console.log(!!Array.from(onlineUsers).find((u) => u === userData?.id));
+
+      setIsOnline(!!Array.from(onlineUsers).find((u) => u === userData?.id));
+    }
+  }, [onlineUsers, userData?.id]);
   return (
     <>
       <div
@@ -67,20 +72,14 @@ const ChatUser: React.FC<IProps> = ({
             </div>
           )}
 
-          {onlineUsers?.map((u) =>
-            u.id === friendOnline?.id ? (
-              <div
-                key={u.id}
-                className="absolute w-3 h-3 rounded-full bg-zinc-600 ring-2 ring-white dark:ring-black bottom-0 right-0"></div>
-            ) : (
-              <div
-                key={u.id}
-                className="absolute w-3 h-3 rounded-full bg-green-600 ring-2 ring-white dark:ring-black bottom-0 right-0"></div>
-            )
+          {isOnline ? (
+            <div className="absolute w-3 h-3 rounded-full bg-green-600 ring-2 ring-white dark:ring-black bottom-0 right-0"></div>
+          ) : (
+            <div className="absolute w-3 h-3 rounded-full bg-zinc-600 ring-2 ring-white dark:ring-black bottom-0 right-0"></div>
           )}
         </div>
         <div className="flex-1 min-w-0 lg:block">
-          <a href="#" className="focus:outline-none">
+          <a className="focus:outline-none">
             <span className="absolute inset-0" aria-hidden="true"></span>
             <p className="truncate text-base font-medium">
               {userData?.fullName}
@@ -88,7 +87,7 @@ const ChatUser: React.FC<IProps> = ({
           </a>
         </div>
       </div>
-      {/* <div className="absolute -bottom-[1px] lg:-bottom-[1px] dark:bg-white bg-black w-1/2 lg:w-3/4 h-1 left-1/2 -translate-x-1/2 rounded"></div> */}
+      <div className="absolute -bottom-[1px] lg:-bottom-[1px] dark:bg-white bg-black w-1/2 lg:w-3/4 h-1 left-1/2 -translate-x-1/2 rounded"></div>
     </>
   );
 };

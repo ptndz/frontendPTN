@@ -1,6 +1,7 @@
 import { GetServerSideProps } from "next";
 import { graphQLServer } from "../../plugins/graphql.plugin";
 import { graphql } from "../../gql";
+
 interface IProps {
   token: string;
 }

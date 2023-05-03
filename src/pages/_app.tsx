@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import NProgress from "nprogress";
-import { Theme, ToastContainer } from "react-toastify";
+import { Theme, ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../styles/globals.css";
 import "nprogress/nprogress.css";
@@ -26,6 +26,7 @@ import { getCookie, setCookie } from "cookies-next";
 
 import axios from "axios";
 import { base64ToUint8Array } from "../plugins/notification";
+import { io } from "socket.io-client";
 
 export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: ReactElement) => ReactNode;
@@ -41,6 +42,24 @@ function MyApp({ Component, pageProps }: AppProps) {
 
   const cookieToken = getCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string);
 
+  const socket: any = useRef();
+
+  const token = getCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string);
+  useEffect(() => {
+    socket.current = io(process.env.NEXT_PUBLIC_BASE_URL_API as string, {
+      autoConnect: true,
+      auth: {
+        token: token,
+      },
+    });
+  }, [token]);
+  useEffect(() => {
+    socket.current.on("newMessageApp", (message: any) => {
+      toast(`${message.user.fullName} đã gửi tin: ${message.message}`, {
+        autoClose: 1000,
+      });
+    });
+  }, []);
   let interval = useRef<any>(null);
   useEffect(() => {
     if (cookieToken) {

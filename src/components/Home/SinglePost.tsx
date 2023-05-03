@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useId } from "react";
 import Image from "next/image";
 import moment from "moment";
 import { FaArrowUp, FaRegSurprise } from "react-icons/fa";
@@ -53,7 +53,7 @@ const SinglePost: React.FC<IProps> = ({
   const [comment, setComment] = useState("");
   const [menu, setMenu] = useState("hidden");
   const ref = useRef<HTMLInputElement>(null);
-
+  const idLike = useId();
   const { user } = useStoreUser();
 
   useEffect(() => {
@@ -446,15 +446,15 @@ const SinglePost: React.FC<IProps> = ({
       <div className="flex justify-between items-center">
         <div className="pt-3 flex items-center">
           <div className="box pt-2 pb-0 px-1.5">
-            <input type="checkbox" id="like" className="field-reactions" />
-            <label htmlFor="like" className="label-reactions">
+            <input type="checkbox" id={idLike} className="field-reactions" />
+            <label htmlFor={idLike} className="label-reactions">
               Like
             </label>
             <span className="text-desc">
               Press space and after tab key to navigation
             </span>
             <div className="toolbox" />
-            <label className="overlay" htmlFor="like" />
+            <label className="overlay" htmlFor={idLike} />
             <button
               className="reaction-like"
               onClick={() => handleLike("LIKE")}>

@@ -12,6 +12,7 @@ import {
 } from "../../plugins/graphql.plugin";
 import { toast } from "react-toastify";
 import { useStoreUser } from "../../store/user";
+import { useRouter } from "next/router";
 
 interface IUser {
   fullName: string;
@@ -22,9 +23,10 @@ const RightSideBar = () => {
   const [users, setUsers] = useState<IUser[]>([]);
   const [loading, setLoading] = useState(false);
   const { user } = useStoreUser();
-  const queryUsers = graphql(`
-    query getUsers {
-      getUsers {
+  const router = useRouter();
+  const queryGetUsersYouMayKnow = graphql(`
+    query getUsersYouMayKnow {
+      getUsersYouMayKnow {
         code
         success
         message
@@ -45,13 +47,13 @@ const RightSideBar = () => {
     setLoading(true);
     const fetchData = async () => {
       try {
-        const res = await graphQLClient.request(queryUsers);
-        if (res.getUsers.code === 400) {
-          toast.error(res.getUsers.message);
+        const res = await graphQLClient.request(queryGetUsersYouMayKnow);
+        if (res.getUsersYouMayKnow.code === 400) {
+          toast.error(res.getUsersYouMayKnow.message);
         }
         if (graphQLClientErrorCheck(res)) {
-          if (res.getUsers.users) {
-            const data = res.getUsers.users.filter((userData) => {
+          if (res.getUsersYouMayKnow.users) {
+            const data = res.getUsersYouMayKnow.users.filter((userData) => {
               return userData.id !== user.id;
             });
             setUsers(data);
@@ -64,7 +66,7 @@ const RightSideBar = () => {
       }
     };
     fetchData();
-  }, [queryUsers, user.id]);
+  }, [queryGetUsersYouMayKnow, user, router.pathname]);
   return (
     <div>
       <div className="bg-white dark:bg-black drop-shadow-sm p-3 rounded-lg">

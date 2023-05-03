@@ -45,6 +45,7 @@ const Profile: React.FC<IProps> = ({ userData, user, profileData }) => {
           url={`${process.env.NEXT_PUBLIC_URL_APP}/${userData.username}`}
           sameAs={["http://www.facebook.com/ptn1411"]}
         />
+
         <Navigation />
         <div className="max-w-4xl mx-auto gap-4 bg-gray-100 dark:bg-zinc-900 pt-2 w-full ">
           <UserProfile
