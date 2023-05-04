@@ -12,6 +12,14 @@ import Login from "../components/Auth/Login";
 import { GetServerSideProps } from "next";
 import { getCookies } from "cookies-next";
 import { User } from "../gql/graphql";
+import dynamic from "next/dynamic";
+
+const DynamicWidgetMessage = dynamic(
+  () => import("../components/Messages/WidgetMessage"),
+  {
+    ssr: false,
+  }
+);
 
 interface IProps {
   userData: User;
@@ -44,6 +52,7 @@ const Home: React.FC<IProps> = ({ userData }) => {
               <RightSideBar />
             </div>
           </div>
+          <DynamicWidgetMessage />
         </div>
       </div>
     );

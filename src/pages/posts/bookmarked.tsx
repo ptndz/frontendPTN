@@ -7,7 +7,14 @@ import { GetServerSideProps } from "next";
 import { queryUser } from "../../graphql/user";
 import { graphQLServer } from "../../plugins/graphql.plugin";
 import { User } from "../../gql/graphql";
+import dynamic from "next/dynamic";
 
+const DynamicWidgetMessage = dynamic(
+  () => import("../../components/Messages/WidgetMessage"),
+  {
+    ssr: false,
+  }
+);
 interface IProps {
   userData: User;
 }
@@ -21,7 +28,12 @@ const BookmarkedPostsPage: React.FC<IProps> = ({ userData }) => {
   }, [setUser, userData]);
 
   if (userData) {
-    return <BookmarkedPosts />;
+    return (
+      <>
+        <BookmarkedPosts />
+        <DynamicWidgetMessage />
+      </>
+    );
   } else {
     return <Login />;
   }

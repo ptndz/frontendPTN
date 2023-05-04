@@ -15,7 +15,13 @@ import { useStoreUser } from "../store/user";
 
 import { useRouter } from "next/router";
 import { SocialProfileJsonLd } from "next-seo";
-
+import dynamic from "next/dynamic";
+const DynamicWidgetMessage = dynamic(
+  () => import("../components/Messages/WidgetMessage"),
+  {
+    ssr: false,
+  }
+);
 interface IProps {
   userData: User;
   user: User;
@@ -53,6 +59,7 @@ const Profile: React.FC<IProps> = ({ userData, user, profileData }) => {
             profileData={profileData}
             setUpdateUserData={setUpdateUserData}
           />
+          <DynamicWidgetMessage />
         </div>
       </>
     );

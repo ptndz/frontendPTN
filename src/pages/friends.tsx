@@ -11,6 +11,15 @@ import { graphQLServer } from "../plugins/graphql.plugin";
 import { User } from "../gql/graphql";
 import Head from "next/head";
 import { NextSeo } from "next-seo";
+import dynamic from "next/dynamic";
+
+const DynamicWidgetMessage = dynamic(
+  () => import("../components/Messages/WidgetMessage"),
+  {
+    ssr: false,
+  }
+);
+
 interface IProps {
   userData: User;
 }
@@ -46,6 +55,7 @@ const Friends: React.FC<IProps> = ({ userData }) => {
           <div className="max-w-5xl w-full mx-auto">
             <AllFriends />
           </div>
+          <DynamicWidgetMessage />
         </div>
       </>
     );

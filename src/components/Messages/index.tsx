@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useDeferredValue, useEffect, useRef, useState } from "react";
 import Navigation from "../Share/Navigation";
 import ChatUserSearchOffCanvas from "./ChatUserSearchOffcanvas";
 import { FiSearch } from "react-icons/fi";
@@ -6,15 +6,15 @@ import { RiSendPlaneLine } from "react-icons/ri";
 import { HiOutlineChatAlt2 } from "react-icons/hi";
 
 import axios from "axios";
-import { io } from "socket.io-client";
+
 import ChatUser from "./ChatUser";
 import Chat from "./Chat";
 import UserListSkeleton from "../Loaders/UserListSkeleton";
 import OnlineUsers from "./OnlineUsers";
 import { useStoreUser } from "../../store/user";
 import { User } from "../../gql/graphql";
-import { getCookie } from "cookies-next";
 
+import socket from "../../plugins/socket";
 const MessagingMain = () => {
   const [isSearchOffCanvasOpen, setIsSearchOffCanvasOpen] = useState(false);
   const closeSearchOffCanvas = () => setIsSearchOffCanvasOpen(false);
@@ -28,26 +28,17 @@ const MessagingMain = () => {
 
   const [scroll, setScroll] = useState<string>("");
   const [allUsers, setAllUsers] = useState<User[]>();
-  // const [onlineUsers, setOnlineUsers] = useState<string[]>();
+
   const [onlineUsers, setOnlineUsers] = useState(new Set<string>());
   const scrollRef: any = useRef();
-  const socket: any = useRef();
-  const token = getCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string);
-  useEffect(() => {
-    socket.current = io(process.env.NEXT_PUBLIC_BASE_URL_API as string, {
-      autoConnect: true,
-      auth: {
-        token: token,
-      },
-    });
-  }, [token]);
+  const deferredNewMessage = useDeferredValue(newMessage);
 
   useEffect(() => {
-    socket.current.on("onlineFriends", (friendList: any) => {
+    socket.on("onlineFriends", (friendList: any) => {
       const newOnlineUsers = new Set<string>(friendList);
       setOnlineUsers(newOnlineUsers);
     });
-    socket.current.on("connected", (userid: string) => {
+    socket.on("connected", (userid: string) => {
       if (onlineUsers instanceof Set) {
         if (!onlineUsers.has(userid)) {
           const newOnlineUsers = new Set<string>(onlineUsers);
@@ -56,7 +47,7 @@ const MessagingMain = () => {
         }
       }
     });
-    socket.current.on("disconnected", (userid: string) => {
+    socket.on("disconnected", (userid: string) => {
       if (onlineUsers instanceof Set) {
         if (onlineUsers.has(userid)) {
           const newOnlineUsers = new Set<string>(onlineUsers);
@@ -67,7 +58,7 @@ const MessagingMain = () => {
     });
   }, [onlineUsers]);
   useEffect(() => {
-    socket.current.on("conversations", (conversations: any) => {
+    socket.on("conversations", (conversations: any) => {
       setConversations(conversations);
     });
   }, [user.id, currentChat]);
@@ -88,11 +79,11 @@ const MessagingMain = () => {
   useEffect(() => {
     const friend: User = currentChat?.users.find((u: User) => u.id !== user.id);
     if (friend) {
-      socket.current.emit("joinConversation", friend.id);
+      socket.emit("joinConversation", friend.id);
     }
   }, [currentChat, user.id]);
   useEffect(() => {
-    socket.current.on("messages", (messages: any) => {
+    socket.on("messages", (messages: any) => {
       setMessages(messages);
       setScroll("scroll");
     });
@@ -100,9 +91,9 @@ const MessagingMain = () => {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    if (newMessage !== "" && currentChat.id !== undefined) {
+    if (deferredNewMessage !== "" && currentChat.id !== undefined) {
       const message = {
-        message: newMessage,
+        message: deferredNewMessage,
         conversation: {
           id: currentChat?.id,
         },
@@ -110,12 +101,14 @@ const MessagingMain = () => {
           id: user.id,
         },
       };
-      socket.current.emit("sendMessage", message);
+      socket.emit("sendMessage", message);
       setNewMessage("");
     }
   };
   useEffect(() => {
-    socket.current.on("newMessage", (message: any) => {
+    socket.on("newMessage", (message: any) => {
+      console.log(message);
+
       const allMessageIds = messages.map((message: any) => message.id);
       if (!allMessageIds.includes(message.id)) {
         setMessages([...messages, message]);
@@ -123,7 +116,7 @@ const MessagingMain = () => {
         setScroll(`scroll-${message.id}`);
       }
     });
-  }, [messages, newMessage]);
+  }, [messages, deferredNewMessage]);
 
   useEffect(() => {
     const fetchFriends = async () => {

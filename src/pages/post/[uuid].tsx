@@ -9,6 +9,14 @@ import Error from "../404";
 import { queryUser } from "../../graphql/user";
 import { useStoreUser } from "../../store/user";
 import { ArticleJsonLd } from "next-seo";
+import dynamic from "next/dynamic";
+
+const DynamicWidgetMessage = dynamic(
+  () => import("../../components/Messages/WidgetMessage"),
+  {
+    ssr: false,
+  }
+);
 interface IProps {
   postData: IPost;
 }
@@ -50,6 +58,7 @@ const Post: React.FC<IProps> = ({ postData }) => {
             setDeletePost={setDeletePost}
             bookmarkedPostsId={[]}
           />
+          <DynamicWidgetMessage />
         </div>
       </>
     );

@@ -66,6 +66,8 @@ export async function refreshToken(): Promise<string> {
     refreshToken: refreshToken,
   });
   const { accessToken } = rs.data;
-  setCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string, accessToken);
+  setCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string, accessToken, {
+    maxAge: 60 * 60 * 48,
+  });
   return accessToken;
 }

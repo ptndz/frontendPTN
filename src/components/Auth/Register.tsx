@@ -69,7 +69,7 @@ const Register = () => {
         maxAge: 60 * 60 * 24 * 30,
       });
       setCookies(process.env.NEXT_PUBLIC_COOKIE_NAME as string, accessToken, {
-        maxAge: 60 * 60 * 24,
+        maxAge: 60 * 60 * 48,
       });
       setCookies(
         process.env.NEXT_PUBLIC_REFRESH_TOKEN_COOKIE_NAME as string,

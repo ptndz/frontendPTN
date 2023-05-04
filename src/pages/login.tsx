@@ -30,9 +30,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         context.req.headers.cookie,
         accessToken
       ).request(queryUser);
-      console.log("context", accessToken);
+
       if (res.user.user) {
-        console.log("context", res);
         return {
           redirect: {
             destination: "/",
@@ -45,7 +44,6 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       props: {},
     };
   } catch (error) {
-    console.log(error);
     return {
       props: {},
     };
