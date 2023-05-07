@@ -5,7 +5,7 @@ import ChatWidget from "./ChatWidget";
 import { IStateOpen } from "./WidgetMessage";
 import { RiSendPlaneLine } from "react-icons/ri";
 import Image from "next/image";
-
+import { MessageType } from "./index";
 interface IProps {
   chat: IStateOpen;
   onClick: () => void;
@@ -14,8 +14,8 @@ interface IProps {
 const ChatWindow: React.FC<IProps> = ({ chat, onClick }) => {
   const { user } = useStoreUser();
   const scrollRef: any = useRef();
-  const [messages, setMessages] = useState<any>([]);
-  const [scroll, setScroll] = useState<string>("");
+  const [messages, setMessages] = useState<any[]>([]);
+
   const [newMessage, setNewMessage] = useState("");
   const deferredNewMessage = useDeferredValue(newMessage);
   useEffect(() => {
@@ -23,27 +23,23 @@ const ChatWindow: React.FC<IProps> = ({ chat, onClick }) => {
   }, [chat, user.id]);
 
   useEffect(() => {
-    socket.on("chatWindowMessages", (messages: any) => {
-      setMessages(messages);
-      setScroll("scroll");
+    socket.on("chatWindowMessages", (messagesI: any) => {
+      setMessages(messagesI);
+      scrollRef.current?.scrollIntoView({ behavior: "smooth" });
     });
-  }, [chat]);
+  }, [chat, messages]);
   useEffect(() => {
     socket.on("newMessage", (message: any) => {
-      console.log("message", message);
       if (message.conversation.id === chat.id) {
         const allMessageIds = messages.map((message: any) => message.id);
         if (!allMessageIds.includes(message.id)) {
-          setMessages([...messages, message]);
-
-          setScroll(`scroll-${message.id}`);
+          setMessages(updateObjectInState(messages, message));
+          scrollRef.current?.scrollIntoView({ behavior: "smooth" });
         }
       }
     });
   }, [messages, deferredNewMessage, chat.id]);
-  useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, scroll]);
+
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     if (deferredNewMessage !== "" && chat.id !== undefined) {
@@ -55,6 +51,7 @@ const ChatWindow: React.FC<IProps> = ({ chat, onClick }) => {
         user: {
           id: user.id,
         },
+        type: MessageType.TEXT,
       };
       socket.emit("sendMessage", message);
       setNewMessage("");
@@ -127,3 +124,23 @@ const ChatWindow: React.FC<IProps> = ({ chat, onClick }) => {
 };
 
 export default ChatWindow;
+function updateObjectInState(state: any, objectToUpdate: any) {
+  if (state.length === 0) {
+    return [objectToUpdate];
+  }
+  const foundObject = state.find((obj: any) => obj.id === objectToUpdate.id);
+  if (!foundObject) {
+    // Nếu không tìm thấy object có id tương ứng, thêm mới object vào mảng
+    return [...state, objectToUpdate];
+  } else {
+    // Nếu tìm thấy object có id tương ứng, cập nhật object đó trong mảng
+    const newState = state.map((obj: any) => {
+      if (obj.id === objectToUpdate.id) {
+        return objectToUpdate;
+      } else {
+        return obj;
+      }
+    });
+    return newState;
+  }
+}

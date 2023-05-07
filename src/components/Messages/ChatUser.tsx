@@ -44,8 +44,6 @@ const ChatUser: React.FC<IProps> = ({
 
   useEffect(() => {
     if (onlineUsers.size > 0) {
-      console.log(!!Array.from(onlineUsers).find((u) => u === userData?.id));
-
       setIsOnline(!!Array.from(onlineUsers).find((u) => u === userData?.id));
     }
   }, [onlineUsers, userData?.id]);

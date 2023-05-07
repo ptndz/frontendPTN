@@ -77,7 +77,7 @@ const LeftSideBar = () => {
           </div>
         </div>
 
-        <div className="bg-white font-medium dark:bg-black p-5 rounded-lg drop-shadow-sm space-y-3">
+        {/* <div className="bg-white font-medium dark:bg-black p-5 rounded-lg drop-shadow-sm space-y-3">
           <div className="left-sidebar space-y-2">
             <Link href={`/${user?.username}`} passHref>
               <div className="flex items-center gap-2 p-1.5 cursor-pointer">
@@ -119,7 +119,7 @@ const LeftSideBar = () => {
               Sign out
             </button>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

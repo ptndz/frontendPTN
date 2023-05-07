@@ -164,14 +164,18 @@ const SinglePost: React.FC<IProps> = ({
         }
       }
     `);
-    const res = await graphQLClient.request(queryLike, {
-      postUuid: post.uuid,
-      typeReact: typeReact,
-    });
-    if (graphQLClientErrorCheck(res)) {
-      if (res.likePost.like) {
-        setLike(res.likePost.like.reactions);
+    try {
+      const res = await graphQLClient.request(queryLike, {
+        postUuid: post.uuid,
+        typeReact: typeReact,
+      });
+      if (graphQLClientErrorCheck(res)) {
+        if (res.likePost.like) {
+          setLike(res.likePost.like.reactions);
+        }
       }
+    } catch (error) {
+      console.log(error);
     }
   };
   const handleDelete = async (uuid: string) => {

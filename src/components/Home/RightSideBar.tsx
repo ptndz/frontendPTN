@@ -12,7 +12,6 @@ import {
 } from "../../plugins/graphql.plugin";
 import { toast } from "react-toastify";
 import { useStoreUser } from "../../store/user";
-import { useRouter } from "next/router";
 
 interface IUser {
   fullName: string;
@@ -23,7 +22,7 @@ const RightSideBar = () => {
   const [users, setUsers] = useState<IUser[]>([]);
   const [loading, setLoading] = useState(false);
   const { user } = useStoreUser();
-  const router = useRouter();
+
   const queryGetUsersYouMayKnow = graphql(`
     query getUsersYouMayKnow {
       getUsersYouMayKnow {
@@ -66,7 +65,7 @@ const RightSideBar = () => {
       }
     };
     fetchData();
-  }, [queryGetUsersYouMayKnow, user, router.pathname]);
+  }, [queryGetUsersYouMayKnow, user]);
   return (
     <div>
       <div className="bg-white dark:bg-black drop-shadow-sm p-3 rounded-lg">

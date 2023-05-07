@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import Error from "../404";
 import { queryUser } from "../../graphql/user";
 import { useStoreUser } from "../../store/user";
-import { ArticleJsonLd } from "next-seo";
+import { ArticleJsonLd, NextSeoProps } from "next-seo";
 import dynamic from "next/dynamic";
 
 const DynamicWidgetMessage = dynamic(
@@ -42,6 +42,7 @@ const Post: React.FC<IProps> = ({ postData }) => {
           type="BlogPosting"
           url={`${process.env.NEXT_PUBLIC_URL_APP}post/${postData.uuid}`}
           title={postData.content}
+          canonical={`${process.env.NEXT_PUBLIC_URL_APP}post/${postData.uuid}`}
           description={postData.content}
           images={postData.images as string[]}
           datePublished={postData.createAt}

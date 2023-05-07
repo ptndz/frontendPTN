@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -14,12 +14,13 @@ import {
 } from "react-icons/bs";
 import { VscListSelection } from "react-icons/vsc";
 import { FiUsers, FiLogOut, FiSearch } from "react-icons/fi";
-
+import { MdOutlineNotificationsNone } from "react-icons/md";
 import { useStoreUser } from "../../store/user";
 import { useStoreTheme } from "../../store/state";
 import { graphql } from "../../gql";
 import { graphQLClient } from "../../plugins/graphql.plugin";
 import { deleteCookie } from "cookies-next";
+import axios from "axios";
 
 const topCenterNavlinks = [
   {
@@ -43,6 +44,27 @@ const topCenterNavlinks = [
     label: "Bookmarked posts",
   },
 ];
+interface INotion {
+  id: number;
+  isRead: boolean;
+  notification: {
+    id: number;
+    content: string;
+    createAt: string;
+    senderID: string;
+    url: string;
+  };
+}
+
+function countUnreadNotifications(notifications: INotion[]) {
+  let count = 0;
+  for (let i = 0; i < notifications.length; i++) {
+    if (!notifications[i].isRead) {
+      count++;
+    }
+  }
+  return count;
+}
 
 const Navigation = () => {
   const [mounted, setMounted] = useState(false);
@@ -51,12 +73,62 @@ const Navigation = () => {
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isNotion, setIsNotion] = useState(false);
   const closeProfileMenu = () => setIsProfileMenuOpen(false);
   const toggleProfileMenu = () => setIsProfileMenuOpen(!isProfileMenuOpen);
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
   const openMobileMenu = () => setIsMobileMenuOpen(true);
   const { theme, setTheme } = useStoreTheme();
+  const menuRef: any = useRef(null);
+  const menuNotionRef: any = useRef(null);
 
+  const [listNotion, setListNotion] = useState<INotion[]>();
+  const [numberNotion, setNumberNotion] = useState<number>();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const res = await axios.get("/notification/all");
+      setListNotion(res.data.notifications);
+      setNumberNotion(countUnreadNotifications(res.data.notifications));
+    };
+    fetchData();
+  }, []);
+
+  // Hàm này sẽ được gọi mỗi khi isProfileMenuOpen thay đổi
+  useEffect(() => {
+    // Nếu menu mở, thì ta sẽ thêm event listener để lắng nghe sự kiện click trên document
+    if (isProfileMenuOpen || isNotion) {
+      document.addEventListener("click", handleClickOutsideMenu);
+    } else {
+      document.removeEventListener("click", handleClickOutsideMenu);
+    }
+
+    // Hàm này sẽ được gọi khi component unmount
+    return () => {
+      document.removeEventListener("click", handleClickOutsideMenu);
+    };
+  }, [isProfileMenuOpen, isNotion]);
+
+  // Hàm này sẽ được gọi mỗi khi click trên document
+  const handleClickOutsideMenu = (event: any) => {
+    // Nếu click nằm ngoài menu, ta sẽ đóng menu
+    if (menuRef.current && !menuRef.current.contains(event.target)) {
+      setIsMobileMenuOpen(false);
+      setIsProfileMenuOpen(false);
+    }
+    if (
+      menuNotionRef.current &&
+      !menuNotionRef.current.contains(event.target)
+    ) {
+      setIsNotion(false);
+    }
+  };
+  const readNotion = async (notion: INotion) => {
+    const res = await axios.post(`/notification/read/${notion.id}`);
+    if (res.data.status) {
+      router.push(notion.notification.url);
+    }
+  };
   useEffect(() => setMounted(true), []);
   const handleLogout = async () => {
     try {
@@ -153,8 +225,47 @@ const Navigation = () => {
           <div className="flex items-center gap-1.5 md:gap-2.5">
             {/* theme button */}
             {renderThemeChanger()}
+
+            <div ref={menuNotionRef} className="relative">
+              <div className="relative">
+                <button
+                  onClick={() => setIsNotion(!isNotion)}
+                  className="whitespace-nowrap relative h-11 w-11 border border-gray-300 dark:border-zinc-600 dark:hover:bg-zinc-900 hover:bg-gray-100 rounded-full text-lg focus:outline-none focus:ring-offset-0">
+                  <MdOutlineNotificationsNone className="h-9 w-9" />
+
+                  {numberNotion && numberNotion > 0 ? (
+                    <div className="absolute top-0 right-0 px-1 bg-red-500 rounded-full text-white text-sm">
+                      {numberNotion}
+                    </div>
+                  ) : null}
+                </button>
+              </div>
+              {/* dropdowns */}
+              <div
+                className={`${
+                  isNotion
+                    ? "opacity-100 translate-y-0 z-50"
+                    : "opacity-0 translate-y-4 pointer-events-none"
+                }  transform transition-all divide-y divide-gray-300 dark:divide-zinc-600 duration-200 absolute z-50 right-4 mt-2 p-1 w-64 rounded-md shadow-lg overflow-hidden dark:bg-black bg-white ring-1 ring-gray-100 dark:ring-zinc-600 focus:outline-none`}>
+                <div className="py-1">
+                  {listNotion?.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => readNotion(item)}
+                      className={`flex items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg ${
+                        item.isRead ? "text-gray-400" : "text-gray-700"
+                      }`}>
+                      <p className="flex items-center gap-2">
+                        <span>{item.notification.content}</span>
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             {/* profile options */}
-            <div className="relative">
+            <div ref={menuRef} className="relative">
               <div className="relative">
                 <button
                   onClick={toggleProfileMenu}

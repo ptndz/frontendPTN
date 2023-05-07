@@ -83,23 +83,3 @@ const WidgetMessage = () => {
 };
 
 export default WidgetMessage;
-function updateObjectInState(state: any, objectToUpdate: any) {
-  if (state.length === 0) {
-    return [objectToUpdate];
-  }
-  const foundObject = state.find((obj: any) => obj.id === objectToUpdate.id);
-  if (!foundObject) {
-    // Nếu không tìm thấy object có id tương ứng, thêm mới object vào mảng
-    return [...state, objectToUpdate];
-  } else {
-    // Nếu tìm thấy object có id tương ứng, cập nhật object đó trong mảng
-    const newState = state.map((obj: any) => {
-      if (obj.id === objectToUpdate.id) {
-        return objectToUpdate;
-      } else {
-        return obj;
-      }
-    });
-    return newState;
-  }
-}

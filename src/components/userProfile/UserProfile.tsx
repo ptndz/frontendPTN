@@ -88,7 +88,9 @@ const UserProfile: React.FC<IProps> = ({
   const loadMoreRef = useRef() as React.RefObject<HTMLButtonElement>;
 
   useEffect(() => {
-    fetchNextPage();
+    if (newPost) {
+      fetchNextPage();
+    }
   }, [fetchNextPage, newPost]);
 
   useEffect(() => {
@@ -367,17 +369,19 @@ const UserProfile: React.FC<IProps> = ({
           {data?.pages.map((data) => (
             <Fragment key={data?.page}>
               {data?.posts &&
-                data?.posts.map((post) => (
-                  <SinglePost
-                    loading={false}
-                    bookmarkedPostsId={bookmarkedPostsId || []}
-                    key={post.uuid}
-                    post={post}
-                    deletePost={deletePost}
-                    setDeletePost={setDeletePost}
-                    isBookmarkPage={false}
-                  />
-                ))}
+                data?.posts
+                  .map((post) => (
+                    <SinglePost
+                      loading={false}
+                      bookmarkedPostsId={bookmarkedPostsId || []}
+                      key={post.uuid}
+                      post={post}
+                      deletePost={deletePost}
+                      setDeletePost={setDeletePost}
+                      isBookmarkPage={false}
+                    />
+                  ))
+                  .reverse()}
             </Fragment>
           ))}
 

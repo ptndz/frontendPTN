@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import { RiUserSmileLine } from "react-icons/ri";
 import moment from "moment";
+import { MessageType } from "./index";
 
 interface IProps {
   message: any;
@@ -11,6 +12,47 @@ interface IProps {
 const Chat: React.FC<IProps> = ({ message, own }) => {
   const user = message.user;
 
+  const renderContent = () => {
+    switch (message.type) {
+      case MessageType.TEXT:
+        if (own) {
+          return (
+            <p className="bg-blue-500 text-white text-left text-sm font-normal md:max-w-sm max-w-sm shadow py-2 px-4 inline-block rounded-md">
+              {message.message}
+            </p>
+          );
+        } else {
+          return (
+            <p className="bg-white dark:bg-zinc-800 text-sm font-normal md:max-w-sm max-w-sm shadow py-2 px-4 inline-block rounded-md">
+              {message.message}
+            </p>
+          );
+        }
+      case MessageType.IMAGE:
+        return (
+          <Image
+            width={500}
+            height={500}
+            src={message.message}
+            alt={user.fullName}
+          />
+        );
+      default:
+        if (own) {
+          return (
+            <p className="bg-blue-500 text-white text-left text-sm font-normal md:max-w-sm max-w-sm shadow py-2 px-4 inline-block rounded-md">
+              {message.message}
+            </p>
+          );
+        } else {
+          return (
+            <p className="bg-white dark:bg-zinc-800 text-sm font-normal md:max-w-sm max-w-sm shadow py-2 px-4 inline-block rounded-md">
+              {message.message}
+            </p>
+          );
+        }
+    }
+  };
   return (
     <>
       {own ? (
@@ -34,9 +76,7 @@ const Chat: React.FC<IProps> = ({ message, own }) => {
             <p className="text-xs font-medium dark:text-gray-300 text-gray-600">
               {user?.fullName}
             </p>
-            <p className="bg-blue-500 text-white text-left text-sm font-normal md:max-w-sm max-w-sm shadow py-2 px-4 inline-block rounded-md">
-              {message.message}
-            </p>
+            {renderContent()}
             <div className="text-xs">{moment(message.createdAt).fromNow()}</div>
           </div>
         </div>
@@ -61,9 +101,7 @@ const Chat: React.FC<IProps> = ({ message, own }) => {
             <p className="text-xs font-medium dark:text-gray-300 text-gray-600">
               {user?.fullName}
             </p>
-            <p className="bg-white dark:bg-zinc-800 text-sm font-normal md:max-w-sm max-w-sm shadow py-2 px-4 inline-block rounded-md">
-              {message.message}
-            </p>
+            {renderContent()}
             <div className="text-xs">{moment(message.createdAt).fromNow()}</div>
           </div>
         </div>

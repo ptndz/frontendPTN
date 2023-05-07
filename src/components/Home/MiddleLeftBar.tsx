@@ -80,17 +80,19 @@ const MiddleLeftBar = () => {
       {data?.pages.map((data, i) => (
         <Fragment key={data.page}>
           {data?.posts &&
-            data?.posts.map((post) => (
-              <SinglePost
-                loading={loading}
-                bookmarkedPostsId={bookmarkedPostsId || []}
-                key={post.uuid}
-                post={post}
-                deletePost={deletePost}
-                setDeletePost={setDeletePost}
-                isBookmarkPage={false}
-              />
-            ))}
+            data?.posts
+              .map((post) => (
+                <SinglePost
+                  loading={loading}
+                  bookmarkedPostsId={bookmarkedPostsId || []}
+                  key={post.uuid}
+                  post={post}
+                  deletePost={deletePost}
+                  setDeletePost={setDeletePost}
+                  isBookmarkPage={false}
+                />
+              ))
+              .reverse()}
         </Fragment>
       ))}
 

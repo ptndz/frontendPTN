@@ -62,7 +62,6 @@ const AllFriends = () => {
   useEffect(() => {
     const getReceived = async () => {
       const res = await axios.get("/friends/me/received-requests");
-      console.log(res.data);
     };
 
     const myFriends = async () => {

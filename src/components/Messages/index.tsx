@@ -4,7 +4,8 @@ import ChatUserSearchOffCanvas from "./ChatUserSearchOffcanvas";
 import { FiSearch } from "react-icons/fi";
 import { RiSendPlaneLine } from "react-icons/ri";
 import { HiOutlineChatAlt2 } from "react-icons/hi";
-
+import { FcAddImage } from "react-icons/fc";
+import { BsX } from "react-icons/bs";
 import axios from "axios";
 
 import ChatUser from "./ChatUser";
@@ -15,8 +16,22 @@ import { useStoreUser } from "../../store/user";
 import { User } from "../../gql/graphql";
 
 import socket from "../../plugins/socket";
+import Image from "next/image";
+
+export enum MessageType {
+  TEXT = "TEXT",
+  URL = "URL",
+  IMAGE = "IMAGE",
+  VIDEO = "VIDEO",
+  AUDIO = "AUDIO",
+  FILE = "FILE",
+  LOCATION = "LOCATION",
+  CONTACT = "CONTACT",
+  STICKER = "STICKER",
+}
 const MessagingMain = () => {
   const [isSearchOffCanvasOpen, setIsSearchOffCanvasOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const closeSearchOffCanvas = () => setIsSearchOffCanvasOpen(false);
   const openSearchOffCanvas = () => setIsSearchOffCanvasOpen(true);
 
@@ -32,6 +47,8 @@ const MessagingMain = () => {
   const [onlineUsers, setOnlineUsers] = useState(new Set<string>());
   const scrollRef: any = useRef();
   const deferredNewMessage = useDeferredValue(newMessage);
+  const [image, setImage] = useState<File[]>();
+  const [imagePreview, setImagePreview] = useState<string[]>();
 
   useEffect(() => {
     socket.on("onlineFriends", (friendList: any) => {
@@ -100,15 +117,72 @@ const MessagingMain = () => {
         user: {
           id: user.id,
         },
+        type: MessageType.TEXT,
       };
       socket.emit("sendMessage", message);
       setNewMessage("");
     }
   };
+  const handleSubmitImage = async (e: any) => {
+    e.preventDefault();
+    setIsLoading(false);
+    const formData = new FormData();
+    let imagesData: string[] = [];
+    if (image) {
+      image.map((image: File) => {
+        formData.append("images", image);
+      });
+
+      const resImages = await axios.post("/image", formData);
+      if (resImages.data.code === 200) {
+        if (resImages.data.images) {
+          imagesData = resImages.data.images;
+        }
+      }
+    }
+    if (currentChat.id && imagesData.length > 0) {
+      await imagesData.map(async (value) => {
+        let message = {
+          message: value,
+          conversation: {
+            id: currentChat?.id,
+          },
+          user: {
+            id: user.id,
+          },
+          type: MessageType.IMAGE,
+        };
+        await socket.emit("sendMessage", message);
+      });
+    }
+    setImage(undefined);
+    setImagePreview(undefined);
+    setIsLoading(true);
+  };
+  const handleImageChange = (event: any) => {
+    const files = event.target.files;
+    const images: any = [];
+    if (files) {
+      for (let i = 0; i < files.length; i++) {
+        images.push(URL.createObjectURL(files[i]));
+      }
+
+      if (imagePreview === undefined) {
+        setImagePreview([...images]);
+      }
+      if (imagePreview) {
+        setImagePreview((result: any) => [...result, ...images]);
+      }
+      if (image === undefined) {
+        setImage([files[0]]);
+      }
+      if (image) {
+        setImage((result: any) => [...result, files[0]]);
+      }
+    }
+  };
   useEffect(() => {
     socket.on("newMessage", (message: any) => {
-      console.log(message);
-
       const allMessageIds = messages.map((message: any) => message.id);
       if (!allMessageIds.includes(message.id)) {
         setMessages([...messages, message]);
@@ -231,21 +305,72 @@ const MessagingMain = () => {
                   <div className="border-t border-gray-200 dark:border-zinc-600 dark:bg-black bg-white py-4 lg:px-12 px-4">
                     <form>
                       <div className="flex gap-3">
+                        <label
+                          htmlFor="image-upload"
+                          className="cursor-pointer">
+                          <FcAddImage className="w-9 h-9" />
+                        </label>
                         <input
-                          type="text"
-                          onChange={(e) => setNewMessage(e.target.value)}
-                          value={newMessage}
-                          name="message"
-                          placeholder="Aa"
-                          autoComplete="off"
-                          className="w-full bg-gray-50 dark:bg-transparent rounded-full bg-opacity-50 border border-gray-300 dark:border-zinc-600 focus:ring-2 focus:ring-indigo-200 focus:bg-transparent focus:border-indigo-500 text-base outline-none py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
+                          type="file"
+                          id="image-upload"
+                          onChange={handleImageChange}
+                          accept="image/*"
+                          className="hidden"
                         />
-                        <button
-                          onClick={handleSubmit}
-                          disabled={!newMessage}
-                          className="inline-flex disabled:cursor-not-allowed gap-2 items-center justify-center border border-transparent rounded-full shadow-sm">
-                          <RiSendPlaneLine className="h-4 w-4 text-white rotate-45 rounded-full bg-indigo-500 hover:bg-indigo-600 focus:outline-none box-content p-3" />
-                        </button>
+                        {imagePreview && (
+                          <div className="flex flex-wrap gap-4">
+                            {imagePreview.map((image, index: number) => (
+                              <div key={index} className="max-w-xs">
+                                <Image
+                                  src={image}
+                                  alt="Pham Thanh Nam"
+                                  width="200"
+                                  height="200"
+                                />
+                              </div>
+                            ))}
+
+                            <button
+                              className="absolute top-3 right-1 mr-2.5"
+                              type="button"
+                              onClick={() => {
+                                setImage(undefined);
+                                setImagePreview(undefined);
+                              }}>
+                              <BsX className="h-5 w-5 box-content p-2 rounded-full bg-white border dark:border-zinc-600 dark:bg-zinc-700" />
+                            </button>
+                          </div>
+                        )}
+                        {imagePreview ? (
+                          <>
+                            {isLoading ? (
+                              <button
+                                onClick={handleSubmitImage}
+                                disabled={!imagePreview}
+                                className="inline-flex disabled:cursor-not-allowed gap-2 items-center justify-center border border-transparent rounded-full shadow-sm">
+                                <RiSendPlaneLine className="h-4 w-4 text-white rotate-45 rounded-full bg-indigo-500 hover:bg-indigo-600 focus:outline-none box-content p-3" />
+                              </button>
+                            ) : null}
+                          </>
+                        ) : (
+                          <>
+                            <input
+                              type="text"
+                              onChange={(e) => setNewMessage(e.target.value)}
+                              value={newMessage}
+                              name="message"
+                              placeholder="Aa"
+                              autoComplete="off"
+                              className="w-full bg-gray-50 dark:bg-transparent rounded-full bg-opacity-50 border border-gray-300 dark:border-zinc-600 focus:ring-2 focus:ring-indigo-200 focus:bg-transparent focus:border-indigo-500 text-base outline-none py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
+                            />
+                            <button
+                              onClick={handleSubmit}
+                              disabled={!newMessage}
+                              className="inline-flex disabled:cursor-not-allowed gap-2 items-center justify-center border border-transparent rounded-full shadow-sm">
+                              <RiSendPlaneLine className="h-4 w-4 text-white rotate-45 rounded-full bg-indigo-500 hover:bg-indigo-600 focus:outline-none box-content p-3" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </form>
                   </div>

@@ -1,13 +1,56 @@
 import Image from "next/image";
 import moment from "moment";
 import { RiUserSmileLine } from "react-icons/ri";
-
+import { MessageType } from "./index";
 interface IProps {
   message: any;
   own: boolean;
 }
 const ChatWidget: React.FC<IProps> = ({ message, own }) => {
   const user = message.user;
+
+  const renderContent = () => {
+    switch (message.type) {
+      case MessageType.TEXT:
+        if (own) {
+          return (
+            <div className="bg-blue-600 text-white p-3 rounded-l-lg rounded-br-lg">
+              <p className="text-sm">{message.message}</p>
+            </div>
+          );
+        } else {
+          return (
+            <div className="bg-gray-300 p-3 rounded-r-lg rounded-bl-lg">
+              <p className="text-sm">{message.message}</p>
+            </div>
+          );
+        }
+      case MessageType.IMAGE:
+        return (
+          <Image
+            width={200}
+            height={200}
+            src={message.message}
+            alt={user.fullName}
+          />
+        );
+      default:
+        if (own) {
+          return (
+            <div className="bg-blue-600 text-white p-3 rounded-l-lg rounded-br-lg">
+              <p className="text-sm">{message.message}</p>
+            </div>
+          );
+        } else {
+          return (
+            <div className="bg-gray-300 p-3 rounded-r-lg rounded-bl-lg">
+              <p className="text-sm">{message.message}</p>
+            </div>
+          );
+        }
+    }
+  };
+
   return (
     <>
       {own ? (
@@ -33,7 +76,7 @@ const ChatWidget: React.FC<IProps> = ({ message, own }) => {
               {user?.fullName}
             </p>
             <div className="bg-gray-300 p-3 rounded-r-lg rounded-bl-lg">
-              <p className="text-sm">{message.message}</p>
+              {renderContent()}
             </div>
             <span className="text-xs text-gray-500 leading-none">
               {moment(message.createdAt).fromNow()}
@@ -47,7 +90,7 @@ const ChatWidget: React.FC<IProps> = ({ message, own }) => {
               {user?.fullName}
             </p>
             <div className="bg-blue-600 text-white p-3 rounded-l-lg rounded-br-lg">
-              <p className="text-sm">{message.message}</p>
+              {renderContent()}
             </div>
             <span className="text-xs text-gray-500 leading-none">
               {moment(message.createdAt).fromNow()}
