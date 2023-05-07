@@ -12,19 +12,7 @@ const ChatWidget: React.FC<IProps> = ({ message, own }) => {
   const renderContent = () => {
     switch (message.type) {
       case MessageType.TEXT:
-        if (own) {
-          return (
-            <div className="bg-blue-600 text-white p-3 rounded-l-lg rounded-br-lg">
-              <p className="text-sm">{message.message}</p>
-            </div>
-          );
-        } else {
-          return (
-            <div className="bg-gray-300 p-3 rounded-r-lg rounded-bl-lg">
-              <p className="text-sm">{message.message}</p>
-            </div>
-          );
-        }
+        return <p className="text-sm">{message.message}</p>;
       case MessageType.IMAGE:
         return (
           <Image
@@ -35,19 +23,7 @@ const ChatWidget: React.FC<IProps> = ({ message, own }) => {
           />
         );
       default:
-        if (own) {
-          return (
-            <div className="bg-blue-600 text-white p-3 rounded-l-lg rounded-br-lg">
-              <p className="text-sm">{message.message}</p>
-            </div>
-          );
-        } else {
-          return (
-            <div className="bg-gray-300 p-3 rounded-r-lg rounded-bl-lg">
-              <p className="text-sm">{message.message}</p>
-            </div>
-          );
-        }
+        return <p className="text-sm">{message.message}</p>;
     }
   };
 

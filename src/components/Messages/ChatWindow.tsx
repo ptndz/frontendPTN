@@ -15,7 +15,7 @@ const ChatWindow: React.FC<IProps> = ({ chat, onClick }) => {
   const { user } = useStoreUser();
   const scrollRef: any = useRef();
   const [messages, setMessages] = useState<any[]>([]);
-
+  const [scroll, setScroll] = useState<string>("");
   const [newMessage, setNewMessage] = useState("");
   const deferredNewMessage = useDeferredValue(newMessage);
   useEffect(() => {
@@ -25,7 +25,7 @@ const ChatWindow: React.FC<IProps> = ({ chat, onClick }) => {
   useEffect(() => {
     socket.on("chatWindowMessages", (messagesI: any) => {
       setMessages(messagesI);
-      scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+      setScroll(`smooth`);
     });
   }, [chat, messages]);
   useEffect(() => {
@@ -34,12 +34,14 @@ const ChatWindow: React.FC<IProps> = ({ chat, onClick }) => {
         const allMessageIds = messages.map((message: any) => message.id);
         if (!allMessageIds.includes(message.id)) {
           setMessages(updateObjectInState(messages, message));
-          scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+          setScroll(`smooth${message.id}`);
         }
       }
     });
   }, [messages, deferredNewMessage, chat.id]);
-
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [scroll]);
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     if (deferredNewMessage !== "" && chat.id !== undefined) {
@@ -55,6 +57,7 @@ const ChatWindow: React.FC<IProps> = ({ chat, onClick }) => {
       };
       socket.emit("sendMessage", message);
       setNewMessage("");
+      setScroll(deferredNewMessage);
     }
   };
 
@@ -83,37 +86,39 @@ const ChatWindow: React.FC<IProps> = ({ chat, onClick }) => {
           </div>
           <div className="h-72 flex flex-col items-center justify-center min-h-screen bg-gray-100 text-gray-800">
             <div className="flex flex-col flex-grow w-full max-w-xl bg-white shadow-xl rounded-lg overflow-hidden">
-              <div className="flex flex-col flex-grow h-0 p-4 overflow-auto space-y-9">
+              <div className="max-h-full flex flex-col flex-grow h-0 p-4 overflow-auto space-y-9">
                 {messages.map((message: any) => (
                   <div ref={scrollRef} key={message.id}>
-                    <ChatWidget
-                      message={message}
-                      own={message?.user.id != user?.id}
-                    />
+                    <div>
+                      <ChatWidget
+                        message={message}
+                        own={message?.user.id !== user?.id}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
-              <div className="bg-gray-300 p-4 sticky bottom-0">
-                <form>
-                  <div className="flex gap-3">
-                    <input
-                      type="text"
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      value={newMessage}
-                      name="message"
-                      placeholder="Aa"
-                      autoComplete="off"
-                      className="w-full bg-gray-50 dark:bg-transparent rounded-full bg-opacity-50 border border-gray-300 dark:border-zinc-600 focus:ring-2 focus:ring-indigo-200 focus:bg-transparent focus:border-indigo-500 text-base outline-none py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
-                    />
-                    <button
-                      onClick={handleSubmit}
-                      disabled={!newMessage}
-                      className="inline-flex disabled:cursor-not-allowed gap-2 items-center justify-center border border-transparent rounded-full shadow-sm">
-                      <RiSendPlaneLine className="h-4 w-4 text-white rotate-45 rounded-full bg-indigo-500 hover:bg-indigo-600 focus:outline-none box-content p-3" />
-                    </button>
-                  </div>
-                </form>
-              </div>
+            </div>
+            <div className="bg-gray-300 p-4 sticky bottom-0">
+              <form>
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    value={newMessage}
+                    name="message"
+                    placeholder="Aa"
+                    autoComplete="off"
+                    className="w-full bg-gray-50 dark:bg-transparent rounded-full bg-opacity-50 border border-gray-300 dark:border-zinc-600 focus:ring-2 focus:ring-indigo-200 focus:bg-transparent focus:border-indigo-500 text-base outline-none py-1 px-8 leading-8 transition-colors duration-200 ease-in-out mr-14"
+                  />
+                  <button
+                    onClick={handleSubmit}
+                    disabled={!newMessage}
+                    className="inline-flex disabled:cursor-not-allowed gap-2 items-center justify-center border border-transparent rounded-full shadow-sm">
+                    <RiSendPlaneLine className="h-4 w-4 text-white rotate-45 rounded-full bg-indigo-500 hover:bg-indigo-600 focus:outline-none box-content p-3" />
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
