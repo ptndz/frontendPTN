@@ -8,7 +8,7 @@
     "server:build": "env-cmd -f .env.production next build",
     "server:start": "env-cmd -f .env.production next start -p 3000",
     "server:dev": "env-cmd -f .env.production next dev",
-    "start": "env-cmd -f .env.local next start",
+    "start": "env-cmd -f .env.production next start",
     "lint": "next lint",
     "postbuild": "cross-env next-sitemap --config next-sitemap.js",
     "codegen": "graphql-codegen --config codegen.ts --watch",

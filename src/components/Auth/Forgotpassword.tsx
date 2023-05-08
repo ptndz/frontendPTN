@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form";
 
 import "react-toastify/dist/ReactToastify.css";
 
-import { useRouter } from "next/router";
 import {
   graphQLClient,
   graphQLClientErrorCheck,
@@ -49,7 +48,7 @@ const ForgotPassword = () => {
                 />
               </Link>
               <h1 className="text-gray-900 dark:text-white font-bold text-3xl font-title pl-4">
-                Create an account
+                Forgot Password
               </h1>
             </div>
             <div className={`${showText ? "" : "hidden"}`}>

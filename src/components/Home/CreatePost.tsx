@@ -53,16 +53,7 @@ const CreatePost: React.FC<IProps> = ({ setNewPost }) => {
   `);
   const { register, handleSubmit } = useForm();
   const onSubmit = async (data: any) => {
-    toast("🦄 Posting....", {
-      position: "top-right",
-      autoClose: 3000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: "light",
-    });
+    toast("🦄 Posting....");
     const formData = new FormData();
     let imagesData: string[] = [];
     if (postImages) {

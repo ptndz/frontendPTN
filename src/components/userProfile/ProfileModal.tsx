@@ -158,7 +158,7 @@ const ProfileModal: React.FC<IProps> = ({
             </div>
             <div className="flex flex-col space-y-1 py-6 px-2">
               <div className="text-lg font-medium dark:text-white">
-                Chenge First Name:
+                Change First Name:
               </div>
               <input
                 placeholder={data.firstName}
@@ -170,7 +170,7 @@ const ProfileModal: React.FC<IProps> = ({
             </div>
             <div className="flex flex-col space-y-1 py-6 px-2">
               <div className="text-lg font-medium dark:text-white">
-                Chenge Last Name:
+                Change Last Name:
               </div>
               <input
                 placeholder={data.lastName}
