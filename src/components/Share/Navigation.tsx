@@ -21,7 +21,7 @@ import { graphql } from "../../gql";
 import { graphQLClient } from "../../plugins/graphql.plugin";
 import { deleteCookie } from "cookies-next";
 import axios from "axios";
-
+import socket from "../../plugins/socket";
 const topCenterNavlinks = [
   {
     href: "/",
@@ -84,16 +84,20 @@ const Navigation = () => {
 
   const [listNotion, setListNotion] = useState<INotion[]>();
   const [numberNotion, setNumberNotion] = useState<number>();
-
+  const fetchData = async () => {
+    const res = await axios.get("/notification/all");
+    setListNotion(res.data.notifications);
+    setNumberNotion(countUnreadNotifications(res.data.notifications));
+  };
   useEffect(() => {
-    const fetchData = async () => {
-      const res = await axios.get("/notification/all");
-      setListNotion(res.data.notifications);
-      setNumberNotion(countUnreadNotifications(res.data.notifications));
-    };
     fetchData();
   }, []);
 
+  useEffect(() => {
+    socket.on("notification", (data) => {
+      fetchData();
+    });
+  }, []);
   // Hàm này sẽ được gọi mỗi khi isProfileMenuOpen thay đổi
   useEffect(() => {
     // Nếu menu mở, thì ta sẽ thêm event listener để lắng nghe sự kiện click trên document
@@ -335,16 +339,18 @@ const Navigation = () => {
                     </p>
                     <BsChevronRight />
                   </Link>
-                  <Link
-                    href={`/${user?.username}`}
-                    onClick={closeProfileMenu}
-                    className="flex items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg">
-                    <p className="flex items-center gap-2">
-                      <BsGear />
-                      <span>Settings</span>
-                    </p>
-                    <BsChevronRight />
-                  </Link>
+                  {user.role === "admin" && (
+                    <Link
+                      href={`/dashboard`}
+                      onClick={closeProfileMenu}
+                      className="flex items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg">
+                      <p className="flex items-center gap-2">
+                        <BsGear />
+                        <span>Dashboard</span>
+                      </p>
+                      <BsChevronRight />
+                    </Link>
+                  )}
                 </div>
                 <div>
                   <button

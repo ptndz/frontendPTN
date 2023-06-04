@@ -34,31 +34,27 @@ const Home: React.FC<IProps> = ({ userData }) => {
     }
   }, [setUser, userData]);
 
-  if (userData) {
-    return (
-      <div className="bg-neutral-100 dark:bg-zinc-900">
-        <Navigation />
-        <div className="mt-2 w-max inline">
-          <div className="grid grid-cols-12 mx-auto 2xl:max-w-[1560px] gap-6">
-            <div className="col-span-3 max-w-2xl hidden lg:block h-[89vh] overflow-y-scroll scrollbar	scrollbar-hide hover:scrollbar-default px-2">
-              <LeftSideBar />
-            </div>
-            <div className="col-span-12 lg:col-span-6 w-full mx-auto h-[89vh] scrollbar-hide overflow-y-scroll scrollbar scroll-ml-5">
-              <div className="col-span-12 max-w-2xl mx-auto">
-                <MiddleLeftBar />
-              </div>
-            </div>
-            <div className="col-span-3 max-w-2xl hidden lg:block h-[89vh] overflow-y-scroll scrollbar	scrollbar-hide hover:scrollbar-default px-2">
-              <RightSideBar />
+  return (
+    <div className="bg-neutral-100 dark:bg-zinc-900">
+      <Navigation />
+      <div className="mt-2 w-max inline">
+        <div className="grid grid-cols-12 mx-auto 2xl:max-w-[1560px] gap-6">
+          <div className="col-span-3 max-w-2xl hidden lg:block h-[89vh] overflow-y-scroll scrollbar	scrollbar-hide hover:scrollbar-default px-2">
+            <LeftSideBar />
+          </div>
+          <div className="col-span-12 lg:col-span-6 w-full mx-auto h-[89vh] scrollbar-hide overflow-y-scroll scrollbar scroll-ml-5">
+            <div className="col-span-12 max-w-2xl mx-auto">
+              <MiddleLeftBar />
             </div>
           </div>
-          <DynamicWidgetMessage />
+          <div className="col-span-3 max-w-2xl hidden lg:block h-[89vh] overflow-y-scroll scrollbar	scrollbar-hide hover:scrollbar-default px-2">
+            <RightSideBar />
+          </div>
         </div>
+        <DynamicWidgetMessage />
       </div>
-    );
-  } else {
-    return <Login />;
-  }
+    </div>
+  );
 };
 export default Home;
 export const getServerSideProps: GetServerSideProps = async (context) => {

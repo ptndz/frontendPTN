@@ -16,6 +16,7 @@ import {
   BsHeart,
   BsEmojiAngry,
 } from "react-icons/bs";
+import { MdBugReport } from "react-icons/md";
 import { toast } from "react-toastify";
 import { IComment, IPost } from "../../gql/graphql";
 import { useStoreUser } from "../../store/user";
@@ -26,6 +27,7 @@ import {
 } from "../../plugins/graphql.plugin";
 import { CgSmileMouthOpen } from "react-icons/cg";
 import Carousel from "./Carousel";
+import axios from "axios";
 
 interface IProps {
   post: IPost;
@@ -273,6 +275,10 @@ const SinglePost: React.FC<IProps> = ({
       toast.error(uuid);
     }
   };
+  const handleReport = async (uuid: string) => {
+    const res = await axios.post(`/bookmark/report/${uuid}`);
+    toast.error("Report");
+  };
   const renderLike = () => {
     const reactions = [
       {
@@ -379,14 +385,24 @@ const SinglePost: React.FC<IProps> = ({
                 Remove
               </li>
             ) : (
-              <li
-                onClick={() => {
-                  handleBookmark(post.uuid);
-                  setMenu("hidden");
-                }}
-                className="py-1 flex items-center cursor-pointer hover:bg-white dark:hover:bg-zinc-600 px-3">
-                <BsBookmark className="mr-2" /> Bookmark post
-              </li>
+              <>
+                <li
+                  onClick={() => {
+                    handleBookmark(post.uuid);
+                    setMenu("hidden");
+                  }}
+                  className="py-1 flex items-center cursor-pointer hover:bg-white dark:hover:bg-zinc-600 px-3">
+                  <BsBookmark className="mr-2" /> Bookmark post
+                </li>
+                <li
+                  onClick={() => {
+                    handleReport(post.uuid);
+                    setMenu("hidden");
+                  }}
+                  className="py-1 flex items-center cursor-pointer hover:bg-white dark:hover:bg-zinc-600 px-3">
+                  <MdBugReport className="mr-2" /> Report
+                </li>
+              </>
             )}
             {user.username === post.user.username && (
               <li

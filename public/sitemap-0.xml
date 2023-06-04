@@ -1,12 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:mobile="http://www.google.com/schemas/sitemap-mobile/1.0" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
-<url><loc>https://phamthanhnam.com</loc><lastmod>2023-05-04T04:40:17.345Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://phamthanhnam.com/forgotpassword</loc><lastmod>2023-05-04T04:40:17.345Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://phamthanhnam.com/friends</loc><lastmod>2023-05-04T04:40:17.345Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://phamthanhnam.com/login</loc><lastmod>2023-05-04T04:40:17.345Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://phamthanhnam.com/messenger</loc><lastmod>2023-05-04T04:40:17.345Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://phamthanhnam.com/notification</loc><lastmod>2023-05-04T04:40:17.345Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://phamthanhnam.com/posts/bookmarked</loc><lastmod>2023-05-04T04:40:17.345Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://phamthanhnam.com/register</loc><lastmod>2023-05-04T04:40:17.345Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
-<url><loc>https://phamthanhnam.com/post/8a75266a-3886-4527-a794-203ce4f27ad3</loc><lastmod>2023-05-04T04:40:17.345Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/dashboard</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/forgotpassword</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/friends</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/login</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/messenger</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/notification</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/posts/bookmarked</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/register</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/post/2773bb9e-f7c9-48e4-8f61-d904f6128a6c</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/post/4177e9d1-f234-44c8-aab5-e6b7e51fb6a1</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/post/463a00c0-3242-4743-803e-1576d9a6a2fe</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/post/59fbbec7-3cfe-4a02-8319-f7c14d21b841</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/post/7b46025d-6fce-4691-815b-1e4116f996f4</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/post/8a75266a-3886-4527-a794-203ce4f27ad3</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/post/94778cb6-2f7c-4b4b-9c73-e635e9e0fdb5</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/post/a2a31879-19d5-43e5-8739-09a327ebbcc1</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/post/a9f5c6d4-5dd3-476f-b073-6ee81ed50858</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/post/ade56359-b2c8-4c5a-be65-179119a282d2</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/post/cb1a4902-ffbb-4525-878c-6fd47371d578</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/post/faa21ab0-44c2-4de6-b345-f5b3363111d8</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/post/5191e74c-ece4-417b-bafc-2280d893454a</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/post/5ea3feeb-3491-4e82-86f1-85363e8ce34f</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/post/71de9827-24be-44ff-a3f4-257a0d1d443a</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://phamthanhnam.com/post/c4f55268-31ef-40a2-adcc-de353f3e2b99</loc><lastmod>2023-06-04T17:59:26.495Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
 </urlset>
