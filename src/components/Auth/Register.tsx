@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { BsEyeSlash, BsEye } from "react-icons/bs";
+import { setCookies } from "cookies-next";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/router";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { BsEye, BsEyeSlash } from "react-icons/bs";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { graphQLClient } from "../../plugins/graphql.plugin";
 import { queryRegister } from "../../graphql/user";
-import { setCookies } from "cookies-next";
+import { graphQLClient } from "../../plugins/graphql.plugin";
 import { useStoreUser } from "../../store/user";
-import { useRouter } from "next/router";
 
 const Register = () => {
   const router = useRouter();
@@ -33,10 +33,8 @@ const Register = () => {
         fullName: `${data.firstName} ${data.lastName}`,
         sex: sex,
         birthday: data.birthday,
-        avatar:
-          "https://api.phamthanhnam.com/image/n/20230423-useravatar-1682214795690.png",
-        coverImage:
-          "https://api.phamthanhnam.com/image/n/20230423-backgroundlogin-1682214873268.png",
+        avatar: "https://i.imgur.com/rLpAsb4.png",
+        coverImage: "https://i.imgur.com/rLpAsb4.png",
       });
       if (res.register.code != 200) {
         toast.error(res.register.message);

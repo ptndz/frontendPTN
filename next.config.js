@@ -11,6 +11,6 @@ module.exports = withPWA({
   swcMinify: true,
   experimental: { appDir: true },
   images: {
-    domains: ["localhost", "api.phamthanhnam.com"],
+    domains: ["localhost", "i.imgur.com", "mxhserver.test", "mxhclient.test"],
   },
 });
