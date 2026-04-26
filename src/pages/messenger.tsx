@@ -3,12 +3,10 @@ import MessagingMain from "../components/Messages";
 
 import Login from "../components/Auth/Login";
 import { GetServerSideProps } from "next";
-import { queryUser } from "../graphql/user";
-import { graphQLServer } from "../plugins/graphql.plugin";
 import { User } from "../gql/graphql";
-import { getCookies } from "cookies-next";
 import { useStoreUser } from "../store/user";
 import { NextSeo } from "next-seo";
+import { getAuthenticatedUser } from "../lib/pages-router-auth";
 interface IProps {
   userData: User;
 }
@@ -40,34 +38,21 @@ export default MessengerPage;
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   try {
-    const cookie = getCookies({ req: context.req });
-    const accessToken = cookie[process.env.NEXT_PUBLIC_COOKIE_NAME as string];
-    if (accessToken) {
-      const res = await graphQLServer(
-        context.req.headers.cookie,
-        accessToken
-      ).request(queryUser);
+    const user = await getAuthenticatedUser(context);
 
-      if (res.user.user) {
-        return {
-          props: {
-            userData: res.user.user,
-          },
-        };
-      }
+    if (user) {
+      return {
+        props: {
+          userData: user,
+        },
+      };
     }
-    return {
-      redirect: {
-        destination: "/login",
-        permanent: false,
-      },
-    };
-  } catch (error) {
-    return {
-      redirect: {
-        destination: "/login",
-        permanent: false,
-      },
-    };
-  }
+  } catch (error) {}
+
+  return {
+    redirect: {
+      destination: "/login",
+      permanent: false,
+    },
+  };
 };
