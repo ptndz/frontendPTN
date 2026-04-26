@@ -15,8 +15,8 @@ import Image from "next/image";
 import { useStoreUser } from "../../store/user";
 import { graphql } from "../../gql";
 import { graphQLClient } from "../../plugins/graphql.plugin";
-import { deleteCookie } from "cookies-next";
 import { useRouter } from "next/router";
+import { clearAuthCookies } from "../../lib/auth/session";
 
 const LeftSideBar = () => {
   const { user } = useStoreUser();
@@ -30,8 +30,7 @@ const LeftSideBar = () => {
       `);
       const res = await graphQLClient.request(queryLogout);
       if (res.logout) {
-        deleteCookie("accessToken");
-        deleteCookie("uuid");
+        clearAuthCookies();
         router.push("/login");
       }
     } catch (error) {

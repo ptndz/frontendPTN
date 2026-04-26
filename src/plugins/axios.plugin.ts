@@ -1,5 +1,10 @@
 import axios from "axios";
-import { deleteCookie, getCookie, setCookie } from "cookies-next";
+import { getCookie } from "cookies-next";
+import {
+  clearAuthCookies,
+  getRefreshToken,
+  setAccessToken,
+} from "../lib/auth/session";
 
 axios.defaults.baseURL = process.env.NEXT_PUBLIC_BASE_URL_API;
 
@@ -46,9 +51,7 @@ axios.interceptors.response.use(
       }
       if (error.response.status === 400 && !originalConfig._retry) {
         originalConfig._retry = true;
-        deleteCookie("accessToken");
-        deleteCookie("uuid");
-        deleteCookie("awt");
+        clearAuthCookies();
 
         return Promise.reject(error);
       }
@@ -59,15 +62,11 @@ axios.interceptors.response.use(
 );
 
 export async function refreshToken(): Promise<string> {
-  const refreshToken = getCookie(
-    process.env.NEXT_PUBLIC_REFRESH_TOKEN_COOKIE_NAME as string
-  );
+  const refreshToken = getRefreshToken();
   const rs = await axios.post("/refresh_token", {
     refreshToken: refreshToken,
   });
   const { accessToken } = rs.data;
-  setCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string, accessToken, {
-    maxAge: 60 * 60 * 48,
-  });
+  setAccessToken(accessToken);
   return accessToken;
 }

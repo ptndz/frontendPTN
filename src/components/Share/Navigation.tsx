@@ -19,9 +19,9 @@ import { useStoreUser } from "../../store/user";
 import { useStoreTheme } from "../../store/state";
 import { graphql } from "../../gql";
 import { graphQLClient } from "../../plugins/graphql.plugin";
-import { deleteCookie } from "cookies-next";
 import axios from "axios";
 import socket from "../../plugins/socket";
+import { clearAuthCookies } from "../../lib/auth/session";
 const topCenterNavlinks = [
   {
     href: "/",
@@ -143,8 +143,7 @@ const Navigation = () => {
       `);
       const res = await graphQLClient.request(queryLogout);
       if (res.logout) {
-        deleteCookie("accessToken");
-        deleteCookie("uuid");
+        clearAuthCookies();
         router.push("/login");
       }
     } catch (error) {
