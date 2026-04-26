@@ -1,9 +1,22 @@
-"use strict";
+import { defaultCache } from "@serwist/next/worker";
+import { Serwist } from "serwist";
+
+const serwist = new Serwist({
+  precacheEntries: self.__SW_MANIFEST,
+  skipWaiting: true,
+  clientsClaim: true,
+  navigationPreload: true,
+  runtimeCaching: defaultCache,
+});
+
+serwist.addEventListeners();
 
 self.addEventListener("push", function (event) {
+  if (!event.data) return;
+
   const data = JSON.parse(event.data.text());
   event.waitUntil(
-    registration.showNotification(data.title, {
+    self.registration.showNotification(data.title, {
       body: data.message,
       icon: "/favicon/android-chrome-192x192.png",
     })
@@ -13,7 +26,7 @@ self.addEventListener("push", function (event) {
 self.addEventListener("notificationclick", function (event) {
   event.notification.close();
   event.waitUntil(
-    clients
+    self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then(function (clientList) {
         if (clientList.length > 0) {
@@ -25,7 +38,8 @@ self.addEventListener("notificationclick", function (event) {
           }
           return client.focus();
         }
-        return clients.openWindow("/");
+
+        return self.clients.openWindow("/");
       })
   );
 });
