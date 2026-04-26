@@ -4,14 +4,12 @@ import AllFriends from "../components/FriendsCom/AllFriends";
 import { useStoreUser } from "../store/user";
 import Login from "../components/Auth/Login";
 
-import { getCookies } from "cookies-next";
 import { GetServerSideProps } from "next";
-import { queryUser } from "../graphql/user";
-import { graphQLServer } from "../plugins/graphql.plugin";
 import { User } from "../gql/graphql";
 import Head from "next/head";
 import { NextSeo } from "next-seo";
 import dynamic from "next/dynamic";
+import { getAuthenticatedUser } from "../lib/pages-router-auth";
 
 const DynamicWidgetMessage = dynamic(
   () => import("../components/Messages/WidgetMessage"),
@@ -63,33 +61,21 @@ const Friends: React.FC<IProps> = ({ userData }) => {
 export default Friends;
 export const getServerSideProps: GetServerSideProps = async (context) => {
   try {
-    const cookie = getCookies({ req: context.req });
-    const accessToken = cookie[process.env.NEXT_PUBLIC_COOKIE_NAME as string];
-    if (accessToken) {
-      const res = await graphQLServer(
-        context.req.headers.cookie,
-        accessToken
-      ).request(queryUser);
-      if (res.user.user) {
-        return {
-          props: {
-            userData: res.user.user,
-          },
-        };
-      }
+    const user = await getAuthenticatedUser(context);
+
+    if (user) {
+      return {
+        props: {
+          userData: user,
+        },
+      };
     }
-    return {
-      redirect: {
-        destination: "/login",
-        permanent: false,
-      },
-    };
-  } catch (error) {
-    return {
-      redirect: {
-        destination: "/login",
-        permanent: false,
-      },
-    };
-  }
+  } catch (error) {}
+
+  return {
+    redirect: {
+      destination: "/login",
+      permanent: false,
+    },
+  };
 };

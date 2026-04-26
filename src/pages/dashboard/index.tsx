@@ -4,12 +4,10 @@ import { BsFileEarmarkPost } from "react-icons/bs";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { GetServerSideProps } from "next";
-import { getCookies } from "cookies-next";
-import { graphQLServer } from "../../plugins/graphql.plugin";
-import { queryUser } from "../../graphql/user";
 import { User } from "../../gql/graphql";
 import { useStoreUser } from "../../store/user";
 
+import { getAuthenticatedUser } from "../../lib/pages-router-auth";
 interface IProps {
   userData: User;
 }
@@ -585,33 +583,21 @@ export default PageDashboard;
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   try {
-    const cookie = getCookies({ req: context.req });
-    const accessToken = cookie[process.env.NEXT_PUBLIC_COOKIE_NAME as string];
-    if (accessToken) {
-      const res = await graphQLServer(
-        context.req.headers.cookie,
-        accessToken
-      ).request(queryUser);
-      if (res.user.user) {
-        return {
-          props: {
-            userData: res.user.user,
-          },
-        };
-      }
+    const user = await getAuthenticatedUser(context);
+
+    if (user) {
+      return {
+        props: {
+          userData: user,
+        },
+      };
     }
-    return {
-      redirect: {
-        destination: "/login",
-        permanent: false,
-      },
-    };
-  } catch (error) {
-    return {
-      redirect: {
-        destination: "/login",
-        permanent: false,
-      },
-    };
-  }
+  } catch (error) {}
+
+  return {
+    redirect: {
+      destination: "/login",
+      permanent: false,
+    },
+  };
 };
