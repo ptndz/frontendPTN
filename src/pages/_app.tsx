@@ -13,7 +13,7 @@ import type { ReactElement, ReactNode } from "react";
 import type { NextPage } from "next";
 
 import {
-  Hydrate,
+  HydrationBoundary,
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
@@ -32,12 +32,12 @@ export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: ReactElement) => ReactNode;
 };
 
-const queryClient = new QueryClient();
 Router.events.on("routeChangeStart", () => NProgress.start());
 Router.events.on("routeChangeComplete", () => NProgress.done());
 Router.events.on("routeChangeError", () => NProgress.done());
 
 function MyApp({ Component, pageProps }: AppProps) {
+  const [queryClient] = React.useState(() => new QueryClient());
   const { theme, setTheme } = useStoreTheme();
 
   const cookieToken = getCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string);
@@ -128,7 +128,7 @@ function MyApp({ Component, pageProps }: AppProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Hydrate state={pageProps.dehydratedState}>
+      <HydrationBoundary state={pageProps?.dehydratedState}>
         <ToastContainer
           position="top-right"
           autoClose={3000}
@@ -139,7 +139,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         />
         <DefaultSeo {...SEO} />
         <Component {...pageProps} />
-      </Hydrate>
+      </HydrationBoundary>
 
       <ReactQueryDevtools />
     </QueryClientProvider>

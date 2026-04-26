@@ -30,7 +30,10 @@ const MiddleLeftBar = () => {
     return resPost.posts;
   };
   const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =
-    useInfiniteQuery(["posts"], ({ pageParam = 1 }) => getPost(pageParam), {
+    useInfiniteQuery({
+      queryKey: ["posts"],
+      queryFn: ({ pageParam }) => getPost(pageParam),
+      initialPageParam: 1,
       getNextPageParam: (lastPage, _allPages) => {
         const page = lastPage?.page ? lastPage.page + 1 : 1;
         return page;

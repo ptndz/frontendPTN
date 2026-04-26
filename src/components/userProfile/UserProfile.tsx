@@ -74,16 +74,15 @@ const UserProfile: React.FC<IProps> = ({
     isFetching,
     isFetchingNextPage,
     remove,
-  } = useInfiniteQuery(
-    ["userPosts"],
-    ({ pageParam = 1 }) => getPost(pageParam),
-    {
-      getNextPageParam: (lastPage, _allPages) => {
-        const page = lastPage?.page ? lastPage.page + 1 : 1;
-        return page;
-      },
-    }
-  );
+  } = useInfiniteQuery({
+    queryKey: ["userPosts"],
+    queryFn: ({ pageParam }) => getPost(pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, _allPages) => {
+      const page = lastPage?.page ? lastPage.page + 1 : 1;
+      return page;
+    },
+  });
 
   const loadMoreRef = useRef() as React.RefObject<HTMLButtonElement>;
 
