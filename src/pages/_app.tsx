@@ -58,45 +58,65 @@ function MyApp({ Component, pageProps }: AppProps) {
   }, [cookieToken]);
 
   useEffect(() => {
-    if (cookieToken) {
-      const postSubscribe = async (sub: any) => {
-        try {
-          await axios.post("/user/notification/subscription", {
-            subscription: sub,
-            agent: window.navigator.userAgent,
-          });
-        } catch (error) {
-          console.warn(error);
-        }
-      };
+    if (!cookieToken) return;
 
-      const getSubscribe = async () => {
-        if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-          const reg = await navigator.serviceWorker.ready;
-          const sub: any = await reg.pushManager.getSubscription();
-          if (
-            sub &&
-            !(
-              sub.expirationTime &&
-              Date.now() > sub.expirationTime - 5 * 60 * 1000
-            )
-          ) {
-            postSubscribe(sub);
-            return;
-          } else {
-            const sub = await reg.pushManager.subscribe({
-              userVisibleOnly: true,
-              applicationServerKey: base64ToUint8Array(
-                process.env.NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY
-              ),
-            });
-            postSubscribe(sub);
-            return;
-          }
+    const postSubscribe = async (sub: PushSubscription) => {
+      try {
+        await axios.post("/user/notification/subscription", {
+          subscription: sub,
+          agent: window.navigator.userAgent,
+        });
+      } catch (error) {
+        console.warn(error);
+      }
+    };
+
+    const getSubscribe = async () => {
+      if (typeof window === "undefined") return;
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+
+      try {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (!reg) return;
+        const currentPermission = Notification.permission;
+
+        if (currentPermission === "denied") return;
+
+        const permission =
+          currentPermission === "granted"
+            ? currentPermission
+            : await Notification.requestPermission();
+
+        if (permission !== "granted") return;
+
+        const existedSub = await reg.pushManager.getSubscription();
+        const isSubExpired =
+          existedSub?.expirationTime &&
+          Date.now() > existedSub.expirationTime - 5 * 60 * 1000;
+
+        if (existedSub && !isSubExpired) {
+          await postSubscribe(existedSub);
+          return;
         }
-      };
-      getSubscribe();
-    }
+
+        const publicKey = process.env.NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY;
+        if (!publicKey) {
+          console.warn("NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY is missing.");
+          return;
+        }
+
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: base64ToUint8Array(publicKey),
+        });
+
+        await postSubscribe(sub);
+      } catch (error) {
+        console.warn(error);
+      }
+    };
+
+    getSubscribe();
   }, [cookieToken]);
   useEffect(() => {
     if (document) {
