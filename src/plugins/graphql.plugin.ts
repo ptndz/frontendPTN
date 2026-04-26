@@ -30,18 +30,18 @@ export function useGraphQL<TResult, TVariables>(
   document: TypedDocumentNode<TResult, TVariables>,
   ...[variables]: TVariables extends Record<string, never> ? [] : [TVariables]
 ) {
-  return useQuery(
-    [
+  return useQuery({
+    queryKey: [
       // This logic can be customized as desired
       document.definitions.find(isOperationDefinition)?.name,
       variables,
     ] as const,
-    async ({ queryKey }) =>
-      executor({
+    queryFn: async ({ queryKey }) =>
+      (executor({
         document: document as any,
         variables: queryKey[1] as any,
-      }) as Promise<ExecutionResult<TResult>>
-  );
+      }) as Promise<ExecutionResult<TResult>>),
+  });
 }
 export const graphQLClient = new GraphQLClient(endpoint, {
   headers: {
