@@ -9,9 +9,10 @@ import {
 } from "graphql";
 import { useQuery } from "@tanstack/react-query";
 import { GraphQLClient } from "graphql-request";
-import { deleteCookie, getCookie } from "cookies-next";
+import { getCookie } from "cookies-next";
 
 import { refreshToken } from "./axios.plugin";
+import { clearAuthCookies } from "../lib/auth/session";
 const endpoint = process.env.NEXT_PUBLIC_URL_GRAPHQL as string;
 const aToken = getCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string);
 
@@ -69,9 +70,7 @@ export const graphQLClientErrorCheck = (response: any) => {
         refreshToken();
         break;
       default:
-        deleteCookie("accessToken");
-        deleteCookie("uuid");
-        deleteCookie("awt");
+        clearAuthCookies();
         break;
     }
     return false;
