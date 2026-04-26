@@ -1,8 +1,7 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import NProgress from "nprogress";
 import { Theme, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import "../styles/globals.css";
 import "nprogress/nprogress.css";
 import "../styles/globals.css";
 import "../styles/reaction.css";
@@ -22,12 +21,12 @@ import { DefaultSeo } from "next-seo";
 import "../plugins/axios.plugin";
 import SEO from "../../next-seo.config";
 import { useStoreTheme } from "../store/state";
-import { getThemeC, setThemeC } from "../plugins/theme";
-import { getCookie, setCookie } from "cookies-next";
-
-import axios from "axios";
-import { base64ToUint8Array } from "../plugins/notification";
+import { getCookie } from "cookies-next";
+import { useOnlineHeartbeat } from "../hooks/useOnlineHeartbeat";
+import { usePushSubscription } from "../hooks/usePushSubscription";
+import { useThemeBootstrap } from "../hooks/useThemeBootstrap";
 import "../plugins/socket";
+
 export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: ReactElement) => ReactNode;
 };
@@ -40,111 +39,14 @@ function MyApp({ Component, pageProps }: AppProps) {
   const [queryClient] = React.useState(() => new QueryClient());
   const { theme, setTheme } = useStoreTheme();
 
-  const cookieToken = getCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string);
+  const cookieToken = getCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string)?.toString();
 
-  let interval = useRef<any>(null);
-  useEffect(() => {
-    if (cookieToken) {
-      interval.current = setInterval(async () => {
-        try {
-          const res = await axios.put("/user/online");
-          console.log("Last Online: ", res.data.lastOnline);
-        } catch (error) {
-          console.warn(error);
-        }
-      }, 300000);
-    }
-    return () => clearInterval(interval.current);
-  }, [cookieToken]);
-
-  useEffect(() => {
-    if (!cookieToken) return;
-
-    const postSubscribe = async (sub: PushSubscription) => {
-      try {
-        await axios.post("/user/notification/subscription", {
-          subscription: sub,
-          agent: window.navigator.userAgent,
-        });
-      } catch (error) {
-        console.warn(error);
-      }
-    };
-
-    const getSubscribe = async () => {
-      if (typeof window === "undefined") return;
-      if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
-
-      try {
-        const reg = await navigator.serviceWorker.getRegistration();
-        if (!reg) return;
-        const currentPermission = Notification.permission;
-
-        if (currentPermission === "denied") return;
-
-        const permission =
-          currentPermission === "granted"
-            ? currentPermission
-            : await Notification.requestPermission();
-
-        if (permission !== "granted") return;
-
-        const existedSub = await reg.pushManager.getSubscription();
-        const isSubExpired =
-          existedSub?.expirationTime &&
-          Date.now() > existedSub.expirationTime - 5 * 60 * 1000;
-
-        if (existedSub && !isSubExpired) {
-          await postSubscribe(existedSub);
-          return;
-        }
-
-        const publicKey = process.env.NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY;
-        if (!publicKey) {
-          console.warn("NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY is missing.");
-          return;
-        }
-
-        const sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: base64ToUint8Array(publicKey),
-        });
-
-        await postSubscribe(sub);
-      } catch (error) {
-        console.warn(error);
-      }
-    };
-
-    getSubscribe();
-  }, [cookieToken]);
-  useEffect(() => {
-    if (document) {
-      const themeC = getThemeC();
-      const d = document.documentElement;
-
-      if (theme && themeC) {
-        d.classList.remove("dark", "light");
-        d.classList.add(theme);
-        setThemeC(theme);
-        setCookie("theme", theme);
-        return;
-      }
-
-      if (themeC && theme === "") {
-        d.classList.remove("dark", "light");
-        d.classList.add(themeC);
-        setTheme(themeC);
-        setCookie("theme", themeC);
-        return;
-      }
-
-      setTheme("light");
-      setThemeC("light");
-      setCookie("theme", "light");
-      d.classList.add("light");
-    }
-  }, [setTheme, theme]);
+  useOnlineHeartbeat(cookieToken);
+  usePushSubscription(cookieToken);
+  useThemeBootstrap({
+    theme,
+    setTheme,
+  });
 
   return (
     <QueryClientProvider client={queryClient}>
