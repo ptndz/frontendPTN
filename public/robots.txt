@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://phamthanhnam.com
+
+# Sitemaps
+Sitemap: https://phamthanhnam.com/sitemap.xml

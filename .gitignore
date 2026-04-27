@@ -4,14 +4,14 @@
 /node_modules
 /.pnp
 .pnp.js
-
+/.vscode/
 # testing
 /coverage
 
 # next.js
 /.next/
 /out/
-
+/test
 # production
 /build
 
@@ -27,10 +27,17 @@ yarn-error.log*
 
 # local env files
 .env*.local
-
+.env.local
+.env.production
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# PWA build artifacts
+
+# Serwist
+public/sw*
+public/swe-worker*

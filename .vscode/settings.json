@@ -1,0 +1,15 @@
+{
+  "cSpell.words": [
+    "autosize",
+    "haha",
+    "inputsize",
+    "ptndev",
+    "tailwindcss",
+    "tanstack",
+    "toastify",
+    "viewfullpage",
+    "zustand"
+  ],
+  "typescript.tsdk": "node_modules\\typescript\\lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
+}

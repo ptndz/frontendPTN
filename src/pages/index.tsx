@@ -1,117 +1,48 @@
-import axios from "axios";
-import React, { useEffect, useRef } from "react";
-import { useRouter } from "next/router";
-import { NextSeo } from "next-seo";
-import { IPost } from "./api/post";
-import { IStory } from "./api/stories";
-import LeftSidebar from "../components/ui/sidebar/LeftSidebar";
-import NewsFeedScreen from "../components/ui/NewsFeed";
-import RightSidebar from "../components/ui/sidebar/RightSidebar";
-import HomePageLayout from "../components/layouts/HomePageLayout";
-import type { NextPageWithLayout } from "./_app";
-import { useInfiniteQuery } from "@tanstack/react-query";
-interface IPages {
-  posts: IPost[];
-  time: string;
-}
+import LeftSideBar from "../components/Home/LeftSideBar";
+import MiddleLeftBar from "../components/Home/MiddleLeftBar";
+import RightSideBar from "../components/Home/RightSideBar";
+import Navigation from "../components/Share/Navigation";
+
+import { User } from "../gql/graphql";
+import dynamic from "next/dynamic";
+import { withAuthSSP } from "../lib/with-auth-ssp";
+import { useInitUser } from "../hooks/useInitUser";
+
+const DynamicWidgetMessage = dynamic(
+  () => import("../components/Messages/WidgetMessage"),
+  {
+    ssr: false,
+  }
+);
+
 interface IProps {
-  postsData: {
-    pages: IPages[];
-    pageParams: string;
-  };
-  storiesData: IStory[];
+  userData: User;
 }
-interface IPostsData {
-  pages: IPages[];
-  pageParams: string;
-}
-const Home: NextPageWithLayout<IProps> = (props) => {
-  const { storiesData } = props;
-  const getPost = async (pageParam: string) => {
-    const resPost = await axios.get("/post?time=" + pageParam);
-    return resPost.data;
-  };
-  const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =
-    useInfiniteQuery(
-      ["posts"],
-      ({ pageParam = "01-01-9999" }) => getPost(pageParam),
-      {
-        getNextPageParam: (lastPage, _allPages) => {
-          const time = lastPage.time;
 
-          return time;
-        },
-      }
-    );
+const Home: React.FC<IProps> = ({ userData }) => {
+  useInitUser(userData);
 
-  const loadMoreRef = useRef() as React.RefObject<HTMLButtonElement>;
-  const router = useRouter();
-  useEffect(() => {
-    if (!hasNextPage) {
-      return;
-    }
-
-    const observer = new IntersectionObserver((entries) =>
-      entries.forEach((entry) => entry.isIntersecting && fetchNextPage())
-    );
-
-    const el = loadMoreRef && loadMoreRef.current;
-
-    if (!el) {
-      return;
-    }
-
-    observer.observe(el);
-  }, [hasNextPage, router, fetchNextPage]);
   return (
-    <>
-      <NextSeo
-        title="Simple Usage Example"
-        description="A short description goes here."
-      />
-      <HomePageLayout>
-        <div className="w-full h-full grid grid-cols-7">
-          <div className="col-span-2 flex justify-start ml-2">
-            <LeftSidebar />
+    <div className="bg-neutral-100 dark:bg-zinc-900">
+      <Navigation />
+      <div className="mt-2 w-max inline">
+        <div className="grid grid-cols-12 mx-auto 2xl:max-w-[1560px] gap-6">
+          <div className="col-span-3 max-w-2xl hidden lg:block h-[89vh] overflow-y-scroll scrollbar	scrollbar-hide hover:scrollbar-default px-2">
+            <LeftSideBar />
           </div>
-          <div className="col-span-3 h-full">
-            <NewsFeedScreen
-              storiesData={storiesData}
-              postsData={data as unknown as IPostsData}
-            />
-            <div className="">
-              <button
-                ref={loadMoreRef}
-                onClick={() => fetchNextPage()}
-                disabled={!hasNextPage || isFetchingNextPage}
-              >
-                {isFetchingNextPage
-                  ? "Loading more..."
-                  : hasNextPage
-                  ? "Load More"
-                  : "Nothing more to load"}
-              </button>
-            </div>
-            <div>
-              {isFetching && !isFetchingNextPage ? "Fetching..." : null}
+          <div className="col-span-12 lg:col-span-6 w-full mx-auto h-[89vh] scrollbar-hide overflow-y-scroll scrollbar scroll-ml-5">
+            <div className="col-span-12 max-w-2xl mx-auto">
+              <MiddleLeftBar />
             </div>
           </div>
-          <div className="col-span-2 flex justify-end pr-2">
-            <RightSidebar />
+          <div className="col-span-3 max-w-2xl hidden lg:block h-[89vh] overflow-y-scroll scrollbar	scrollbar-hide hover:scrollbar-default px-2">
+            <RightSideBar />
           </div>
         </div>
-      </HomePageLayout>
-    </>
+        <DynamicWidgetMessage />
+      </div>
+    </div>
   );
 };
-
 export default Home;
-export const getStaticProps = async () => {
-  const resStories = await axios.get("/stories");
-
-  return {
-    props: {
-      storiesData: resStories.data as IStory[],
-    },
-  };
-};
+export const getServerSideProps = withAuthSSP();
