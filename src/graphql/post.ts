@@ -163,6 +163,210 @@ export const queryGetAllPostIds = graphql(`
     getAllPostIds
   }
 `);
+export const mutationCommentPost = graphql(`
+  mutation commentPost($postUuid: String!, $content: String!) {
+    commentPost(postUuid: $postUuid, content: $content) {
+      code
+      success
+      message
+      comment {
+        id
+        user {
+          id
+          username
+          fullName
+          avatar
+        }
+        content
+        likes {
+          id
+          reactions
+          user {
+            id
+            username
+            fullName
+            avatar
+          }
+        }
+      }
+      comments {
+        id
+        content
+        user {
+          id
+          username
+          fullName
+          avatar
+        }
+        likes {
+          id
+          user {
+            id
+            username
+            fullName
+            avatar
+          }
+          reactions
+        }
+      }
+    }
+  }
+`);
+
+export const mutationLikePost = graphql(`
+  mutation likePost($postUuid: String!, $typeReact: String!) {
+    likePost(postUuid: $postUuid, typeReact: $typeReact) {
+      code
+      success
+      message
+      like {
+        id
+        reactions
+        user {
+          fullName
+          username
+        }
+      }
+    }
+  }
+`);
+
+export const mutationDeletePost = graphql(`
+  mutation deletePost($uuid: String!) {
+    deletePost(uuid: $uuid) {
+      code
+      success
+      message
+      post {
+        uuid
+        content
+        createAt
+        updateAt
+        images
+      }
+      errors {
+        field
+        message
+      }
+    }
+  }
+`);
+
+export const queryCreateBookmark = graphql(`
+  query createBookmark($postUuid: String!) {
+    createBookmark(postUuid: $postUuid) {
+      code
+      success
+      bookmarks {
+        user {
+          username
+          fullName
+          avatar
+        }
+        post {
+          uuid
+          content
+          createAt
+          updateAt
+          shares
+          images
+          user {
+            username
+            fullName
+          }
+          likes {
+            id
+            reactions
+          }
+          comments {
+            id
+            content
+            likes {
+              id
+              reactions
+            }
+            user {
+              id
+              username
+              avatar
+              fullName
+            }
+          }
+        }
+      }
+    }
+  }
+`);
+
+export const mutationCreatePost = graphql(`
+  mutation createPost($content: String!, $images: [String!]!) {
+    createPost(createPostInput: { content: $content, images: $images }) {
+      code
+      success
+      message
+      post {
+        uuid
+        content
+        createAt
+        updateAt
+        images
+      }
+      errors {
+        field
+        message
+      }
+    }
+  }
+`);
+
+export const mutationLikeComment = graphql(`
+  mutation likeComment($commentId: Float!, $typeReact: String!) {
+    likeComment(commentId: $commentId, typeReact: $typeReact) {
+      code
+      success
+      message
+      like {
+        id
+        reactions
+        user {
+          fullName
+          username
+        }
+      }
+    }
+  }
+`);
+
+export const mutationCommentComment = graphql(`
+  mutation commentComment($commentId: Float!, $content: String!) {
+    commentComment(commentId: $commentId, content: $content) {
+      code
+      success
+      message
+      comment {
+        id
+        user {
+          id
+          username
+          fullName
+          avatar
+        }
+        content
+        likes {
+          id
+          reactions
+          user {
+            id
+            username
+            fullName
+            avatar
+          }
+        }
+      }
+    }
+  }
+`);
+
 export const queryCommentByCommentId = graphql(`
   query getCommentComment($commentId: Float!) {
     getCommentComment(commentId: $commentId) {

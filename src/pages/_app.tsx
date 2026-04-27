@@ -25,6 +25,7 @@ import { getCookie } from "cookies-next";
 import { useOnlineHeartbeat } from "../hooks/useOnlineHeartbeat";
 import { usePushSubscription } from "../hooks/usePushSubscription";
 import { useThemeBootstrap } from "../hooks/useThemeBootstrap";
+import ErrorBoundary from "../components/Share/ErrorBoundary";
 import "../plugins/socket";
 
 export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
@@ -60,10 +61,12 @@ function MyApp({ Component, pageProps }: AppProps) {
           theme={theme ? (theme as Theme) : "light"}
         />
         <DefaultSeo {...SEO} />
-        <Component {...pageProps} />
+        <ErrorBoundary>
+          <Component {...pageProps} />
+        </ErrorBoundary>
       </HydrationBoundary>
 
-      <ReactQueryDevtools />
+      {process.env.NODE_ENV === "development" && <ReactQueryDevtools />}
     </QueryClientProvider>
   );
 }

@@ -1,11 +1,9 @@
-import React, { useEffect } from "react";
+import React from "react";
 import BookmarkedPosts from "../../components/Bookmarked";
-import { useStoreUser } from "../../store/user";
-import Login from "../login";
-import { GetServerSideProps } from "next";
 import { User } from "../../gql/graphql";
 import dynamic from "next/dynamic";
-import { getAuthenticatedUser } from "../../lib/pages-router-auth";
+import { withAuthSSP } from "../../lib/with-auth-ssp";
+import { useInitUser } from "../../hooks/useInitUser";
 
 const DynamicWidgetMessage = dynamic(
   () => import("../../components/Messages/WidgetMessage"),
@@ -17,44 +15,14 @@ interface IProps {
   userData: User;
 }
 const BookmarkedPostsPage: React.FC<IProps> = ({ userData }) => {
-  const { setUser } = useStoreUser();
-
-  useEffect(() => {
-    if (userData) {
-      setUser(userData);
-    }
-  }, [setUser, userData]);
-
-  if (userData) {
-    return (
-      <>
-        <BookmarkedPosts />
-        <DynamicWidgetMessage />
-      </>
-    );
-  } else {
-    return <Login />;
-  }
+  useInitUser(userData);
+  return (
+    <>
+      <BookmarkedPosts />
+      <DynamicWidgetMessage />
+    </>
+  );
 };
 
 export default BookmarkedPostsPage;
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  try {
-    const user = await getAuthenticatedUser(context);
-
-    if (user) {
-      return {
-        props: {
-          userData: user,
-        },
-      };
-    }
-  } catch (error) {}
-
-  return {
-    redirect: {
-      destination: "/login",
-      permanent: false,
-    },
-  };
-};
+export const getServerSideProps = withAuthSSP();

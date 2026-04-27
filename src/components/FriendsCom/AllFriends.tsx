@@ -1,18 +1,20 @@
 import React, { useEffect, useState } from "react";
 import SingleFriends from "./SingleFriends";
+import UserListSkeleton from "../Loaders/UserListSkeleton";
 
 import { User, IUser } from "../../gql/graphql";
 import axios from "axios";
-import { graphql } from "../../gql";
 import {
   graphQLClient,
   graphQLClientErrorCheck,
 } from "../../plugins/graphql.plugin";
 import { useStoreUser } from "../../store/user";
+import { queryGetUsersYouMayKnow, queryFriendRequest } from "../../graphql/user";
 
 const AllFriends = () => {
   const [searchText, setSearchText] = useState("");
   const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
   const { user } = useStoreUser();
   const [usersYouMayKnow, setUsersYouMayKnow] = useState<IUser[]>([]);
   const [friendRequest, setFriendRequest] = useState<IUser[]>([]);
@@ -21,50 +23,13 @@ const AllFriends = () => {
     if (searchText !== "") {
     }
   };
-  const queryGetUsersYouMayKnow = graphql(`
-    query getUsersYouMayKnow {
-      getUsersYouMayKnow {
-        code
-        success
-        message
-        users {
-          id
-          fullName
-          avatar
-          username
-        }
-        errors {
-          message
-          field
-        }
-      }
-    }
-  `);
-  const queryFriendRequest = graphql(`
-    query friendRequest {
-      friendRequest {
-        code
-        success
-        message
-        users {
-          id
-          fullName
-          avatar
-          username
-        }
-        errors {
-          message
-          field
-        }
-      }
-    }
-  `);
   useEffect(() => {
     const getReceived = async () => {
       const res = await axios.get("/friends/me/received-requests");
     };
 
     const myFriends = async () => {
+      setLoading(true);
       try {
         const res = await axios.get("/friends/my");
         if (res.data.success) {
@@ -97,10 +62,12 @@ const AllFriends = () => {
         }
       } catch (error) {
         console.log(error);
+      } finally {
+        setLoading(false);
       }
     };
     myFriends();
-  }, [queryGetUsersYouMayKnow, queryFriendRequest, user.id]);
+  }, [user.id]);
   return (
     <div className=" pb-20">
       <div className="mx-8 md:mx-18 sm:mx-11 xs:mx-8 lg:mx-1 pt-5">
@@ -156,7 +123,8 @@ const AllFriends = () => {
           </div>
         </div>
         <div className="grid grid-cols-1 xs:grid-cols-12 sm:grid-cols-12 md:grid-cols-12 gap-3">
-          {usersYouMayKnow &&
+          {loading && <UserListSkeleton />}
+          {!loading &&
             usersYouMayKnow.map((user) => (
               <SingleFriends key={user.username} user={user as User} />
             ))}

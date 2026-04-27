@@ -23,13 +23,15 @@ const ChatWindow: React.FC<IProps> = ({ chat, onClick }) => {
   }, [chat, user.id]);
 
   useEffect(() => {
-    socket.on("chatWindowMessages", (messagesI: any) => {
+    const handler = (messagesI: any) => {
       setMessages(messagesI);
       setScroll(`smooth`);
-    });
-  }, [chat, messages]);
+    };
+    socket.on("chatWindowMessages", handler);
+    return () => { socket.off("chatWindowMessages", handler); };
+  }, [chat]);
   useEffect(() => {
-    socket.on("newMessage", (message: any) => {
+    const handler = (message: any) => {
       if (message.conversation.id === chat.id) {
         const allMessageIds = messages.map((message: any) => message.id);
         if (!allMessageIds.includes(message.id)) {
@@ -37,7 +39,9 @@ const ChatWindow: React.FC<IProps> = ({ chat, onClick }) => {
           setScroll(`smooth${message.id}`);
         }
       }
-    });
+    };
+    socket.on("newMessage", handler);
+    return () => { socket.off("newMessage", handler); };
   }, [messages, deferredNewMessage, chat.id]);
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });

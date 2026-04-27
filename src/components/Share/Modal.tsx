@@ -1,5 +1,5 @@
 import ReactModal from "react-modal";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 interface IProps {
   isOpen: boolean;
   onClose: () => void;
@@ -7,6 +7,10 @@ interface IProps {
 }
 const Modal: React.FC<IProps> = ({ isOpen, onClose, children }) => {
   const [modalIsOpen, setModalIsOpen] = useState(isOpen);
+
+  useEffect(() => {
+    setModalIsOpen(isOpen);
+  }, [isOpen]);
 
   const handleModalClose = () => {
     setModalIsOpen(false);

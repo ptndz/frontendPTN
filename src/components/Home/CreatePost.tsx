@@ -4,12 +4,11 @@ import { BsX } from "react-icons/bs";
 import { BiMessageSquareEdit } from "react-icons/bi";
 import { MdOutlinePhotoSizeSelectActual } from "react-icons/md";
 import Image from "next/image";
-import { useForm } from "react-hook-form";
 import axios from "axios";
 import { toast } from "react-toastify";
 import jsonP from "@ptndev/json";
 import { useStoreUser } from "../../store/user";
-import { graphql } from "../../gql";
+import { mutationCreatePost } from "../../graphql/post";
 import {
   graphQLClient,
   graphQLClientErrorCheck,
@@ -31,28 +30,13 @@ const CreatePost: React.FC<IProps> = ({ setNewPost }) => {
   useEffect(() => {
     autosize(textareaRef.current);
   }, [postContents]);
-  const queryPost = graphql(`
-    mutation createPost($content: String!, $images: [String!]!) {
-      createPost(createPostInput: { content: $content, images: $images }) {
-        code
-        success
-        message
-        post {
-          uuid
-          content
-          createAt
-          updateAt
-          images
-        }
-        errors {
-          field
-          message
-        }
-      }
-    }
-  `);
-  const { register, handleSubmit } = useForm();
-  const onSubmit = async (data: any) => {
+
+  useEffect(() => {
+    return () => {
+      postImagePreview?.forEach(URL.revokeObjectURL);
+    };
+  }, [postImagePreview]);
+  const onSubmit = async () => {
     toast("🦄 Posting....");
     const formData = new FormData();
     let imagesData: string[] = [];
@@ -68,7 +52,7 @@ const CreatePost: React.FC<IProps> = ({ setNewPost }) => {
         }
       }
     }
-    const resPost = await graphQLClient.request(queryPost, {
+    const resPost = await graphQLClient.request(mutationCreatePost, {
       content: jsonP.stringify(postContents),
       images: imagesData ? imagesData : [],
     });
@@ -80,8 +64,8 @@ const CreatePost: React.FC<IProps> = ({ setNewPost }) => {
       toast.success(resPost.createPost.message);
       setPostContents("");
       setPostImages(undefined);
+      postImagePreview?.forEach(URL.revokeObjectURL);
       setPostImagePreview(undefined);
-
       setNewPost(true);
     }
   };
@@ -89,7 +73,7 @@ const CreatePost: React.FC<IProps> = ({ setNewPost }) => {
   return (
     <div>
       <form
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={(e) => { e.preventDefault(); onSubmit(); }}
         className="sm:rounded-lg bg-white dark:bg-black overflow-hidden">
         <div className="px-2 sm:px-4 pb-2 pt-5 sm:pb-6">
           <div className="flex gap-1 items-start">
@@ -110,7 +94,6 @@ const CreatePost: React.FC<IProps> = ({ setNewPost }) => {
                 </h1>
               </div>
               <textarea
-                {...register("postContent")}
                 id="postContent"
                 ref={textareaRef}
                 value={postContents}
@@ -141,6 +124,7 @@ const CreatePost: React.FC<IProps> = ({ setNewPost }) => {
               className="absolute top-3 right-1 mr-2.5"
               type="button"
               onClick={() => {
+                postImagePreview?.forEach(URL.revokeObjectURL);
                 setPostImagePreview(undefined);
                 setPostImages(undefined);
               }}>

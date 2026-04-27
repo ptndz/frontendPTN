@@ -5,43 +5,20 @@ import Image from "next/image";
 import Link from "next/link";
 import UserListSkeleton from "../Loaders/UserListSkeleton";
 
-import { graphql } from "../../gql";
 import {
   graphQLClient,
   graphQLClientErrorCheck,
 } from "../../plugins/graphql.plugin";
 import { toast } from "react-toastify";
 import { useStoreUser } from "../../store/user";
+import { queryGetUsersYouMayKnow } from "../../graphql/user";
+import { User } from "../../gql/graphql";
 
-interface IUser {
-  fullName: string;
-  avatar: string;
-  username: string;
-}
 const RightSideBar = () => {
-  const [users, setUsers] = useState<IUser[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const { user } = useStoreUser();
 
-  const queryGetUsersYouMayKnow = graphql(`
-    query getUsersYouMayKnow {
-      getUsersYouMayKnow {
-        code
-        success
-        message
-        users {
-          id
-          fullName
-          avatar
-          username
-        }
-        errors {
-          message
-          field
-        }
-      }
-    }
-  `);
   useEffect(() => {
     setLoading(true);
     const fetchData = async () => {
@@ -65,7 +42,7 @@ const RightSideBar = () => {
       }
     };
     fetchData();
-  }, [queryGetUsersYouMayKnow, user]);
+  }, [user.id]);
   return (
     <div>
       <div className="bg-white dark:bg-black drop-shadow-sm p-3 rounded-lg">

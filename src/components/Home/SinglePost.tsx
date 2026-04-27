@@ -6,7 +6,7 @@ import { FiTrash, FiBookOpen } from "react-icons/fi";
 import { BiShare } from "react-icons/bi";
 import { AiOutlineLike } from "react-icons/ai";
 import { TbMoodCry } from "react-icons/tb";
-import Comments from "./Comments";
+import CommentThread from "./CommentThread";
 import Link from "next/link";
 import {
   BsChatLeft,
@@ -20,7 +20,12 @@ import { MdBugReport } from "react-icons/md";
 import { toast } from "react-toastify";
 import { IComment, IPost } from "../../gql/graphql";
 import { useStoreUser } from "../../store/user";
-import { graphql } from "../../gql";
+import {
+  mutationCommentPost,
+  mutationLikePost,
+  mutationDeletePost,
+  queryCreateBookmark,
+} from "../../graphql/post";
 import {
   graphQLClient,
   graphQLClientErrorCheck,
@@ -84,56 +89,7 @@ const SinglePost: React.FC<IProps> = ({
       return;
     }
 
-    const queryCommentPost = graphql(`
-      mutation commentPost($postUuid: String!, $content: String!) {
-        commentPost(postUuid: $postUuid, content: $content) {
-          code
-          success
-          message
-          comment {
-            id
-            user {
-              id
-              username
-              fullName
-              avatar
-            }
-            content
-            likes {
-              id
-              reactions
-              user {
-                id
-                username
-                fullName
-                avatar
-              }
-            }
-          }
-          comments {
-            id
-            content
-            user {
-              id
-              username
-              fullName
-              avatar
-            }
-            likes {
-              id
-              user {
-                id
-                username
-                fullName
-                avatar
-              }
-              reactions
-            }
-          }
-        }
-      }
-    `);
-    const res = await graphQLClient.request(queryCommentPost, {
+    const res = await graphQLClient.request(mutationCommentPost, {
       postUuid: post.uuid,
       content: comment,
     });
@@ -149,25 +105,8 @@ const SinglePost: React.FC<IProps> = ({
   };
 
   const handleLike = async (typeReact: string) => {
-    const queryLike = graphql(`
-      mutation likePost($postUuid: String!, $typeReact: String!) {
-        likePost(postUuid: $postUuid, typeReact: $typeReact) {
-          code
-          success
-          message
-          like {
-            id
-            reactions
-            user {
-              fullName
-              username
-            }
-          }
-        }
-      }
-    `);
     try {
-      const res = await graphQLClient.request(queryLike, {
+      const res = await graphQLClient.request(mutationLikePost, {
         postUuid: post.uuid,
         typeReact: typeReact,
       });
@@ -181,27 +120,7 @@ const SinglePost: React.FC<IProps> = ({
     }
   };
   const handleDelete = async (uuid: string) => {
-    const queryDeletePost = graphql(`
-      mutation deletePost($uuid: String!) {
-        deletePost(uuid: $uuid) {
-          code
-          success
-          message
-          post {
-            uuid
-            content
-            createAt
-            updateAt
-            images
-          }
-          errors {
-            field
-            message
-          }
-        }
-      }
-    `);
-    const res = await graphQLClient.request(queryDeletePost, {
+    const res = await graphQLClient.request(mutationDeletePost, {
       uuid: uuid,
     });
 
@@ -212,52 +131,7 @@ const SinglePost: React.FC<IProps> = ({
 
   const handleBookmark = async (uuid: string) => {
     try {
-      const queryBookmarkPost = graphql(`
-        query createBookmark($postUuid: String!) {
-          createBookmark(postUuid: $postUuid) {
-            code
-            success
-            bookmarks {
-              user {
-                username
-                fullName
-                avatar
-              }
-              post {
-                uuid
-                content
-                createAt
-                updateAt
-                shares
-                images
-                user {
-                  username
-                  fullName
-                }
-                likes {
-                  id
-                  reactions
-                }
-                comments {
-                  id
-                  content
-                  likes {
-                    id
-                    reactions
-                  }
-                  user {
-                    id
-                    username
-                    avatar
-                    fullName
-                  }
-                }
-              }
-            }
-          }
-        }
-      `);
-      const res = await graphQLClient.request(queryBookmarkPost, {
+      const res = await graphQLClient.request(queryCreateBookmark, {
         postUuid: uuid,
       });
       if (graphQLClientErrorCheck(res)) {
@@ -553,7 +427,7 @@ const SinglePost: React.FC<IProps> = ({
         </div>
       </form>
       {dbComments
-        ?.map((comment) => <Comments key={comment.id} comment={comment} />)
+        ?.map((comment) => <CommentThread key={comment.id} comment={comment} isRoot />)
         .reverse()}
     </div>
   );

@@ -5,7 +5,7 @@ import {
   graphQLClientErrorCheck,
 } from "../../plugins/graphql.plugin";
 import { queryCommentByCommentId } from "../../graphql/post";
-import Comment from "./Comment";
+import CommentThread from "./CommentThread";
 
 interface IProps {
   comment: IComment;
@@ -38,7 +38,7 @@ const CommentChild: React.FC<IProps> = ({ comment }) => {
   return (
     <>
       {commentData
-        ? commentData.map((item) => <Comment key={item.id} comment={item} />)
+        ? commentData.map((item) => <CommentThread key={item.id} comment={item} />)
         : null}
     </>
   );

@@ -10,17 +10,18 @@ import { toast } from "react-toastify";
 
 import { useStoreUser } from "../../store/user";
 import { useRouter } from "next/router";
-import { setCookies } from "cookies-next";
+import { setAuthCookies } from "../../lib/auth/session";
 
 const Login = () => {
   const [showPass, setShowPass] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { register, handleSubmit } = useForm();
+  interface LoginForm { email: string; password: string; }
+  const { register, handleSubmit } = useForm<LoginForm>();
 
   const { setUser } = useStoreUser();
   const router = useRouter();
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
     const res = await graphQLClient.request(queryLogin, {
       email: data.email,
@@ -48,23 +49,7 @@ const Login = () => {
       setIsLoading(false);
       return;
     }
-    try {
-      setCookies("uuid", res.login.user.id, {
-        maxAge: 60 * 60 * 24 * 30,
-      });
-      setCookies(process.env.NEXT_PUBLIC_COOKIE_NAME as string, accessToken, {
-        maxAge: 60 * 60 * 24 * 30,
-      });
-      setCookies(
-        process.env.NEXT_PUBLIC_REFRESH_TOKEN_COOKIE_NAME as string,
-        refreshToken,
-        {
-          maxAge: 60 * 60 * 24 * 30,
-        }
-      );
-    } catch (error) {
-      console.log(error);
-    }
+    setAuthCookies(accessToken, refreshToken, res.login.user.id);
 
     setUser(res.login.user);
     setIsLoading(false);
@@ -128,7 +113,6 @@ const Login = () => {
                     </button>
                   </div>
                   <div className="mt-1">
-                    <p>Aa@12345678</p>
                     <input
                       id="password"
                       {...register("password", { required: true })}

@@ -1,54 +1,28 @@
-/* eslint-disable import/no-extraneous-dependencies */
-import { buildHTTPExecutor } from "@graphql-tools/executor-http";
-import { TypedDocumentNode } from "@graphql-typed-document-node/core";
-import {
-  ASTNode,
-  ExecutionResult,
-  Kind,
-  OperationDefinitionNode,
-} from "graphql";
-import { useQuery } from "@tanstack/react-query";
 import { GraphQLClient } from "graphql-request";
 import { getCookie } from "cookies-next";
 
 import { refreshToken } from "./axios.plugin";
 import { clearAuthCookies } from "../lib/auth/session";
+
 const endpoint = process.env.NEXT_PUBLIC_URL_GRAPHQL as string;
-const aToken = getCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string);
 
-const executor = buildHTTPExecutor({
-  endpoint: endpoint,
-  headers: {
-    Authorization: `Bearer ${aToken}`,
-  },
-});
+function getAccessToken(): string {
+  return (getCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string) as string) ?? "";
+}
 
-const isOperationDefinition = (def: ASTNode): def is OperationDefinitionNode =>
-  def.kind === Kind.OPERATION_DEFINITION;
-
-export function useGraphQL<TResult, TVariables>(
-  document: TypedDocumentNode<TResult, TVariables>,
-  ...[variables]: TVariables extends Record<string, never> ? [] : [TVariables]
-) {
-  return useQuery({
-    queryKey: [
-      // This logic can be customized as desired
-      document.definitions.find(isOperationDefinition)?.name,
-      variables,
-    ] as const,
-    queryFn: async ({ queryKey }) =>
-      (executor({
-        document: document as any,
-        variables: queryKey[1] as any,
-      }) as Promise<ExecutionResult<TResult>>),
+export function getGraphQLClient(): GraphQLClient {
+  return new GraphQLClient(endpoint, {
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+    credentials: "include",
   });
 }
-export const graphQLClient = new GraphQLClient(endpoint, {
-  headers: {
-    Authorization: `Bearer ${aToken}`,
-  },
-  credentials: "include",
-});
+
+export const graphQLClient = {
+  request: (...args: Parameters<GraphQLClient["request"]>) =>
+    getGraphQLClient().request(...args),
+};
 
 export const graphQLServer = (
   cookie: string | undefined,

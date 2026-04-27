@@ -300,3 +300,43 @@ export const queryUpdateUser = graphql(`
     }
   }
 `);
+
+export const queryGetUsersYouMayKnow = graphql(`
+  query getUsersYouMayKnow {
+    getUsersYouMayKnow {
+      code
+      success
+      message
+      users {
+        id
+        fullName
+        avatar
+        username
+      }
+      errors {
+        message
+        field
+      }
+    }
+  }
+`);
+
+export const queryFriendRequest = graphql(`
+  query friendRequest {
+    friendRequest {
+      code
+      success
+      message
+      users {
+        id
+        fullName
+        avatar
+        username
+      }
+      errors {
+        message
+        field
+      }
+    }
+  }
+`);

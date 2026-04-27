@@ -13,30 +13,13 @@ import React from "react";
 
 import Image from "next/image";
 import { useStoreUser } from "../../store/user";
-import { graphql } from "../../gql";
-import { graphQLClient } from "../../plugins/graphql.plugin";
 import { useRouter } from "next/router";
-import { clearAuthCookies } from "../../lib/auth/session";
+import { logout } from "../../lib/logout";
 
 const LeftSideBar = () => {
   const { user } = useStoreUser();
   const router = useRouter();
-  const handleLogout = async () => {
-    try {
-      const queryLogout = graphql(`
-        mutation logout {
-          logout
-        }
-      `);
-      const res = await graphQLClient.request(queryLogout);
-      if (res.logout) {
-        clearAuthCookies();
-        router.push("/login");
-      }
-    } catch (error) {
-      console.warn(error);
-    }
-  };
+  const handleLogout = () => logout(router);
   return (
     <div>
       <div className="w-full space-y-4">

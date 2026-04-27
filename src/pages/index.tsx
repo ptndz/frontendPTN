@@ -3,13 +3,10 @@ import MiddleLeftBar from "../components/Home/MiddleLeftBar";
 import RightSideBar from "../components/Home/RightSideBar";
 import Navigation from "../components/Share/Navigation";
 
-import { useStoreUser } from "../store/user";
-
-import { useEffect } from "react";
-import { getAuthenticatedUser } from "../lib/pages-router-auth";
-import { GetServerSideProps } from "next";
 import { User } from "../gql/graphql";
 import dynamic from "next/dynamic";
+import { withAuthSSP } from "../lib/with-auth-ssp";
+import { useInitUser } from "../hooks/useInitUser";
 
 const DynamicWidgetMessage = dynamic(
   () => import("../components/Messages/WidgetMessage"),
@@ -23,13 +20,7 @@ interface IProps {
 }
 
 const Home: React.FC<IProps> = ({ userData }) => {
-  const { setUser } = useStoreUser();
-
-  useEffect(() => {
-    if (userData) {
-      setUser(userData);
-    }
-  }, [setUser, userData]);
+  useInitUser(userData);
 
   return (
     <div className="bg-neutral-100 dark:bg-zinc-900">
@@ -54,23 +45,4 @@ const Home: React.FC<IProps> = ({ userData }) => {
   );
 };
 export default Home;
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  try {
-    const user = await getAuthenticatedUser(context);
-
-    if (user) {
-      return {
-        props: {
-          userData: user,
-        },
-      };
-    }
-  } catch (error) {}
-
-  return {
-    redirect: {
-      destination: "/login",
-      permanent: false,
-    },
-  };
-};
+export const getServerSideProps = withAuthSSP();

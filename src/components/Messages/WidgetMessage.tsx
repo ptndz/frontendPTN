@@ -15,11 +15,12 @@ const WidgetMessage = () => {
   const { chatWindows, setChatWindows, setUpdatedWindows } =
     useStoreChatWindow();
   useEffect(() => {
-    socket.on("newChatWindow", (chatWindow: any) => {
-      // setChatWindows(updateObjectInState(chatWindows, chatWindow));
+    const handler = (chatWindow: any) => {
       setChatWindows(chatWindow);
-    });
-  }, [chatWindows, setChatWindows]);
+    };
+    socket.on("newChatWindow", handler);
+    return () => { socket.off("newChatWindow", handler); };
+  }, [setChatWindows]);
 
   const handleAvatarClick = (conversationId: number) => {
     if (chatWindows) {

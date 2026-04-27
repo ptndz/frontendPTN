@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -17,11 +17,9 @@ import { FiUsers, FiLogOut, FiSearch } from "react-icons/fi";
 import { MdOutlineNotificationsNone } from "react-icons/md";
 import { useStoreUser } from "../../store/user";
 import { useStoreTheme } from "../../store/state";
-import { graphql } from "../../gql";
-import { graphQLClient } from "../../plugins/graphql.plugin";
 import axios from "axios";
 import socket from "../../plugins/socket";
-import { clearAuthCookies } from "../../lib/auth/session";
+import { logout } from "../../lib/logout";
 const topCenterNavlinks = [
   {
     href: "/",
@@ -83,21 +81,23 @@ const Navigation = () => {
   const menuNotionRef: any = useRef(null);
 
   const [listNotion, setListNotion] = useState<INotion[]>();
-  const [numberNotion, setNumberNotion] = useState<number>();
-  const fetchData = async () => {
+  const numberNotion = useMemo(
+    () => countUnreadNotifications(listNotion ?? []),
+    [listNotion]
+  );
+  const fetchData = useCallback(async () => {
     const res = await axios.get("/notification/all");
     setListNotion(res.data.notifications);
-    setNumberNotion(countUnreadNotifications(res.data.notifications));
-  };
+  }, []);
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   useEffect(() => {
-    socket.on("notification", (data) => {
-      fetchData();
-    });
-  }, []);
+    const handler = () => { fetchData(); };
+    socket.on("notification", handler);
+    return () => { socket.off("notification", handler); };
+  }, [fetchData]);
   // Hàm này sẽ được gọi mỗi khi isProfileMenuOpen thay đổi
   useEffect(() => {
     // Nếu menu mở, thì ta sẽ thêm event listener để lắng nghe sự kiện click trên document
@@ -134,22 +134,7 @@ const Navigation = () => {
     }
   };
   useEffect(() => setMounted(true), []);
-  const handleLogout = async () => {
-    try {
-      const queryLogout = graphql(`
-        mutation logout {
-          logout
-        }
-      `);
-      const res = await graphQLClient.request(queryLogout);
-      if (res.logout) {
-        clearAuthCookies();
-        router.push("/login");
-      }
-    } catch (error) {
-      console.warn(error);
-    }
-  };
+  const handleLogout = () => logout(router);
   const renderThemeChanger = () => {
     if (!mounted) return null;
 

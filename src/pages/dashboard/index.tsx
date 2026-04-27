@@ -3,11 +3,9 @@ import { FaUserCircle, FaUserFriends } from "react-icons/fa";
 import { BsFileEarmarkPost } from "react-icons/bs";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { GetServerSideProps } from "next";
 import { User } from "../../gql/graphql";
-import { useStoreUser } from "../../store/user";
-
-import { getAuthenticatedUser } from "../../lib/pages-router-auth";
+import { withAuthSSP } from "../../lib/with-auth-ssp";
+import { useInitUser } from "../../hooks/useInitUser";
 interface IProps {
   userData: User;
 }
@@ -15,13 +13,7 @@ const PageDashboard: React.FC<IProps> = ({ userData }) => {
   const [numberUser, serNumberUser] = useState<number>(0);
   const [numberPost, serNumberPost] = useState<number>(0);
   const [numberFriend, serNumberFriend] = useState<number>(0);
-  const { setUser } = useStoreUser();
-
-  useEffect(() => {
-    if (userData) {
-      setUser(userData);
-    }
-  }, [setUser, userData]);
+  useInitUser(userData);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -581,23 +573,4 @@ const PageDashboard: React.FC<IProps> = ({ userData }) => {
 
 export default PageDashboard;
 
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  try {
-    const user = await getAuthenticatedUser(context);
-
-    if (user) {
-      return {
-        props: {
-          userData: user,
-        },
-      };
-    }
-  } catch (error) {}
-
-  return {
-    redirect: {
-      destination: "/login",
-      permanent: false,
-    },
-  };
-};
+export const getServerSideProps = withAuthSSP();

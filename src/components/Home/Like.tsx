@@ -1,4 +1,4 @@
-import { graphql } from "../../gql";
+import { mutationLikeComment } from "../../graphql/post";
 import { IComment } from "../../gql/graphql";
 import { FaRegSurprise } from "react-icons/fa";
 
@@ -24,24 +24,7 @@ const Like: React.FC<IProps> = ({ comment }) => {
     setLike(isLikePost ? isLikePost.reactions : "");
   }, [comment?.likes, user.id]);
   const handleLike = async (typeReact: string) => {
-    const queryLike = graphql(`
-      mutation likeComment($commentId: Float!, $typeReact: String!) {
-        likeComment(commentId: $commentId, typeReact: $typeReact) {
-          code
-          success
-          message
-          like {
-            id
-            reactions
-            user {
-              fullName
-              username
-            }
-          }
-        }
-      }
-    `);
-    const res = await graphQLClient.request(queryLike, {
+    const res = await graphQLClient.request(mutationLikeComment, {
       commentId: comment.id,
       typeReact: typeReact,
     });

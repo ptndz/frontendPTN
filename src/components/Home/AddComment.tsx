@@ -7,7 +7,7 @@ import {
   graphQLClient,
   graphQLClientErrorCheck,
 } from "../../plugins/graphql.plugin";
-import { graphql } from "../../gql";
+import { mutationCommentComment } from "../../graphql/post";
 interface IProps {
   comment: IComment;
   isOpenComment: boolean;
@@ -23,36 +23,7 @@ const AddComment: React.FC<IProps> = ({
   const { user } = useStoreUser();
   const [commentValue, setCommentValue] = useState("");
   const handleSubmit = async () => {
-    const queryCommentComment = graphql(`
-      mutation commentComment($commentId: Float!, $content: String!) {
-        commentComment(commentId: $commentId, content: $content) {
-          code
-          success
-          message
-          comment {
-            id
-            user {
-              id
-              username
-              fullName
-              avatar
-            }
-            content
-            likes {
-              id
-              reactions
-              user {
-                id
-                username
-                fullName
-                avatar
-              }
-            }
-          }
-        }
-      }
-    `);
-    const res = await graphQLClient.request(queryCommentComment, {
+    const res = await graphQLClient.request(mutationCommentComment, {
       commentId: comment.id,
       content: commentValue,
     });

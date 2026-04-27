@@ -19,6 +19,17 @@ export const getRefreshToken = () => getCookie(getRefreshTokenCookieName());
 export const setAccessToken = (token: string, maxAge = 60 * 60 * 48) =>
   setCookie(getAccessTokenCookieName(), token, { maxAge });
 
+export const setAuthCookies = (
+  accessToken: string,
+  refreshToken: string,
+  userId: string,
+  maxAge = 60 * 60 * 24 * 30
+) => {
+  setCookie(getAccessTokenCookieName(), accessToken, { maxAge });
+  setCookie(getRefreshTokenCookieName(), refreshToken, { maxAge });
+  setCookie(USER_ID_COOKIE_FALLBACK, userId, { maxAge });
+};
+
 export const clearAuthCookies = () => {
   deleteCookie(getAccessTokenCookieName());
   deleteCookie(getRefreshTokenCookieName());

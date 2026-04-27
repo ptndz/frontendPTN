@@ -1,15 +1,12 @@
-import React, { useEffect } from "react";
+import React from "react";
 import Navigation from "../components/Share/Navigation";
 import AllFriends from "../components/FriendsCom/AllFriends";
-import { useStoreUser } from "../store/user";
-import Login from "../components/Auth/Login";
-
-import { GetServerSideProps } from "next";
 import { User } from "../gql/graphql";
 import Head from "next/head";
 import { NextSeo } from "next-seo";
 import dynamic from "next/dynamic";
-import { getAuthenticatedUser } from "../lib/pages-router-auth";
+import { withAuthSSP } from "../lib/with-auth-ssp";
+import { useInitUser } from "../hooks/useInitUser";
 
 const DynamicWidgetMessage = dynamic(
   () => import("../components/Messages/WidgetMessage"),
@@ -22,13 +19,7 @@ interface IProps {
   userData: User;
 }
 const Friends: React.FC<IProps> = ({ userData }) => {
-  const { setUser } = useStoreUser();
-
-  useEffect(() => {
-    if (userData) {
-      setUser(userData);
-    }
-  }, [setUser, userData]);
+  useInitUser(userData);
 
   return (
     <>
@@ -59,23 +50,4 @@ const Friends: React.FC<IProps> = ({ userData }) => {
 };
 
 export default Friends;
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  try {
-    const user = await getAuthenticatedUser(context);
-
-    if (user) {
-      return {
-        props: {
-          userData: user,
-        },
-      };
-    }
-  } catch (error) {}
-
-  return {
-    redirect: {
-      destination: "/login",
-      permanent: false,
-    },
-  };
-};
+export const getServerSideProps = withAuthSSP();

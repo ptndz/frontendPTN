@@ -24,22 +24,21 @@ const ResetPassword: React.FC<IProps> = ({ token }) => {
   const { register, handleSubmit } = useForm();
 
   const onSubmit = async (data: any) => {
-    if (data.password === data.confirmPass) {
-      setIsLoading(true);
-      const res = await graphQLClient.request(queryResetPassword, {
-        token: token,
-        password: data.password,
-      });
-      if (res.resetPassword) {
-        setIsLoading(false);
-        return router.push("/");
-      }
-
-      setIsLoading(false);
-      return router.push("/");
-    } else {
-      toast.warn("Oops! password dosen't match");
+    if (data.password !== data.confirmPass) {
+      toast.warn("Oops! password doesn't match");
+      return;
     }
+    setIsLoading(true);
+    const res = await graphQLClient.request(queryResetPassword, {
+      token: token,
+      password: data.password,
+    });
+    setIsLoading(false);
+    if (res.resetPassword) {
+      toast.success("Password reset successfully. Please log in.");
+      return router.push("/login");
+    }
+    toast.error("Reset link is invalid or expired. Please try again.");
   };
 
   return (

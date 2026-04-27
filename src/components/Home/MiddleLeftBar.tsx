@@ -63,6 +63,7 @@ const MiddleLeftBar = () => {
     }
 
     observer.observe(el);
+    return () => { observer.disconnect(); };
   }, [hasNextPage, router, fetchNextPage, deletePost]);
 
   useEffect(() => {

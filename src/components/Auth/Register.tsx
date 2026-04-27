@@ -1,5 +1,5 @@
-import { setCookies } from "cookies-next";
 import Image from "next/image";
+import { setAuthCookies } from "../../lib/auth/session";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState } from "react";
@@ -17,10 +17,14 @@ const Register = () => {
   const [sex, setSex] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassConfirm, setShowPassConfirm] = useState(false);
+  interface RegisterForm {
+    firstName: string; lastName: string; email: string; password: string;
+    confirmPass: string; phone: string; username: string; birthday: string;
+  }
   const { setUser } = useStoreUser();
-  const { register, handleSubmit } = useForm();
+  const { register, handleSubmit } = useForm<RegisterForm>();
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: RegisterForm) => {
     if (data.password === data.confirmPass) {
       setIsLoading(true);
       const res = await graphQLClient.request(queryRegister, {
@@ -63,19 +67,7 @@ const Register = () => {
         setIsLoading(false);
         return;
       }
-      setCookies("uuid", res.register.user.id, {
-        maxAge: 60 * 60 * 24 * 30,
-      });
-      setCookies(process.env.NEXT_PUBLIC_COOKIE_NAME as string, accessToken, {
-        maxAge: 60 * 60 * 24 * 30,
-      });
-      setCookies(
-        process.env.NEXT_PUBLIC_REFRESH_TOKEN_COOKIE_NAME as string,
-        refreshToken,
-        {
-          maxAge: 60 * 60 * 24 * 30,
-        }
-      );
+      setAuthCookies(accessToken, refreshToken, res.register.user.id);
       setUser(res.register.user);
       setIsLoading(false);
       return router.push("/");
