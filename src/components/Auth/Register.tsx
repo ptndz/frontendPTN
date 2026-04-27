@@ -11,347 +11,266 @@ import { queryRegister } from "../../graphql/user";
 import { graphQLClient } from "../../plugins/graphql.plugin";
 import { useStoreUser } from "../../store/user";
 
+interface RegisterForm {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  confirmPass: string;
+  phone: string;
+  username: string;
+  birthday: string;
+}
+
+const Spinner = () => (
+  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+  </svg>
+);
+
+const inputClass =
+  "w-full h-10 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 dark:focus:border-emerald-600 transition-all";
+
 const Register = () => {
   const router = useRouter();
   const [showPass, setShowPass] = useState(false);
   const [sex, setSex] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassConfirm, setShowPassConfirm] = useState(false);
-  interface RegisterForm {
-    firstName: string; lastName: string; email: string; password: string;
-    confirmPass: string; phone: string; username: string; birthday: string;
-  }
   const { setUser } = useStoreUser();
   const { register, handleSubmit } = useForm<RegisterForm>();
 
   const onSubmit = async (data: RegisterForm) => {
-    if (data.password === data.confirmPass) {
-      setIsLoading(true);
-      const res = await graphQLClient.request(queryRegister, {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        password: data.password,
-        phone: data.phone,
-        username: data.username,
-        fullName: `${data.firstName} ${data.lastName}`,
-        sex: sex,
-        birthday: data.birthday,
-        avatar: "https://i.imgur.com/rLpAsb4.png",
-        coverImage: "https://i.imgur.com/rLpAsb4.png",
-      });
-      if (res.register.code != 200) {
-        toast.error(res.register.message);
-        if (res.register.errors) {
-          res.register.errors.forEach((err) => {
-            toast.error(err.message);
-          });
-        }
-        setIsLoading(false);
-        return;
-      }
-      const accessToken = res.register.accessToken;
-      if (!accessToken) {
-        toast.error("loi he thong");
-        setIsLoading(false);
-        return;
-      }
-      const refreshToken = res.register.refreshToken;
-      if (!refreshToken) {
-        toast.error("loi he thong");
-        setIsLoading(false);
-        return;
-      }
-      if (!res.register.user) {
-        toast.error("loi he thong");
-        setIsLoading(false);
-        return;
-      }
-      setAuthCookies(accessToken, refreshToken, res.register.user.id);
-      setUser(res.register.user);
-      setIsLoading(false);
-      return router.push("/");
-    } else {
-      toast.warn("Oops! password dosen't match");
+    if (data.password !== data.confirmPass) {
+      toast.warn("Passwords don't match");
+      return;
     }
+    setIsLoading(true);
+    const res = await graphQLClient.request(queryRegister, {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      password: data.password,
+      phone: data.phone,
+      username: data.username,
+      fullName: `${data.firstName} ${data.lastName}`,
+      sex,
+      birthday: data.birthday,
+      avatar: "https://i.imgur.com/rLpAsb4.png",
+      coverImage: "https://i.imgur.com/rLpAsb4.png",
+    });
+    if (res.register.code !== 200) {
+      toast.error(res.register.message);
+      res.register.errors?.forEach((err: { message: string }) => toast.error(err.message));
+      setIsLoading(false);
+      return;
+    }
+    const { accessToken, refreshToken } = res.register;
+    if (!accessToken || !refreshToken || !res.register.user) {
+      toast.error("System error. Please try again.");
+      setIsLoading(false);
+      return;
+    }
+    setAuthCookies(accessToken, refreshToken, res.register.user.id);
+    setUser(res.register.user);
+    setIsLoading(false);
+    router.push("/");
   };
 
   return (
-    <section className="lg:py-10 lg:px-6">
-      <div className="max-w-5xl mx-auto rounded-lg overflow-hidden grid min-h-screen lg:grid-cols-5 grid-cols-2">
-        <div className="hidden lg:flex col-span-2 bg-white dark:bg-black bg-pattern-login">
-          <div className="flex flex-col justify-start items-start py-10 pl-16">
-            {/*  */}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4 py-8">
+      <div className="w-full max-w-4xl bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden grid lg:grid-cols-5">
+
+        {/* Left decorative panel */}
+        <div className="hidden lg:flex lg:col-span-2 bg-gradient-to-br from-emerald-500 to-teal-600 p-10 flex-col justify-between relative overflow-hidden">
+          <div className="absolute -top-16 -left-16 w-64 h-64 bg-white/10 rounded-full" />
+          <div className="absolute bottom-10 -right-10 w-48 h-48 bg-white/10 rounded-full" />
+          <div className="absolute top-1/3 right-6 w-24 h-24 bg-white/5 rounded-full" />
+          <div className="relative z-10">
+            <Link href="/">
+              <Image src="/favicon/logo.png" width={90} height={36} alt="Logo" className="brightness-0 invert opacity-90" />
+            </Link>
           </div>
+          <div className="relative z-10 space-y-3">
+            <h2 className="text-2xl font-bold text-white leading-tight">
+              Join our community today
+            </h2>
+            <p className="text-emerald-100 text-sm leading-relaxed">
+              Create your account and start connecting with friends around the world.
+            </p>
+          </div>
+          <p className="relative z-10 text-emerald-200 text-xs">
+            PTN Social © {new Date().getFullYear()}
+          </p>
         </div>
-        <div className="bg-white dark:bg-black col-span-3 flex flex-col pb-20">
-          <div className="mt-8 mx-auto w-full max-w-md">
-            <div className="flex flex-col justify-start items-start mb-10">
-              <Link href="/">
-                <Image
-                  src="/favicon/logo.png"
-                  alt="Pham Thanh Nam"
-                  width={300}
-                  height={100}
-                />
-              </Link>
-              <h1 className="text-gray-900 dark:text-white font-bold text-3xl font-title pl-4">
-                Create an account
-              </h1>
+
+        {/* Right form panel */}
+        <div className="col-span-5 lg:col-span-3 p-8 sm:p-10 overflow-y-auto">
+          <div className="lg:hidden mb-8">
+            <Link href="/">
+              <Image src="/favicon/logo.png" width={80} height={32} alt="Logo" />
+            </Link>
+          </div>
+
+          <div className="max-w-sm w-full mx-auto space-y-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Create account</h1>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Fill in your details to get started</p>
             </div>
-            <div className="rounded-lg px-4">
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                <div>
-                  <label
-                    htmlFor="firstName"
-                    className="block text-lg text-gray-900 dark:text-white">
-                    First Name<span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="firstName"
-                      {...register("firstName", { required: true })}
-                      type="text"
-                      autoComplete="given-name"
-                      required
-                      placeholder="Pham "
-                      className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label
-                    htmlFor="lastName"
-                    className="block text-lg text-gray-900 dark:text-white">
-                    Last Name<span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="lastName"
-                      {...register("lastName", { required: true })}
-                      type="text"
-                      autoComplete="given-name"
-                      required
-                      placeholder="Nam"
-                      className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-lg text-gray-900 dark:text-white">
-                    Email address<span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="email"
-                      {...register("email", { required: true })}
-                      type="email"
-                      autoComplete="email"
-                      required
-                      placeholder="example@mail.com"
-                      className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label
-                    htmlFor="phone"
-                    className="block text-lg text-gray-900 dark:text-white">
-                    Phone Number<span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="phone"
-                      {...register("phone", { required: true })}
-                      type="tel"
-                      pattern="^(0\W*\W*(?:\d\W*){9})$"
-                      autoComplete="phone"
-                      required
-                      placeholder="0987654321"
-                      className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label
-                    htmlFor="username"
-                    className="block text-lg text-gray-900 dark:text-white">
-                    User name<span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="username"
-                      {...register("username", { required: true })}
-                      type="text"
-                      autoComplete="given-name"
-                      required
-                      placeholder="Username"
-                      className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between">
-                    <label
-                      htmlFor="password"
-                      className="block text-lg text-gray-900 dark:text-white">
-                      Password<span className="text-red-500">*</span>
-                    </label>
-                    <button
-                      type="button"
-                      className="mr-2"
-                      onClick={() => setShowPass(!showPass)}>
-                      {showPass ? <BsEye /> : <BsEyeSlash />}
-                    </button>
-                  </div>
-                  <div className="mt-1">
-                    <input
-                      id="password"
-                      {...register("password", { required: true })}
-                      type={showPass ? "text" : "password"}
-                      autoComplete="current-password"
-                      required
-                      placeholder="********"
-                      className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
 
-                <div>
-                  <div className="flex items-center justify-between">
-                    <label
-                      htmlFor="confirmPass"
-                      className="block text-lg text-gray-900 dark:text-white">
-                      Retype Password<span className="text-red-500">*</span>
-                    </label>
-                    <button
-                      type="button"
-                      className="mr-2"
-                      onClick={() => setShowPassConfirm(!showPassConfirm)}>
-                      {showPassConfirm ? <BsEye /> : <BsEyeSlash />}
-                    </button>
-                  </div>
-                  <div className="mt-1">
-                    <input
-                      id="confirmPass"
-                      {...register("confirmPass", { required: true })}
-                      type={showPassConfirm ? "text" : "password"}
-                      required
-                      placeholder="********"
-                      className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
-                  </div>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+              {/* Name row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label htmlFor="firstName" className="text-sm font-medium text-gray-700 dark:text-gray-300">First name</label>
+                  <input
+                    id="firstName"
+                    {...register("firstName", { required: true })}
+                    type="text"
+                    placeholder="Pham"
+                    required
+                    className={inputClass}
+                  />
                 </div>
-                <div>
-                  <label
-                    htmlFor="birthday"
-                    className="block text-lg text-gray-900 dark:text-white">
-                    Birth Day<span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="birthday"
-                      {...register("birthday", { required: true })}
-                      autoComplete="date"
-                      required
-                      className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      type="date"
-                      placeholder="dd-mm-yyyy"
-                      min="1970-01-01"
-                      max="2030-12-31"></input>
-                  </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="lastName" className="text-sm font-medium text-gray-700 dark:text-gray-300">Last name</label>
+                  <input
+                    id="lastName"
+                    {...register("lastName", { required: true })}
+                    type="text"
+                    placeholder="Nam"
+                    required
+                    className={inputClass}
+                  />
                 </div>
-
-                <div>
-                  <label
-                    htmlFor="username"
-                    className="block text-lg text-gray-900 dark:text-white">
-                    Sex<span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <div className="mb-3 xl:w-96 ">
-                      <select
-                        data-te-select-init
-                        className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        <option value="true" onClick={() => setSex(true)}>
-                          Male
-                        </option>
-                        <option value="false" onClick={() => setSex(false)}>
-                          Female
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  {isLoading ? (
-                    <button
-                      disabled
-                      type="button"
-                      className="w-full flex justify-center py-2 px-4 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm text-center mr-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 items-center">
-                      <svg
-                        role="status"
-                        className="inline mr-3 w-4 h-4 text-white animate-spin"
-                        viewBox="0 0 100 101"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path
-                          d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9184 73.1895 90.9184 50.5908C90.9184 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                          fill="#E5E7EB"
-                        />
-                        <path
-                          d="M93.9676 39.0409C96.393 38.4038 97.8424 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8442 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 84.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                          fill="currentColor"
-                        />
-                      </svg>
-                      Loading...
-                    </button>
-                  ) : (
-                    <button
-                      type="submit"
-                      className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium dark:text-black text-white dark:bg-white bg-black hover:bg-opacity-80 dark:hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white">
-                      Register
-                    </button>
-                  )}
-                </div>
-              </form>
-
-              <div className="mt-6">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    {/* <span className="px-2 bg-gray-50 dark:bg-black text-gray-900 dark:text-white font-medium">
-                      Or
-                    </span> */}
-                  </div>
-                </div>
-
-                {/* <div className="mt-6">
-                  <div>
-                    <button className="w-full inline-flex justify-center items-center py-2 px-4 rounded-md shadow-sm bg-black dark:bg-white text-sm font-medium text-white dark:text-black hover:bg-opacity-90 dark:hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white">
-                      <BsGoogle className="w-6 h-6" />
-                      &nbsp;Sign in with Google
-                    </button>
-                  </div>
-                </div> */}
-                <p className="mt-6 text-center text-base font-medium text-gray-900 dark:text-white">
-                  Have an account?
-                  <Link
-                    href="/login"
-                    className="text-indigo-500 hover:text-indigo-600 font-medium">
-                    &nbsp;&nbsp;Sign in
-                  </Link>
-                </p>
               </div>
-            </div>
+
+              {/* Username */}
+              <div className="space-y-1.5">
+                <label htmlFor="username" className="text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
+                <input
+                  id="username"
+                  {...register("username", { required: true })}
+                  type="text"
+                  placeholder="phamnam"
+                  required
+                  className={inputClass}
+                />
+              </div>
+
+              {/* Email */}
+              <div className="space-y-1.5">
+                <label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">Email address</label>
+                <input
+                  id="email"
+                  {...register("email", { required: true })}
+                  type="email"
+                  placeholder="you@example.com"
+                  required
+                  className={inputClass}
+                />
+              </div>
+
+              {/* Phone */}
+              <div className="space-y-1.5">
+                <label htmlFor="phone" className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone number</label>
+                <input
+                  id="phone"
+                  {...register("phone", { required: true })}
+                  type="tel"
+                  pattern="^(0\W*\W*(?:\d\W*){9})$"
+                  placeholder="0987654321"
+                  required
+                  className={inputClass}
+                />
+              </div>
+
+              {/* Birthday & Sex */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label htmlFor="birthday" className="text-sm font-medium text-gray-700 dark:text-gray-300">Birthday</label>
+                  <input
+                    id="birthday"
+                    {...register("birthday", { required: true })}
+                    type="date"
+                    required
+                    min="1970-01-01"
+                    max="2030-12-31"
+                    className={inputClass}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="sex" className="text-sm font-medium text-gray-700 dark:text-gray-300">Gender</label>
+                  <select
+                    id="sex"
+                    className={inputClass}
+                    onChange={(e) => setSex(e.target.value === "true")}
+                    defaultValue="true"
+                  >
+                    <option value="true">Male</option>
+                    <option value="false">Female</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Password */}
+              <div className="space-y-1.5">
+                <label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                <div className="relative">
+                  <input
+                    id="password"
+                    {...register("password", { required: true })}
+                    type={showPass ? "text" : "password"}
+                    placeholder="••••••••"
+                    required
+                    className={`${inputClass} pr-10`}
+                  />
+                  <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    {showPass ? <BsEye /> : <BsEyeSlash />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm password */}
+              <div className="space-y-1.5">
+                <label htmlFor="confirmPass" className="text-sm font-medium text-gray-700 dark:text-gray-300">Confirm password</label>
+                <div className="relative">
+                  <input
+                    id="confirmPass"
+                    {...register("confirmPass", { required: true })}
+                    type={showPassConfirm ? "text" : "password"}
+                    placeholder="••••••••"
+                    required
+                    className={`${inputClass} pr-10`}
+                  />
+                  <button type="button" onClick={() => setShowPassConfirm(!showPassConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    {showPassConfirm ? <BsEye /> : <BsEyeSlash />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-10 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors mt-2"
+              >
+                {isLoading && <Spinner />}
+                {isLoading ? "Creating account..." : "Create account"}
+              </button>
+            </form>
+
+            <p className="text-sm text-center text-gray-500 dark:text-gray-400">
+              Already have an account?{" "}
+              <Link href="/login" className="font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+                Sign in
+              </Link>
+            </p>
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 };
 
