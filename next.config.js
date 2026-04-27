@@ -29,9 +29,13 @@ const securityHeaders = [
 
 module.exports = withSerwist({
   reactStrictMode: true,
-  swcMinify: true,
   images: {
-    domains: ["localhost", "i.imgur.com", "mxhserver.test", "mxhclient.test"],
+    remotePatterns: [
+      { protocol: "http", hostname: "localhost" },
+      { protocol: "https", hostname: "i.imgur.com" },
+      { protocol: "http", hostname: "mxhserver.test" },
+      { protocol: "http", hostname: "mxhclient.test" },
+    ],
   },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
