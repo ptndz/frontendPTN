@@ -1,18 +1,14 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
-import { FiChevronRight } from "react-icons/fi";
 import Image from "next/image";
 import Link from "next/link";
 import UserListSkeleton from "../Loaders/UserListSkeleton";
-
-import {
-  graphQLClient,
-  graphQLClientErrorCheck,
-} from "../../plugins/graphql.plugin";
+import { graphQLClient, graphQLClientErrorCheck } from "../../plugins/graphql.plugin";
 import { toast } from "react-toastify";
 import { useStoreUser } from "../../store/user";
 import { queryGetUsersYouMayKnow } from "../../graphql/user";
 import { User } from "../../gql/graphql";
+import { FiUserPlus } from "react-icons/fi";
 
 const RightSideBar = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -29,46 +25,79 @@ const RightSideBar = () => {
         }
         if (graphQLClientErrorCheck(res)) {
           if (res.getUsersYouMayKnow.users) {
-            const data = res.getUsersYouMayKnow.users.filter((userData) => {
-              return userData.id !== user.id;
-            });
-            setUsers(data);
+            setUsers(res.getUsersYouMayKnow.users.filter((u) => u.id !== user.id));
           }
         }
-        setLoading(false);
       } catch (error) {
-        setLoading(false);
         console.warn(error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
   }, [user.id]);
+
   return (
-    <div>
-      <div className="bg-white dark:bg-black drop-shadow-sm p-3 rounded-lg">
-        <p className="mb-3">You may know</p>
-        <ul className="space-y-2">
-          {loading && <UserListSkeleton />}
-          {users.map((user) => (
-            <Link href={`${user.username}`} key={user.username} passHref>
-              <li className="dark:hover:bg-zinc-900 hover:bg-gray-200 p-2 rounded-md">
-                <span className="flex items-center cursor-pointer">
+    <div className="space-y-3 py-4">
+      {/* People you may know */}
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+        <div className="px-4 pt-4 pb-2">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">People you may know</h3>
+          <p className="text-xs text-gray-400 mt-0.5">Suggested for you</p>
+        </div>
+
+        <div className="px-2 pb-2 space-y-0.5">
+          {loading ? (
+            <div className="px-2">
+              <UserListSkeleton />
+            </div>
+          ) : users.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-4">No suggestions right now</p>
+          ) : (
+            users.map((u) => (
+              <Link
+                href={`/${u.username}`}
+                key={u.username}
+                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group"
+              >
+                <div className="relative w-9 h-9 rounded-xl overflow-hidden flex-shrink-0">
                   <Image
-                    src={user.avatar || "/images/user-avatar.png"}
-                    width="40"
-                    height="40"
-                    alt={user.fullName}
-                    className="rounded-full"
+                    src={u.avatar || "/images/user-avatar.png"}
+                    fill
+                    alt={u.fullName}
+                    className="object-cover"
                   />
-                  <span className="ml-3 contact-users" title={user.fullName}>
-                    {user.fullName}
-                  </span>
-                  <FiChevronRight className="ml-auto" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{u.fullName}</p>
+                  <p className="text-xs text-gray-400 truncate">@{u.username}</p>
+                </div>
+                <span className="opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                  <FiUserPlus className="text-sm" />
                 </span>
-              </li>
+              </Link>
+            ))
+          )}
+        </div>
+
+        {users.length > 0 && (
+          <div className="border-t border-gray-100 dark:border-gray-800">
+            <Link
+              href="/friends"
+              className="flex items-center justify-center gap-2 py-3 text-sm text-emerald-600 dark:text-emerald-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-medium"
+            >
+              See all suggestions
             </Link>
-          ))}
-        </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Footer links */}
+      <div className="px-1">
+        <p className="text-xs text-gray-400 leading-relaxed">
+          Privacy · Terms · Advertising · Cookies ·{" "}
+          <span className="font-medium text-gray-500">PTN Social</span> © {new Date().getFullYear()}
+        </p>
       </div>
     </div>
   );

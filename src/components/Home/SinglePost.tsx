@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useId } from "react";
 import Image from "next/image";
 import moment from "moment";
 import { FaArrowUp, FaRegSurprise } from "react-icons/fa";
-import { FiTrash, FiBookOpen } from "react-icons/fi";
+import { FiTrash, FiBookOpen, FiMoreHorizontal } from "react-icons/fi";
 import { BiShare } from "react-icons/bi";
 import { AiOutlineLike } from "react-icons/ai";
 import { TbMoodCry } from "react-icons/tb";
@@ -12,9 +12,9 @@ import {
   BsChatLeft,
   BsBookmark,
   BsBookmarkX,
-  BsThreeDotsVertical,
   BsHeart,
   BsEmojiAngry,
+  BsHeartFill,
 } from "react-icons/bs";
 import { MdBugReport } from "react-icons/md";
 import { toast } from "react-toastify";
@@ -26,10 +26,7 @@ import {
   mutationDeletePost,
   queryCreateBookmark,
 } from "../../graphql/post";
-import {
-  graphQLClient,
-  graphQLClientErrorCheck,
-} from "../../plugins/graphql.plugin";
+import { graphQLClient, graphQLClientErrorCheck } from "../../plugins/graphql.plugin";
 import { CgSmileMouthOpen } from "react-icons/cg";
 import Carousel from "./Carousel";
 import axios from "axios";
@@ -44,12 +41,7 @@ interface IProps {
 }
 
 const SinglePost: React.FC<IProps> = ({
-  post,
-  setDeletePost,
-  bookmarkedPostsId,
-  deletePost,
-  isBookmarkPage,
-  loading,
+  post, setDeletePost, bookmarkedPostsId, deletePost, isBookmarkPage, loading,
 }) => {
   const [alreadyBookmarked, setAlreadyBookmarked] = useState(
     bookmarkedPostsId?.some((p: string) => p === post.uuid)
@@ -58,377 +50,245 @@ const SinglePost: React.FC<IProps> = ({
   const [isSeeMore, setIsSeeMore] = useState<boolean>(false);
   const [dbComments, setDbComments] = useState<IComment[]>([]);
   const [comment, setComment] = useState("");
-  const [menu, setMenu] = useState("hidden");
+  const [menuOpen, setMenuOpen] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
   const idLike = useId();
   const { user } = useStoreUser();
 
   useEffect(() => {
-    const isLikePost = post?.likes?.find(
-      (item) => item.user.username === user.username
-    );
+    const isLikePost = post?.likes?.find((item) => item.user.username === user.username);
     setLike(isLikePost ? isLikePost.reactions : "");
   }, [post, user.username]);
 
   useEffect(() => {
-    if (post.comments) {
-      setDbComments(post.comments);
-    }
+    if (post.comments) setDbComments(post.comments);
   }, [post.comments]);
 
   useEffect(() => {
-    if (post.content.split("\n").length >= 6) {
-      setIsSeeMore(false);
-    }
+    if (post.content.split("\n").length >= 6) setIsSeeMore(false);
   }, [post.content]);
 
   const handleSubmitComment = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    if (comment.length < 1) {
-      toast.error("Comment is required");
-      return;
-    }
-
+    if (comment.length < 1) { toast.error("Comment is required"); return; }
     const res = await graphQLClient.request(mutationCommentPost, {
-      postUuid: post.uuid,
-      content: comment,
+      postUuid: post.uuid, content: comment,
     });
     if (graphQLClientErrorCheck(res)) {
-      if (res.commentPost.comments) {
-        setDbComments(res.commentPost.comments);
-      }
-      if (ref.current?.value) {
-        ref.current.value = "";
-        setComment("");
-      }
+      if (res.commentPost.comments) setDbComments(res.commentPost.comments);
+      if (ref.current) { ref.current.value = ""; setComment(""); }
     }
   };
 
   const handleLike = async (typeReact: string) => {
     try {
       const res = await graphQLClient.request(mutationLikePost, {
-        postUuid: post.uuid,
-        typeReact: typeReact,
+        postUuid: post.uuid, typeReact,
       });
-      if (graphQLClientErrorCheck(res)) {
-        if (res.likePost.like) {
-          setLike(res.likePost.like.reactions);
-        }
+      if (graphQLClientErrorCheck(res) && res.likePost.like) {
+        setLike(res.likePost.like.reactions);
       }
-    } catch (error) {
-      console.log(error);
-    }
+    } catch (error) { console.log(error); }
   };
-  const handleDelete = async (uuid: string) => {
-    const res = await graphQLClient.request(mutationDeletePost, {
-      uuid: uuid,
-    });
 
-    if (graphQLClientErrorCheck(res)) {
-      setDeletePost(!deletePost);
-    }
+  const handleDelete = async (uuid: string) => {
+    const res = await graphQLClient.request(mutationDeletePost, { uuid });
+    if (graphQLClientErrorCheck(res)) setDeletePost(!deletePost);
   };
 
   const handleBookmark = async (uuid: string) => {
     try {
-      const res = await graphQLClient.request(queryCreateBookmark, {
-        postUuid: uuid,
-      });
-      if (graphQLClientErrorCheck(res)) {
-        setAlreadyBookmarked(true);
-      }
-    } catch (error) {
-      toast.error(uuid);
-    }
+      const res = await graphQLClient.request(queryCreateBookmark, { postUuid: uuid });
+      if (graphQLClientErrorCheck(res)) setAlreadyBookmarked(true);
+    } catch (error) { toast.error(uuid); }
   };
 
-  const handleBookmarkRemove = async (uuid: string) => {
-    try {
-      setAlreadyBookmarked(false);
-    } catch (error) {
-      toast.error(uuid);
-    }
-  };
+  const handleBookmarkRemove = () => setAlreadyBookmarked(false);
   const handleReport = async (uuid: string) => {
-    const res = await axios.post(`/bookmark/report/${uuid}`);
-    toast.error("Report");
+    await axios.post(`/bookmark/report/${uuid}`);
+    toast.error("Reported");
   };
-  const renderLike = () => {
-    const reactions = [
-      {
-        type: "LIKE",
-        icon: (
-          <button>
-            <AiOutlineLike className="text-2xl text-sky-600" />
-          </button>
-        ),
-      },
-      {
-        type: "LOVE",
-        icon: (
-          <button>
-            <BsHeart className="text-2xl text-red-500" />
-          </button>
-        ),
-      },
-      {
-        type: "HAHA",
-        icon: (
-          <button>
-            <CgSmileMouthOpen className="text-2xl text-yellow-400" />
-          </button>
-        ),
-      },
-      {
-        type: "SAD",
-        icon: (
-          <button>
-            <TbMoodCry className="text-2xl text-yellow-400" />
-          </button>
-        ),
-      },
-      {
-        type: "WOW",
-        icon: (
-          <button>
-            <FaRegSurprise className="text-2xl text-yellow-400" />
-          </button>
-        ),
-      },
-      {
-        type: "ANGRY",
-        icon: (
-          <button>
-            <BsEmojiAngry className="text-2xl text-yellow-400" />
-          </button>
-        ),
-      },
-    ];
-    const icon = reactions.find((item) => item.type === like)?.icon;
-    return icon ? (
-      icon
-    ) : (
-      <button>
-        <BsHeart className="text-2xl" />
-      </button>
-    );
+
+  const reactionMap: Record<string, React.ReactNode> = {
+    LIKE: <AiOutlineLike className="text-sky-500" />,
+    LOVE: <BsHeartFill className="text-red-500" />,
+    HAHA: <CgSmileMouthOpen className="text-yellow-400" />,
+    SAD: <TbMoodCry className="text-yellow-400" />,
+    WOW: <FaRegSurprise className="text-yellow-400" />,
+    ANGRY: <BsEmojiAngry className="text-orange-500" />,
   };
+
+  const renderLikeIcon = () => (
+    <span className="text-xl">
+      {reactionMap[like] ?? <BsHeart />}
+    </span>
+  );
+
+  const contentLines = post.content.split("\n");
+  const isLong = contentLines.length >= 6;
 
   return (
-    <div className="drop-shadow-sm bg-white dark:bg-black p-5 sm:rounded-xl my-4 ">
-      <div className="flex justify-between relative">
-        <div className=" flex">
-          <Link href={`/${post.user.username}`} passHref>
-            <div className="relative">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 my-3 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-start justify-between p-4">
+        <div className="flex items-center gap-3">
+          <Link href={`/${post.user.username}`}>
+            <div className="relative w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 cursor-pointer">
               <Image
                 src={post.user.avatar || "/images/user-avatar.png"}
-                className="rounded-full cursor-pointer"
                 alt={post.user.fullName}
-                height={45}
-                width={45}
+                fill
+                className="object-cover"
               />
-              <div className="absolute w-3 h-3 rounded-full bg-zinc-600 ring-2 ring-white dark:ring-black bottom-1 right-0"></div>
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-white dark:border-gray-900 rounded-full" />
             </div>
           </Link>
-          <div className="ml-3">
-            <Link href={`/${post.user.username}`} passHref>
-              <h4 className="text-md font-semibold cursor-pointer">
+          <div>
+            <Link href={`/${post.user.username}`}>
+              <p className="font-semibold text-sm text-gray-900 dark:text-gray-100 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer">
                 {post.user.fullName}
-              </h4>
+              </p>
             </Link>
-            <span className="text-xs">{moment(post.createAt).fromNow()} </span>
+            <p className="text-xs text-gray-400">{moment(post.createAt).fromNow()}</p>
           </div>
         </div>
-        <div onClick={() => setMenu(menu === "hidden" ? "block" : "hidden")}>
-          <div className="p-3 bg-gray-100 dark:bg-zinc-900 rounded-full cursor-pointer">
-            <BsThreeDotsVertical className="dark:text-white text-black" />
-          </div>
+
+        {/* Menu */}
+        <div className="relative">
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <FiMoreHorizontal />
+          </button>
+          {menuOpen && (
+            <div className="absolute right-0 top-9 w-44 bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 z-40 overflow-hidden py-1">
+              {alreadyBookmarked ? (
+                <button
+                  onClick={() => { handleBookmarkRemove(); setMenuOpen(false); }}
+                  className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  <BsBookmarkX className="text-gray-400" /> Remove bookmark
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => { handleBookmark(post.uuid); setMenuOpen(false); }}
+                    className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  >
+                    <BsBookmark className="text-gray-400" /> Bookmark
+                  </button>
+                  <button
+                    onClick={() => { handleReport(post.uuid); setMenuOpen(false); }}
+                    className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  >
+                    <MdBugReport className="text-gray-400" /> Report
+                  </button>
+                </>
+              )}
+              {user.username === post.user.username && (
+                <button
+                  onClick={() => { handleDelete(post.uuid); setMenuOpen(false); }}
+                  className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                >
+                  <FiTrash /> Delete
+                </button>
+              )}
+              <Link href={`/post/${post.uuid}`}>
+                <button
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  <FiBookOpen className="text-gray-400" /> Open post
+                </button>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
-      <div className={menu}>
-        <div className="absolute right-5 py-3 bg-gray-100 dark:bg-zinc-800 w-40 z-40 rounded-lg">
-          <ul>
-            {alreadyBookmarked ? (
-              <li
-                onClick={() => {
-                  handleBookmarkRemove(post.uuid);
-                  setMenu("hidden");
-                }}
-                className="py-1 flex items-center cursor-pointer hover:bg-white dark:hover:bg-zinc-600 px-3">
-                <BsBookmarkX className="mr-2" />
-                Remove
-              </li>
-            ) : (
-              <>
-                <li
-                  onClick={() => {
-                    handleBookmark(post.uuid);
-                    setMenu("hidden");
-                  }}
-                  className="py-1 flex items-center cursor-pointer hover:bg-white dark:hover:bg-zinc-600 px-3">
-                  <BsBookmark className="mr-2" /> Bookmark post
-                </li>
-                <li
-                  onClick={() => {
-                    handleReport(post.uuid);
-                    setMenu("hidden");
-                  }}
-                  className="py-1 flex items-center cursor-pointer hover:bg-white dark:hover:bg-zinc-600 px-3">
-                  <MdBugReport className="mr-2" /> Report
-                </li>
-              </>
-            )}
-            {user.username === post.user.username && (
-              <li
-                className="py-1 flex items-center cursor-pointer hover:bg-white dark:hover:bg-zinc-600 px-3"
-                onClick={() => {
-                  handleDelete(post.uuid);
-                  setMenu("hidden");
-                }}>
-                <FiTrash className="mr-2" /> Delete posts
-              </li>
-            )}
 
-            <Link href={`/post/${post.uuid}`}>
-              <li className="py-1 flex items-center cursor-pointer hover:bg-white dark:hover:bg-zinc-600 px-3">
-                <FiBookOpen className="mr-2" />
-                Open post
-              </li>
-            </Link>
-          </ul>
+      {/* Content */}
+      <div className="px-4 pb-3">
+        <div className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed space-y-1">
+          {(isLong && !isSeeMore ? contentLines.slice(0, 5) : contentLines).map((line, idx) => (
+            <p key={idx}>{line || <br />}</p>
+          ))}
         </div>
-      </div>
-      <div className="pt-3 mb-3">
-        {isSeeMore
-          ? post.content.split("\n").map(function (item, idx) {
-              return (
-                <p key={idx}>
-                  {item}
-                  <br />
-                </p>
-              );
-            })
-          : post.content.split("\n").map(function (item, idx) {
-              if (idx <= 5) {
-                return (
-                  <p key={idx}>
-                    {item}
-                    <br />
-                  </p>
-                );
-              }
-            })}
-
-        {post.content.split("\n").length >= 6 && (
+        {isLong && (
           <button
             onClick={() => setIsSeeMore(!isSeeMore)}
-            className="text-blue-600 pl-2">
+            className="mt-1.5 text-sm text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
+          >
             {isSeeMore ? "See less" : "See more"}
           </button>
         )}
       </div>
-      {/* {post.images
-        ? post.images.map((image: string, index: number) => (
-            <div
-              key={index}
-              className="pt-3 relative h-96 rounded-lg overflow-hidden w-full">
-              <Image src={image} layout="fill" objectFit="cover" alt="" />
-            </div>
-          ))
-        : ""} */}
-      {post.images ? <Carousel images={post.images} /> : null}
-      <div className="flex justify-between items-center">
-        <div className="pt-3 flex items-center">
-          <div className="box pt-2 pb-0 px-1.5">
+
+      {/* Images */}
+      {post.images && <Carousel images={post.images} />}
+
+      {/* Actions */}
+      <div className="flex items-center justify-between px-4 py-2.5 border-t border-gray-100 dark:border-gray-800">
+        <div className="flex items-center gap-1">
+          {/* Like with reaction picker */}
+          <div className="box relative">
             <input type="checkbox" id={idLike} className="field-reactions" />
-            <label htmlFor={idLike} className="label-reactions">
-              Like
-            </label>
-            <span className="text-desc">
-              Press space and after tab key to navigation
-            </span>
+            <label htmlFor={idLike} className="label-reactions">Like</label>
+            <span className="text-desc">Press space and after tab key to navigation</span>
             <div className="toolbox" />
             <label className="overlay" htmlFor={idLike} />
-            <button
-              className="reaction-like"
-              onClick={() => handleLike("LIKE")}>
-              <span className="legend-reaction">Like</span>
-            </button>
-            <button
-              className="reaction-love"
-              onClick={() => handleLike("LOVE")}>
-              <span className="legend-reaction">Love</span>
-            </button>
-            <button
-              className="reaction-haha"
-              onClick={() => handleLike("HAHA")}>
-              <span className="legend-reaction">Haha</span>
-            </button>
-            <button className="reaction-wow" onClick={() => handleLike("WOW")}>
-              <span className="legend-reaction">Wow</span>
-            </button>
-            <button className="reaction-sad" onClick={() => handleLike("SAD")}>
-              <span className="legend-reaction">Sad</span>
-            </button>
-            <button
-              className="reaction-angry"
-              onClick={() => handleLike("ANGRY")}>
-              <span className="legend-reaction">Angry</span>
-            </button>
+            <button className="reaction-like" onClick={() => handleLike("LIKE")}><span className="legend-reaction">Like</span></button>
+            <button className="reaction-love" onClick={() => handleLike("LOVE")}><span className="legend-reaction">Love</span></button>
+            <button className="reaction-haha" onClick={() => handleLike("HAHA")}><span className="legend-reaction">Haha</span></button>
+            <button className="reaction-wow" onClick={() => handleLike("WOW")}><span className="legend-reaction">Wow</span></button>
+            <button className="reaction-sad" onClick={() => handleLike("SAD")}><span className="legend-reaction">Sad</span></button>
+            <button className="reaction-angry" onClick={() => handleLike("ANGRY")}><span className="legend-reaction">Angry</span></button>
           </div>
-          <span className="p-1 pt-2 pb-0 px-1.5">{renderLike()}</span>
-          {like ? (
-            <span className="ml-2">Ban va {post?.likes?.length} nguoi</span>
-          ) : (
-            <span className="ml-2">{post?.likes?.length} Like</span>
-          )}
+          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            {renderLikeIcon()}
+            <span>{post?.likes?.length || 0}</span>
+          </button>
 
-          <div className="ml-5 ">
-            <button className="items-center flex gap-1">
-              <BsChatLeft className="text-xl mt-1" />
-              <span className="ml-1">{post.comments?.length} Comments</span>
-            </button>
-          </div>
-        </div>
-        <div>
-          <button className="flex items-center">
-            <BiShare className="text-xl" />
-            <span className="ml-1">{post.shares} Share</span>
+          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            <BsChatLeft className="text-base" />
+            <span>{post.comments?.length || 0}</span>
           </button>
         </div>
+
+        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+          <BiShare className="text-base" />
+          <span>{post.shares || 0}</span>
+        </button>
       </div>
-      <form onSubmit={handleSubmitComment}>
-        <div className="flex gap-2 items-center pt-5">
-          <div className="relative">
-            <Image
-              src={user.avatar || "/images/user-avatar.png"}
-              alt={user.fullName}
-              height="50"
-              width="50"
-              className="rounded-full"
-            />
-          </div>
-          <div className="w-full">
-            <input
-              onChange={(e) => setComment(e.target.value)}
-              ref={ref}
-              className="w-full h-10 dark:bg-zinc-800 bg-gray-200 rounded-full p-2 resize-none scrollbar-hide"
-              placeholder="Wright a comment ..."
-            />
-          </div>
-          <div className="w-10 flex  items-center justify-center p-3 rounded-full bg-blue-600">
-            <button
-              disabled={!comment.trim()}
-              type="submit"
-              className="disabled:cursor-not-allowed">
-              <FaArrowUp className=" text-white" />
-            </button>
-          </div>
+
+      {/* Comment input */}
+      <form onSubmit={handleSubmitComment} className="flex items-center gap-2.5 px-4 py-3 border-t border-gray-100 dark:border-gray-800">
+        <div className="relative w-8 h-8 rounded-xl overflow-hidden flex-shrink-0">
+          <Image src={user.avatar || "/images/user-avatar.png"} alt={user.fullName} fill className="object-cover" />
         </div>
+        <input
+          onChange={(e) => setComment(e.target.value)}
+          ref={ref}
+          className="flex-1 h-9 bg-gray-50 dark:bg-gray-800 rounded-xl px-3 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 border border-transparent focus:border-emerald-200 dark:focus:border-emerald-800 transition-all"
+          placeholder="Write a comment..."
+        />
+        <button
+          type="submit"
+          disabled={!comment.trim()}
+          className="w-8 h-8 flex items-center justify-center rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-colors flex-shrink-0"
+        >
+          <FaArrowUp className="text-sm" />
+        </button>
       </form>
-      {dbComments
-        ?.map((comment) => <CommentThread key={comment.id} comment={comment} isRoot />)
-        .reverse()}
+
+      {/* Comments */}
+      {dbComments.length > 0 && (
+        <div className="px-4 pb-4 space-y-1 border-t border-gray-100 dark:border-gray-800 pt-2">
+          {[...dbComments].reverse().map((c) => (
+            <CommentThread key={c.id} comment={c} isRoot />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

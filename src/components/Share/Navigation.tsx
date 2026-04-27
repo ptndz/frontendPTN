@@ -7,41 +7,26 @@ import {
   BsGear,
   BsSun,
   BsChatSquare,
-  BsChevronRight,
   BsBookmark,
   BsHouse,
   BsMoon,
 } from "react-icons/bs";
 import { VscListSelection } from "react-icons/vsc";
-import { FiUsers, FiLogOut, FiSearch } from "react-icons/fi";
+import { FiUsers, FiLogOut } from "react-icons/fi";
 import { MdOutlineNotificationsNone } from "react-icons/md";
 import { useStoreUser } from "../../store/user";
 import { useStoreTheme } from "../../store/state";
 import axios from "axios";
 import socket from "../../plugins/socket";
 import { logout } from "../../lib/logout";
+
 const topCenterNavlinks = [
-  {
-    href: "/",
-    icon: <BsHouse />,
-    label: "Home",
-  },
-  {
-    href: "/friends",
-    icon: <FiUsers />,
-    label: "Friends",
-  },
-  {
-    href: "/messenger",
-    icon: <BsChatSquare />,
-    label: "Messages",
-  },
-  {
-    href: "/posts/bookmarked",
-    icon: <BsBookmark />,
-    label: "Bookmarked posts",
-  },
+  { href: "/", icon: <BsHouse />, label: "Home" },
+  { href: "/friends", icon: <FiUsers />, label: "Friends" },
+  { href: "/messenger", icon: <BsChatSquare />, label: "Messages" },
+  { href: "/posts/bookmarked", icon: <BsBookmark />, label: "Bookmarks" },
 ];
+
 interface INotion {
   id: number;
   isRead: boolean;
@@ -57,16 +42,13 @@ interface INotion {
 function countUnreadNotifications(notifications: INotion[]) {
   let count = 0;
   for (let i = 0; i < notifications.length; i++) {
-    if (!notifications[i].isRead) {
-      count++;
-    }
+    if (!notifications[i].isRead) count++;
   }
   return count;
 }
 
 const Navigation = () => {
   const [mounted, setMounted] = useState(false);
-
   const { user } = useStoreUser();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -77,330 +59,249 @@ const Navigation = () => {
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
   const openMobileMenu = () => setIsMobileMenuOpen(true);
   const { theme, setTheme } = useStoreTheme();
-  const menuRef: any = useRef(null);
-  const menuNotionRef: any = useRef(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuNotionRef = useRef<HTMLDivElement>(null);
 
   const [listNotion, setListNotion] = useState<INotion[]>();
   const numberNotion = useMemo(
     () => countUnreadNotifications(listNotion ?? []),
     [listNotion]
   );
+
   const fetchData = useCallback(async () => {
     const res = await axios.get("/notification/all");
     setListNotion(res.data.notifications);
   }, []);
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   useEffect(() => {
     const handler = () => { fetchData(); };
     socket.on("notification", handler);
     return () => { socket.off("notification", handler); };
   }, [fetchData]);
-  // Hàm này sẽ được gọi mỗi khi isProfileMenuOpen thay đổi
+
   useEffect(() => {
-    // Nếu menu mở, thì ta sẽ thêm event listener để lắng nghe sự kiện click trên document
     if (isProfileMenuOpen || isNotion) {
       document.addEventListener("click", handleClickOutsideMenu);
     } else {
       document.removeEventListener("click", handleClickOutsideMenu);
     }
-
-    // Hàm này sẽ được gọi khi component unmount
-    return () => {
-      document.removeEventListener("click", handleClickOutsideMenu);
-    };
+    return () => { document.removeEventListener("click", handleClickOutsideMenu); };
   }, [isProfileMenuOpen, isNotion]);
 
-  // Hàm này sẽ được gọi mỗi khi click trên document
-  const handleClickOutsideMenu = (event: any) => {
-    // Nếu click nằm ngoài menu, ta sẽ đóng menu
-    if (menuRef.current && !menuRef.current.contains(event.target)) {
+  const handleClickOutsideMenu = (event: MouseEvent) => {
+    if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
       setIsMobileMenuOpen(false);
       setIsProfileMenuOpen(false);
     }
-    if (
-      menuNotionRef.current &&
-      !menuNotionRef.current.contains(event.target)
-    ) {
+    if (menuNotionRef.current && !menuNotionRef.current.contains(event.target as Node)) {
       setIsNotion(false);
     }
   };
+
   const readNotion = async (notion: INotion) => {
     const res = await axios.post(`/notification/read/${notion.id}`);
-    if (res.data.status) {
-      router.push(notion.notification.url);
-    }
+    if (res.data.status) router.push(notion.notification.url);
   };
+
   useEffect(() => setMounted(true), []);
   const handleLogout = () => logout(router);
+
   const renderThemeChanger = () => {
     if (!mounted) return null;
-
-    if (theme === "dark") {
-      return (
-        <button
-          className="w-11 h-11 items-center justify-center flex text-2xl border border-gray-300 dark:border-zinc-600 rounded-full"
-          onClick={() => setTheme("light")}>
-          <BsSun className="p-0.5" />
-        </button>
-      );
-    } else {
-      return (
-        <button
-          className="w-11 h-11 items-center justify-center flex text-2xl border border-gray-300 dark:border-zinc-600 rounded-full"
-          onClick={() => setTheme("dark")}>
-          <BsMoon className="p-0.5" />
-        </button>
-      );
-    }
+    return (
+      <button
+        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+        className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        title={theme === "dark" ? "Light mode" : "Dark mode"}
+      >
+        {theme === "dark" ? <BsSun className="text-lg" /> : <BsMoon className="text-lg" />}
+      </button>
+    );
   };
 
   return (
     <>
-      <header className="px-2 md:px-4 lg:px-6 dark:bg-black bg-white sm:border-b border-gray-300 dark:border-zinc-800 mx-auto sticky top-0 w-full z-40">
-        {/* Desktop menu */}
-        <div className="flex gap-4 2xl:container mx-auto justify-between items-center py-2">
-          {/* Menu open button */}
+      <header className="bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-gray-800 sticky top-0 w-full z-40">
+        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-14 gap-4">
+
+          {/* Mobile menu button */}
           <div className="lg:hidden">
             <button
               onClick={openMobileMenu}
-              className="whitespace-nowrap text-xl md:text-xl p-2.5 flex items-center justify-center rounded-full border dark:border-zinc-600 border-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-900 dark:text-white">
-              <VscListSelection />
+              className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              <VscListSelection className="text-xl" />
             </button>
           </div>
-          {/* Logo & search */}
-          <div className="flex gap-2 items-center justify-start mr-20">
-            {/* Logo */}
-            <Link href="/" className="relative flex gap-3 items-center ml-24">
-              {theme === "dark" ? (
-                <Image
-                  width="110"
-                  height="55"
-                  alt="Pham Thanh Nam"
-                  src="/favicon/logo.png"
-                />
-              ) : (
-                <Image
-                  width="110"
-                  height="55"
-                  alt="Pham Thanh Nam"
-                  src="/favicon/logo.png"
-                />
-              )}
-            </Link>
-          </div>
 
-          {/* Navigations */}
-          <nav className="hidden lg:flex lg:flex-1 lg:justify-start lg:items-center space-x-4 ml-32">
-            {topCenterNavlinks.map((navlink, index) => (
-              <Link
-                href={navlink.href}
-                key={index}
-                className={`${
-                  navlink.href === router.pathname
-                    ? "text-2xl font-semibold dark:bg-zinc-800 bg-gray-100 py-3 px-7 rounded-lg"
-                    : "text-2xl dark:text-zinc-400 py-3 px-8 text-gray-600 dark:hover:bg-zinc-900 hover:bg-gray-100 rounded-lg dark:hover:text-white hover:text-gray-800"
-                } `}
-                title={navlink.label}>
-                {navlink.icon}
-              </Link>
-            ))}
+          {/* Logo */}
+          <Link href="/" className="flex-shrink-0">
+            <Image width={100} height={40} alt="Logo" src="/favicon/logo.png" />
+          </Link>
+
+          {/* Center nav */}
+          <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center">
+            {topCenterNavlinks.map((navlink, index) => {
+              const isActive = navlink.href === router.pathname;
+              return (
+                <Link
+                  href={navlink.href}
+                  key={index}
+                  title={navlink.label}
+                  className={`relative flex items-center justify-center w-11 h-11 rounded-xl text-xl transition-colors ${
+                    isActive
+                      ? "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 dark:text-emerald-400"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  {navlink.icon}
+                  {isActive && (
+                    <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-emerald-500" />
+                  )}
+                </Link>
+              );
+            })}
           </nav>
-          {/* end of Navigations */}
-          {/* right side */}
-          <div className="flex items-center gap-1.5 md:gap-2.5">
-            {/* theme button */}
+
+          {/* Right side */}
+          <div className="flex items-center gap-1.5">
             {renderThemeChanger()}
 
+            {/* Notifications */}
             <div ref={menuNotionRef} className="relative">
-              <div className="relative">
-                <button
-                  onClick={() => setIsNotion(!isNotion)}
-                  className="whitespace-nowrap relative h-11 w-11 border border-gray-300 dark:border-zinc-600 dark:hover:bg-zinc-900 hover:bg-gray-100 rounded-full text-lg focus:outline-none focus:ring-offset-0">
-                  <MdOutlineNotificationsNone className="h-9 w-9" />
+              <button
+                onClick={() => setIsNotion(!isNotion)}
+                className="relative w-9 h-9 flex items-center justify-center rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <MdOutlineNotificationsNone className="text-xl" />
+                {numberNotion > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[10px] font-semibold rounded-full flex items-center justify-center">
+                    {numberNotion > 9 ? "9+" : numberNotion}
+                  </span>
+                )}
+              </button>
 
-                  {numberNotion && numberNotion > 0 ? (
-                    <div className="absolute top-0 right-0 px-1 bg-red-500 rounded-full text-white text-sm">
-                      {numberNotion}
-                    </div>
-                  ) : null}
-                </button>
-              </div>
-              {/* dropdowns */}
-              <div
-                className={`${
-                  isNotion
-                    ? "opacity-100 translate-y-0 z-50"
-                    : "opacity-0 translate-y-4 pointer-events-none"
-                }  transform transition-all divide-y divide-gray-300 dark:divide-zinc-600 duration-200 absolute z-50 right-4 mt-2 p-1 w-64 rounded-md shadow-lg overflow-hidden dark:bg-black bg-white ring-1 ring-gray-100 dark:ring-zinc-600 focus:outline-none`}>
-                <div className="py-1">
-                  {listNotion?.map((item) => (
+              <div className={`${isNotion ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-2 pointer-events-none"} transition-all duration-200 absolute right-0 mt-2 w-72 bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 z-50 overflow-hidden`}>
+                <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                  <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100">Notifications</h3>
+                </div>
+                <div className="max-h-80 overflow-y-auto">
+                  {listNotion?.length ? listNotion.map((item) => (
                     <div
                       key={item.id}
                       onClick={() => readNotion(item)}
-                      className={`flex items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg ${
-                        item.isRead ? "text-gray-400" : "text-gray-700"
-                      }`}>
-                      <p className="flex items-center gap-2">
-                        <span>{item.notification.content}</span>
+                      className="flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      {!item.isRead && (
+                        <span className="mt-1.5 w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                      )}
+                      <p className={`text-sm leading-snug ${item.isRead ? "text-gray-400 dark:text-gray-500 pl-5" : "text-gray-700 dark:text-gray-300"}`}>
+                        {item.notification.content}
                       </p>
                     </div>
-                  ))}
+                  )) : (
+                    <p className="text-sm text-gray-400 text-center py-6">No notifications</p>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* profile options */}
+            {/* Profile */}
             <div ref={menuRef} className="relative">
-              <div className="relative">
-                <button
-                  onClick={toggleProfileMenu}
-                  className="whitespace-nowrap relative h-11 w-11 border border-gray-300 dark:border-zinc-600 dark:hover:bg-zinc-900 hover:bg-gray-100 rounded-full text-lg focus:outline-none focus:ring-offset-0">
-                  {user?.avatar ? (
-                    <Image
-                      src={user?.avatar || "/images/user-avatar.png"}
-                      alt={user?.fullName}
-                      layout="fill"
-                      objectFit="cover"
-                      className="h-full w-full rounded-full"
-                    />
-                  ) : (
-                    <div className="h-full w-full rounded-full bg-gray-200 dark:bg-zinc-800"></div>
-                  )}
-                  <div className="absolute w-3 h-3 rounded-full bg-green-400 ring-2 ring-white dark:ring-black bottom-0"></div>
-                </button>
-              </div>
-              {/* dropdowns */}
-              <div
-                className={`${
-                  isProfileMenuOpen
-                    ? "opacity-100 translate-y-0 z-50"
-                    : "opacity-0 translate-y-4 pointer-events-none"
-                }  transform transition-all divide-y divide-gray-300 dark:divide-zinc-600 duration-200 absolute z-50 right-4 mt-2 p-1 w-64 rounded-md shadow-lg overflow-hidden dark:bg-black bg-white ring-1 ring-gray-100 dark:ring-zinc-600 focus:outline-none`}>
+              <button
+                onClick={toggleProfileMenu}
+                className="relative w-9 h-9 rounded-xl overflow-hidden ring-2 ring-transparent hover:ring-emerald-400 transition-all"
+              >
+                {user?.avatar ? (
+                  <Image src={user.avatar} alt={user.fullName} fill className="object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 dark:bg-gray-700" />
+                )}
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-white dark:border-gray-950 rounded-full" />
+              </button>
+
+              <div className={`${isProfileMenuOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-2 pointer-events-none"} transition-all duration-200 absolute right-0 mt-2 w-60 bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 z-50 overflow-hidden`}>
                 <Link
                   href={`/${user?.username}`}
                   onClick={closeProfileMenu}
-                  className="relative p-3 mb-1 rounded-lg flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-zinc-800 focus-within:ring-1 focus-within:ring-inset focus-within:ring-white">
-                  <div className="flex-shrink-0 relative w-11 h-11 rounded-full overflow-hidden">
+                  className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <div className="relative w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
                     {user?.avatar ? (
-                      <Image
-                        src={user?.avatar || "/images/user-avatar.png"}
-                        alt={user?.fullName}
-                        layout="fill"
-                        objectFit="cover"
-                      />
+                      <Image src={user.avatar} alt={user.fullName} fill className="object-cover" />
                     ) : (
-                      <div className="h-full w-full bg-gray-200 dark:bg-zinc-800"></div>
+                      <div className="w-full h-full bg-gray-200 dark:bg-gray-700" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="truncate text-sm">{user?.fullName}</p>
-                    <p className="text-sm text-gray-400 dark:text-zinc-400 truncate">
-                      See profile
-                    </p>
+                    <p className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">{user?.fullName}</p>
+                    <p className="text-xs text-gray-400 truncate">View profile</p>
                   </div>
                 </Link>
-                <div className="py-1">
-                  <Link
-                    href="/friends"
-                    onClick={closeProfileMenu}
-                    className="flex items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg">
-                    <p className="flex items-center gap-2">
-                      <FiUsers />
-                      <span>Friends</span>
-                    </p>
-                    <BsChevronRight />
+
+                <div className="border-t border-gray-100 dark:border-gray-800 p-1.5 space-y-0.5">
+                  <Link href="/friends" onClick={closeProfileMenu} className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <FiUsers className="text-gray-400" /> Friends
                   </Link>
-                  <Link
-                    href="/messenger"
-                    onClick={closeProfileMenu}
-                    className="flex items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg">
-                    <p className="flex items-center gap-2">
-                      <BsChatSquare />
-                      <span>Messenger</span>
-                    </p>
-                    <BsChevronRight />
+                  <Link href="/messenger" onClick={closeProfileMenu} className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <BsChatSquare className="text-gray-400" /> Messenger
                   </Link>
-                  {user.role === "admin" && (
-                    <Link
-                      href={`/dashboard`}
-                      onClick={closeProfileMenu}
-                      className="flex items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg">
-                      <p className="flex items-center gap-2">
-                        <BsGear />
-                        <span>Dashboard</span>
-                      </p>
-                      <BsChevronRight />
+                  {user?.role === "admin" && (
+                    <Link href="/dashboard" onClick={closeProfileMenu} className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <BsGear className="text-gray-400" /> Dashboard
                     </Link>
                   )}
                 </div>
-                <div>
+
+                <div className="border-t border-gray-100 dark:border-gray-800 p-1.5">
                   <button
-                    onClick={() => {
-                      handleLogout();
-                    }}
-                    className="mt-1 flex w-full items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg">
-                    <p className="flex items-center gap-2">
-                      <FiLogOut />
-                      <span>Log out</span>
-                    </p>
-                    <BsChevronRight />
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                  >
+                    <FiLogOut /> Log out
                   </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        {/* Mobile menu */}
-        <div
-          className={`${
-            isMobileMenuOpen
-              ? "opacity-100 translate-x-0"
-              : "opacity-0 pointer-events-none -translate-x-10"
-          } duration-300 z-50 absolute top-0 inset-x-0 p-2 transition transform lg:hidden`}>
-          <div className="rounded-lg shadow-lg dark:bg-black bg-white border dark:border-zinc-600 divide-y dark:divide-zinc-600">
-            <div className="pt-5 pb-6 px-5">
-              <div className="flex items-center justify-between">
-                <Link href="/" className="relative flex gap-3 items-center">
-                  <Image
-                    src="/favicon/logo.png"
-                    width="110"
-                    height="55"
-                    alt="Pham Thanh Nam"
-                  />
-                </Link>
-                {/* close mobile menu button */}
-                <div className="-mr-0.5">
-                  <button
-                    onClick={closeMobileMenu}
-                    className="whitespace-nowrap text-xl md:text-xl p-3 flex gap-1.5 items-center justify-between rounded-full border dark:border-zinc-600 hover:bg-gray-100 dark:hover:bg-zinc-900 bg-transparent dark:hover:bg-opacity-90 dark:text-white">
-                    <BsX />
-                  </button>
-                </div>
-              </div>
-              <div className="mt-6">
-                <nav className="grid gap-y-1">
-                  {topCenterNavlinks.map((navlink) => (
-                    <Link
-                      href={navlink.href}
-                      key={navlink.label}
-                      className={`${
-                        router.pathname === navlink.href
-                          ? "bg-gray-100 dark:bg-zinc-800"
-                          : ""
-                      } flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800`}>
-                      <p className="flex items-center gap-6 text-2xl">
-                        {navlink.icon}
-                        <span className="text-base">{navlink.label}</span>
-                      </p>
-                      <BsChevronRight />
-                    </Link>
-                  ))}
-                </nav>
-              </div>
+
+        {/* Mobile menu overlay */}
+        <div className={`${isMobileMenuOpen ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 pointer-events-none"} transition-all duration-250 absolute top-0 inset-x-0 z-50 p-3 lg:hidden`}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800">
+            <div className="flex items-center justify-between p-4">
+              <Link href="/">
+                <Image src="/favicon/logo.png" width={90} height={36} alt="Logo" />
+              </Link>
+              <button
+                onClick={closeMobileMenu}
+                className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <BsX className="text-xl text-gray-600 dark:text-gray-300" />
+              </button>
             </div>
+            <nav className="p-2 border-t border-gray-100 dark:border-gray-800 space-y-0.5">
+              {topCenterNavlinks.map((navlink) => {
+                const isActive = router.pathname === navlink.href;
+                return (
+                  <Link
+                    href={navlink.href}
+                    key={navlink.label}
+                    onClick={closeMobileMenu}
+                    className={`flex items-center gap-4 px-4 py-3 rounded-xl text-sm transition-colors ${
+                      isActive
+                        ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 font-medium"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    }`}
+                  >
+                    <span className="text-xl">{navlink.icon}</span>
+                    {navlink.label}
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
         </div>
       </header>
