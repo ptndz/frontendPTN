@@ -1,10 +1,10 @@
 import Image from "next/image";
-import React, { useEffect, useState } from "react";
-
+import React, { useState } from "react";
 import Modal from "react-responsive-modal";
 import "react-responsive-modal/styles.css";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { FiCamera } from "react-icons/fi";
 
 import { User } from "../../gql/graphql";
 import axios from "axios";
@@ -22,6 +22,9 @@ interface IProps {
   setUpdateUserData: (updateUserData: boolean) => void;
 }
 
+const inputClass =
+  "w-full h-10 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 dark:focus:border-emerald-600 transition-all";
+
 const ProfileModal: React.FC<IProps> = ({
   data,
   open,
@@ -30,7 +33,6 @@ const ProfileModal: React.FC<IProps> = ({
 }) => {
   const [preProfileImg, setPreProfileImg] = useState<any>();
   const [preCoverImg, setPreCoverImg] = useState<any>();
-
   const [profileImg, setProfileImg] = useState<File>();
   const [coverImg, setCoverImg] = useState<File>();
 
@@ -50,20 +52,16 @@ const ProfileModal: React.FC<IProps> = ({
     let profileLink = "";
     let coverLink = "";
     if (profileImg) {
-      let formData = new FormData();
+      const formData = new FormData();
       formData.append("images", profileImg);
-      let resImages = await axios.post("/image/avatar", formData);
-      if (resImages.data.images) {
-        profileLink = resImages.data.images[0];
-      }
+      const resImages = await axios.post("/image/avatar", formData);
+      if (resImages.data.images) profileLink = resImages.data.images[0];
     }
     if (coverImg) {
-      let formData = new FormData();
+      const formData = new FormData();
       formData.append("images", coverImg);
-      let resImages = await axios.post("/image/cover", formData);
-      if (resImages.data.images) {
-        coverLink = resImages.data.images[0];
-      }
+      const resImages = await axios.post("/image/cover", formData);
+      if (resImages.data.images) coverLink = resImages.data.images[0];
     }
     const newFirstName = e.firstName || data.firstName;
     const newLastName = e.lastName || data.lastName;
@@ -76,36 +74,79 @@ const ProfileModal: React.FC<IProps> = ({
     });
     if (graphQLClientErrorCheck(res)) {
       setUpdateUserData(true);
-      toast("🦄 Profile updated!");
+      toast.success("Profile updated!");
     }
   };
+
   return (
     <>
       <Modal
         open={open}
         onClose={() => setOpenProfileModal(false)}
         center
-        classNames={{
-          modal: "customModal",
-        }}>
-        <div className="bg-white dark:bg-zinc-900 px-7 py-3 shadow-xl text-gray-800">
-          <div className="flex justify-between items-center border-b-2 py-3 border-gray-500">
-            <h4 className="text-lg font-bold dark:text-white">Edit profile</h4>
+        classNames={{ modal: "customModal !rounded-2xl !p-0 !bg-white dark:!bg-gray-900" }}
+      >
+        <div className="bg-white dark:bg-gray-900 w-full md:w-[480px] max-h-[85vh] overflow-y-auto">
+          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-900 z-10">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Edit profile</h2>
           </div>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="flex justify-between items-center pt-5">
-              <h4 className="text-lg font-bold dark:text-white">
-                Profile Picture
-              </h4>
-              <div>
-                <label htmlFor="files1">
-                  <span className="text-lg text-blue-600 font-bold hover:bg-gray-300 px-3 py-1 rounded-md cursor-pointer">
-                    Update
+
+          <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
+            {/* Cover image */}
+            <div>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cover photo</p>
+              <div className="relative h-32 rounded-xl overflow-hidden bg-gradient-to-br from-emerald-400 to-teal-500 group">
+                {(preCoverImg || data.coverImage) && (
+                  <Image
+                    src={preCoverImg || data.coverImage || "/images/user-avatar.png"}
+                    alt="cover"
+                    fill
+                    className="object-cover"
+                  />
+                )}
+                <label
+                  htmlFor="files2"
+                  className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                >
+                  <span className="inline-flex items-center gap-2 h-9 px-4 rounded-xl bg-white text-gray-900 text-sm font-semibold">
+                    <FiCamera className="w-4 h-4" />
+                    Update cover
                   </span>
                 </label>
                 <input
                   type="file"
-                  name="file"
+                  id="files2"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const files = e.target.files;
+                    if (files) handleCoverImg(files[0]);
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Avatar */}
+            <div>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Profile picture</p>
+              <div className="flex items-center gap-4">
+                <div className="relative w-20 h-20 rounded-full overflow-hidden ring-2 ring-gray-100 dark:ring-gray-800">
+                  <Image
+                    src={preProfileImg || data.avatar || "/images/user-avatar.png"}
+                    alt="avatar"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <label
+                  htmlFor="files1"
+                  className="inline-flex items-center gap-2 h-9 px-4 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer transition-colors"
+                >
+                  <FiCamera className="w-4 h-4" />
+                  Change photo
+                </label>
+                <input
+                  type="file"
                   id="files1"
                   accept="image/*"
                   className="hidden"
@@ -116,73 +157,43 @@ const ProfileModal: React.FC<IProps> = ({
                 />
               </div>
             </div>
-            <div className="flex justify-center">
-              <Image
-                className="object-cover rounded-full border-2 bg-no-repeat"
-                src={preProfileImg || data.avatar || "/images/user-avatar.png"}
-                alt="profile image"
-                width="120"
-                height="120"
-              />
-            </div>
-            <div className="flex justify-between items-center py-5">
-              <h4 className="text-lg font-bold dark:text-white">Cover Photo</h4>
-              <label htmlFor="files2">
-                <span className="text-lg text-blue-600 font-bold hover:bg-gray-300 px-3 py-1 rounded-md cursor-pointer ">
-                  Update
-                </span>
-              </label>
-              <input
-                type="file"
-                name="file"
-                id="files2"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const files = e.target.files;
-                  if (files) handleCoverImg(files[0]);
-                }}
-              />
+
+            {/* Names */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">First name</label>
+                <input
+                  defaultValue={data.firstName}
+                  className={inputClass}
+                  type="text"
+                  {...register("firstName")}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Last name</label>
+                <input
+                  defaultValue={data.lastName}
+                  className={inputClass}
+                  type="text"
+                  {...register("lastName")}
+                />
+              </div>
             </div>
 
-            <div className="flex justify-center">
-              <Image
-                className="object-cover"
-                src={
-                  preCoverImg || data.coverImage || "/images/user-avatar.png"
-                }
-                alt="profile image"
-                width="500"
-                height="200"
-              />
-            </div>
-            <div className="flex flex-col space-y-1 py-6 px-2">
-              <div className="text-lg font-medium dark:text-white">
-                Change First Name:
-              </div>
-              <input
-                placeholder={data.firstName}
-                defaultValue={data.firstName}
-                className="w-full h-10  focus:outline-none dark:bg-transparent rounded-lg dark:text-white"
-                type="text"
-                {...register("firstName")}
-              />
-            </div>
-            <div className="flex flex-col space-y-1 py-6 px-2">
-              <div className="text-lg font-medium dark:text-white">
-                Change Last Name:
-              </div>
-              <input
-                placeholder={data.lastName}
-                defaultValue={data.lastName}
-                className="w-full h-10  focus:outline-none dark:bg-transparent rounded-lg dark:text-white"
-                type="text"
-                {...register("lastName")}
-              />
-            </div>
-            <div className="mt-3 flex justify-end space-x-3 pb-5">
-              <button className="px-8 py-2.5 bg-black text-gray-200 dark:hover:bg-opacity-50 rounded-md">
-                Update
+            {/* Actions */}
+            <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+              <button
+                type="button"
+                onClick={() => setOpenProfileModal(false)}
+                className="h-9 px-4 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-sm font-semibold text-gray-700 dark:text-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="h-9 px-5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold transition-colors"
+              >
+                Save changes
               </button>
             </div>
           </form>

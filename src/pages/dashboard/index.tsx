@@ -1,4 +1,5 @@
 import Navigation from "../../components/Share/Navigation";
+import Card from "../../components/Dashboard/Card";
 import { FaUserCircle, FaUserFriends } from "react-icons/fa";
 import { BsFileEarmarkPost } from "react-icons/bs";
 import { useEffect, useState } from "react";
@@ -6,571 +7,158 @@ import axios from "axios";
 import { User } from "../../gql/graphql";
 import { withAuthSSP } from "../../lib/with-auth-ssp";
 import { useInitUser } from "../../hooks/useInitUser";
+
 interface IProps {
   userData: User;
 }
+
+const StatTile = ({
+  icon,
+  label,
+  value,
+  suffix,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  suffix?: string;
+}) => (
+  <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm flex items-center gap-4">
+    <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500 flex items-center justify-center flex-shrink-0">
+      {icon}
+    </div>
+    <div className="flex-1 min-w-0">
+      <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-0.5">
+        {value}
+        {suffix && <span className="text-sm font-normal text-gray-400 ml-1">{suffix}</span>}
+      </p>
+    </div>
+  </div>
+);
+
 const PageDashboard: React.FC<IProps> = ({ userData }) => {
-  const [numberUser, serNumberUser] = useState<number>(0);
-  const [numberPost, serNumberPost] = useState<number>(0);
-  const [numberFriend, serNumberFriend] = useState<number>(0);
+  const [numberUser, setNumberUser] = useState<number>(0);
+  const [numberPost, setNumberPost] = useState<number>(0);
+  const [numberFriend, setNumberFriend] = useState<number>(0);
   useInitUser(userData);
 
   useEffect(() => {
     const fetchData = async () => {
-      const resUser = await axios.get("/dashboard/user/all");
-      serNumberUser(resUser.data[1] as number);
-      const resPost = await axios.get("/dashboard/post/all");
-      serNumberPost(resPost.data[1] as number);
-      const resFriend = await axios.get("/dashboard/friend/all");
-      serNumberFriend(resFriend.data[1] as number);
+      try {
+        const [resUser, resPost, resFriend] = await Promise.all([
+          axios.get("/dashboard/user/all"),
+          axios.get("/dashboard/post/all"),
+          axios.get("/dashboard/friend/all"),
+        ]);
+        setNumberUser(resUser.data[1] as number);
+        setNumberPost(resPost.data[1] as number);
+        setNumberFriend(resFriend.data[1] as number);
+      } catch (err) {
+        console.log(err);
+      }
     };
     fetchData();
   }, []);
 
   return (
-    <main className="relative h-screen overflow-hidden bg-gray-100 dark:bg-gray-800">
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col w-full md:space-y-4">
-          <div className="h-screen px-4 pb-24 overflow-auto md:px-6">
-            <Navigation />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <Navigation />
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Overview of your platform metrics
+          </p>
+        </div>
 
-            <div className="flex flex-col items-center w-full my-6 space-y-4 md:space-x-4 md:space-y-0 md:flex-row">
-              <div className="w-full md:w-6/12">
-                <div className="relative w-full overflow-hidden bg-white shadow-lg dark:bg-gray-700">
-                  <a href="#" className="block w-full h-full">
-                    <div className="flex items-center justify-between px-4 py-6 space-x-4">
-                      <div className="flex items-center">
-                        <FaUserCircle className="w-10 h-10" />
-                        <p className="ml-2 text-sm font-semibold text-gray-700 border-b border-gray-200 dark:text-white">
-                          Registered user
-                        </p>
-                      </div>
-                      <div className="mt-6 text-xl font-bold text-black border-b border-gray-200 md:mt-0 dark:text-white">
-                        {numberUser}
-                        <span className="text-xs text-gray-400">/1000</span>
-                      </div>
-                    </div>
-                    <div className="w-full h-3 bg-gray-100">
-                      <div className="w-1/5 h-full text-xs text-center text-white bg-green-400"></div>
-                    </div>
-                  </a>
-                </div>
-              </div>
-              <div className="flex items-center w-full space-x-4 md:w-1/2">
-                <div className="w-1/2">
-                  <div className="relative w-full px-4 py-6 bg-white shadow-lg dark:bg-gray-700">
-                    <p className="text-2xl font-bold text-black dark:text-white">
-                      {numberPost}
-                    </p>
-                    <p className="text-sm text-gray-400">Posts</p>
-                    <span className="absolute p-4 rounded-full top-2 right-4">
-                      <BsFileEarmarkPost className="w-10 h-10" />
-                    </span>
-                  </div>
-                </div>
-                <div className="w-1/2">
-                  <div className="relative w-full px-4 py-6 bg-white shadow-lg dark:bg-gray-700">
-                    <p className="text-2xl font-bold text-black dark:text-white">
-                      {numberFriend}
-                    </p>
-                    <p className="text-sm text-gray-400">Number of friends</p>
-                    <span className="absolute p-4 rounded-full top-2 right-4">
-                      <FaUserFriends className="w-10 h-10" />
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* Top stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <StatTile
+            icon={<FaUserCircle className="w-6 h-6" />}
+            label="Registered users"
+            value={numberUser}
+            suffix="/ 1000"
+          />
+          <StatTile
+            icon={<BsFileEarmarkPost className="w-6 h-6" />}
+            label="Total posts"
+            value={numberPost}
+          />
+          <StatTile
+            icon={<FaUserFriends className="w-6 h-6" />}
+            label="Total friendships"
+            value={numberFriend}
+          />
+        </div>
 
-            <div className="grid grid-cols-1 gap-4 my-4 md:grid-cols-2 lg:grid-cols-3">
-              <div className="w-full">
-                <div className="relative w-full px-4 py-6 bg-white shadow-lg dark:bg-gray-700">
-                  <p className="text-sm font-semibold text-gray-700 border-b border-gray-200 w-max dark:text-white">
-                    Project Reffered
-                  </p>
-                  <div className="flex items-end my-6 space-x-2">
-                    <p className="text-5xl font-bold text-black dark:text-white">
-                      12
-                    </p>
-                    <span className="flex items-center text-xl font-bold text-green-500">
-                      <svg
-                        width={20}
-                        fill="currentColor"
-                        height={20}
-                        className="h-3"
-                        viewBox="0 0 1792 1792"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                      </svg>
-                      22%
-                    </span>
-                  </div>
-                  <div className="dark:text-white">
-                    <div className="flex items-center justify-between pb-2 mb-2 text-sm border-b border-gray-200 sm:space-x-12">
-                      <p>Unique URL</p>
-                      <div className="flex items-end text-xs">
-                        34
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-green-500"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          22%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>Embedded form</p>
-                      <div className="flex items-end text-xs">
-                        13
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-green-500"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          12%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between space-x-12 text-sm md:space-x-24">
-                      <p>New visitor</p>
-                      <div className="flex items-end text-xs">
-                        45
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-green-500"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          41%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="w-full">
-                <div className="relative w-full px-4 py-6 bg-white shadow-lg dark:bg-gray-700">
-                  <p className="text-sm font-semibold text-gray-700 border-b border-gray-200 w-max dark:text-white">
-                    Project Paid
-                  </p>
-                  <div className="flex items-end my-6 space-x-2">
-                    <p className="text-5xl font-bold text-black dark:text-white">
-                      23
-                    </p>
-                    <span className="flex items-center text-xl font-bold text-green-500">
-                      <svg
-                        width={20}
-                        fill="currentColor"
-                        height={20}
-                        className="h-3"
-                        viewBox="0 0 1792 1792"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                      </svg>
-                      12%
-                    </span>
-                  </div>
-                  <div className="dark:text-white">
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>User paid</p>
-                      <div className="flex items-end text-xs">
-                        21
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-green-500"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          20%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>Income</p>
-                      <div className="flex items-end text-xs">
-                        10
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-green-500"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          2%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between space-x-12 text-sm md:space-x-24">
-                      <p>Royal tees</p>
-                      <div className="flex items-end text-xs">
-                        434
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-red-500 transform rotate-180"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          12%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="w-full">
-                <div className="relative w-full px-4 py-6 bg-white shadow-lg dark:bg-gray-700">
-                  <p className="text-sm font-semibold text-gray-700 border-b border-gray-200 w-max dark:text-white">
-                    New features
-                  </p>
-                  <div className="flex items-end my-6 space-x-2">
-                    <p className="text-5xl font-bold text-black dark:text-white">
-                      12
-                    </p>
-                    <span className="flex items-center text-xl font-bold text-red-500">
-                      <svg
-                        width={20}
-                        fill="currentColor"
-                        height={20}
-                        className="h-3 transform rotate-180"
-                        viewBox="0 0 1792 1792"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                      </svg>
-                      2%
-                    </span>
-                  </div>
-                  <div className="dark:text-white">
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>Down</p>
-                      <div className="flex items-end text-xs">
-                        34
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-red-500 transform rotate-180"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          22%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>Up</p>
-                      <div className="flex items-end text-xs">
-                        13
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-green-500"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          12%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between space-x-12 text-sm md:space-x-24">
-                      <p>No developed</p>
-                      <div className="flex items-end text-xs">
-                        45
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-red-500 transform rotate-180"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          41%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="w-full">
-                <div className="relative w-full px-4 py-6 bg-white shadow-lg dark:bg-gray-700">
-                  <p className="text-sm font-semibold text-gray-700 border-b border-gray-200 w-max dark:text-white">
-                    Sign in
-                  </p>
-                  <div className="flex items-end my-6 space-x-2">
-                    <p className="text-5xl font-bold text-black dark:text-white">
-                      16
-                    </p>
-                    <span className="flex items-center text-xl font-bold text-red-500">
-                      <svg
-                        width={20}
-                        fill="currentColor"
-                        height={20}
-                        className="h-3 transform rotate-180"
-                        viewBox="0 0 1792 1792"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                      </svg>
-                      14%
-                    </span>
-                  </div>
-                  <div className="dark:text-white">
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>Amercia</p>
-                      <div className="flex items-end text-xs">
-                        43
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-red-500 transform rotate-180"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          12%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>Europe</p>
-                      <div className="flex items-end text-xs">
-                        133
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-green-500"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          19%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between space-x-12 text-sm md:space-x-24">
-                      <p>Asia</p>
-                      <div className="flex items-end text-xs">
-                        23
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-red-500 transform rotate-180"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          4%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="w-full">
-                <div className="relative w-full px-4 py-6 bg-white shadow-lg dark:bg-gray-700">
-                  <p className="text-sm font-semibold text-gray-700 border-b border-gray-200 w-max dark:text-white">
-                    Sales
-                  </p>
-                  <div className="flex items-end my-6 space-x-2">
-                    <p className="text-5xl font-bold text-black dark:text-white">
-                      9
-                    </p>
-                    <span className="flex items-center text-xl font-bold text-green-500">
-                      <svg
-                        width={20}
-                        fill="currentColor"
-                        height={20}
-                        className="h-3"
-                        viewBox="0 0 1792 1792"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                      </svg>
-                      34%
-                    </span>
-                  </div>
-                  <div className="dark:text-white">
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>Templates</p>
-                      <div className="flex items-end text-xs">
-                        345
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-red-500 transform rotate-180"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          12%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>Components</p>
-                      <div className="flex items-end text-xs">
-                        139
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-green-500"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          10%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between space-x-12 text-sm md:space-x-24">
-                      <p>Icons</p>
-                      <div className="flex items-end text-xs">
-                        421
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-red-500 transform rotate-180"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          4%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="w-full">
-                <div className="relative w-full px-4 py-6 bg-white shadow-lg dark:bg-gray-700">
-                  <p className="text-sm font-semibold text-gray-700 border-b border-gray-200 w-max dark:text-white">
-                    Maintenance
-                  </p>
-                  <div className="flex items-end my-6 space-x-2">
-                    <p className="text-5xl font-bold text-black dark:text-white">
-                      15
-                    </p>
-                    <span className="flex items-center text-xl font-bold text-green-500">
-                      <svg
-                        width={20}
-                        fill="currentColor"
-                        height={20}
-                        className="h-3"
-                        viewBox="0 0 1792 1792"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                      </svg>
-                      34%
-                    </span>
-                  </div>
-                  <div className="dark:text-white">
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>Cloud</p>
-                      <div className="flex items-end text-xs">
-                        123
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-red-500 transform rotate-180"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          22%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>Infra</p>
-                      <div className="flex items-end text-xs">
-                        134
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-green-500"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          9%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between space-x-12 text-sm md:space-x-24">
-                      <p>Office</p>
-                      <div className="flex items-end text-xs">
-                        23
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-green-500"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          41%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Detail cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Card
+            title="Project Referred"
+            value={12}
+            changePercent={22}
+            rows={[
+              { label: "Unique URL", value: 34, change: 22 },
+              { label: "Embedded form", value: 13, change: 12 },
+              { label: "New visitor", value: 45, change: 41 },
+            ]}
+          />
+          <Card
+            title="Project Paid"
+            value={23}
+            changePercent={12}
+            rows={[
+              { label: "User paid", value: 21, change: 20 },
+              { label: "Income", value: 10, change: 2 },
+              { label: "Royalties", value: 434, change: -12 },
+            ]}
+          />
+          <Card
+            title="New Features"
+            value={12}
+            changePercent={-2}
+            rows={[
+              { label: "Down", value: 34, change: -22 },
+              { label: "Up", value: 13, change: 12 },
+              { label: "Not developed", value: 45, change: -41 },
+            ]}
+          />
+          <Card
+            title="Sign-ins"
+            value={16}
+            changePercent={-14}
+            rows={[
+              { label: "America", value: 43, change: -12 },
+              { label: "Europe", value: 133, change: 19 },
+              { label: "Asia", value: 23, change: -4 },
+            ]}
+          />
+          <Card
+            title="Sales"
+            value={9}
+            changePercent={34}
+            rows={[
+              { label: "Templates", value: 345, change: -12 },
+              { label: "Components", value: 139, change: 10 },
+              { label: "Icons", value: 421, change: -4 },
+            ]}
+          />
+          <Card
+            title="Maintenance"
+            value={15}
+            changePercent={34}
+            rows={[
+              { label: "Cloud", value: 123, change: -22 },
+              { label: "Infrastructure", value: 134, change: 9 },
+              { label: "Office", value: 23, change: 41 },
+            ]}
+          />
         </div>
       </div>
-    </main>
+    </div>
   );
 };
 
 export default PageDashboard;
-
 export const getServerSideProps = withAuthSSP();

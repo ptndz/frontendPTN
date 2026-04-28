@@ -1,81 +1,51 @@
-const Card = () => {
+import { FiTrendingUp, FiTrendingDown } from "react-icons/fi";
+
+interface IStatRow {
+  label: string;
+  value: string | number;
+  change: number;
+}
+
+interface IProps {
+  title: string;
+  value: string | number;
+  changePercent: number;
+  rows: IStatRow[];
+}
+
+const Trend = ({ percent, size = "sm" }: { percent: number; size?: "sm" | "lg" }) => {
+  const positive = percent >= 0;
+  const Icon = positive ? FiTrendingUp : FiTrendingDown;
   return (
-    <div className="w-full">
-      <div className="relative w-full px-4 py-6 bg-white shadow-lg dark:bg-gray-700">
-        <p className="text-sm font-semibold text-gray-700 border-b border-gray-200 w-max dark:text-white">
-          Project Reffered
-        </p>
-        <div className="flex items-end my-6 space-x-2">
-          <p className="text-5xl font-bold text-black dark:text-white">12</p>
-          <span className="flex items-center text-xl font-bold text-green-500">
-            <svg
-              width={20}
-              fill="currentColor"
-              height={20}
-              className="h-3"
-              viewBox="0 0 1792 1792"
-              xmlns="http://www.w3.org/2000/svg">
-              <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-            </svg>
-            22%
-          </span>
-        </div>
-        <div className="dark:text-white">
-          <div className="flex items-center justify-between pb-2 mb-2 text-sm border-b border-gray-200 sm:space-x-12">
-            <p>Unique URL</p>
-            <div className="flex items-end text-xs">
-              34
-              <span className="flex items-center">
-                <svg
-                  width={20}
-                  fill="currentColor"
-                  height={20}
-                  className="h-3 text-green-500"
-                  viewBox="0 0 1792 1792"
-                  xmlns="http://www.w3.org/2000/svg">
-                  <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                </svg>
-                22%
-              </span>
+    <span
+      className={`inline-flex items-center gap-1 ${
+        positive ? "text-emerald-500" : "text-rose-500"
+      } ${size === "lg" ? "text-base font-semibold" : "text-xs font-medium"}`}
+    >
+      <Icon className={size === "lg" ? "w-4 h-4" : "w-3 h-3"} />
+      {Math.abs(percent)}%
+    </span>
+  );
+};
+
+const Card: React.FC<IProps> = ({ title, value, changePercent, rows }) => {
+  return (
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm">
+      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
+      <div className="flex items-baseline gap-3 mt-3 mb-5">
+        <p className="text-4xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
+        <Trend percent={changePercent} size="lg" />
+      </div>
+      <div className="space-y-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+        {rows.map((row, i) => (
+          <div key={i} className="flex items-center justify-between text-sm">
+            <p className="text-gray-600 dark:text-gray-400">{row.label}</p>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-gray-900 dark:text-gray-100">{row.value}</span>
+              <Trend percent={row.change} />
             </div>
           </div>
-          <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-            <p>Embedded form</p>
-            <div className="flex items-end text-xs">
-              13
-              <span className="flex items-center">
-                <svg
-                  width={20}
-                  fill="currentColor"
-                  height={20}
-                  className="h-3 text-green-500"
-                  viewBox="0 0 1792 1792"
-                  xmlns="http://www.w3.org/2000/svg">
-                  <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                </svg>
-                12%
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center justify-between space-x-12 text-sm md:space-x-24">
-            <p>New visitor</p>
-            <div className="flex items-end text-xs">
-              45
-              <span className="flex items-center">
-                <svg
-                  width={20}
-                  fill="currentColor"
-                  height={20}
-                  className="h-3 text-green-500"
-                  viewBox="0 0 1792 1792"
-                  xmlns="http://www.w3.org/2000/svg">
-                  <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                </svg>
-                41%
-              </span>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );

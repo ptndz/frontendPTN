@@ -1,12 +1,13 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
-
 import Modal from "react-responsive-modal";
 import "react-responsive-modal/styles.css";
 import { toast } from "react-toastify";
 import { ProfileUser } from "../../gql/graphql";
-import { graphQLClient, graphQLClientErrorCheck } from "../../plugins/graphql.plugin";
+import {
+  graphQLClient,
+  graphQLClientErrorCheck,
+} from "../../plugins/graphql.plugin";
 import { queryUpdateProfile } from "../../graphql/user";
 
 interface IProps {
@@ -16,6 +17,9 @@ interface IProps {
   setUpdateUserData: (updateUserData: boolean) => void;
 }
 
+const inputClass =
+  "w-full h-10 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 dark:focus:border-emerald-600 transition-all";
+
 const AboutModal: React.FC<IProps> = ({
   data,
   openDetailsModal,
@@ -24,83 +28,105 @@ const AboutModal: React.FC<IProps> = ({
 }) => {
   const { register, handleSubmit } = useForm();
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (formData: any) => {
     const res = await graphQLClient.request(queryUpdateProfile, {
-      city: data.city,
-      education: data.education,
-      from: data.from,
-      relationship: data.relationship,
-      workplace: data.workplace,
+      city: formData.city,
+      education: formData.education,
+      from: formData.from,
+      relationship: formData.relationship,
+      workplace: formData.workplace,
     });
     if (graphQLClientErrorCheck(res)) {
       setUpdateUserData(true);
-      toast("Profile updated successfully");
+      toast.success("Profile updated successfully");
       setOpenDetailsModal(false);
     }
   };
+
   return (
     <Modal
       open={openDetailsModal}
       onClose={() => setOpenDetailsModal(false)}
       center
-      classNames={{
-        modal: "customModal",
-      }}>
-      <div className="bg-white dark:bg-zinc-900 p-5 shadow-xl text-gray-800 md:w-[500px]">
-        <div className="flex justify-between items-center border-b-2 py-3 mb-5 border-gray-500">
-          <h4 className="text-lg font-bold dark:text-white">Edit about</h4>
+      classNames={{ modal: "customModal !rounded-2xl !p-0 !bg-white dark:!bg-gray-900" }}
+    >
+      <div className="bg-white dark:bg-gray-900 w-full md:w-[480px]">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Edit details</h2>
         </div>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <label className="dark:text-white">Educations</label>
-          <input
-            className="w-full h-12 mb-3 bg-transparent rounded-lg px-2 dark:text-white"
-            type="text"
-            {...register("education")}
-            defaultValue={data?.education}
-            placeholder={data?.education}
-          />
-          <label className="dark:text-white">Lives in </label>
-          <input
-            className="w-full h-12 mb-3 bg-transparent rounded-lg px-2 dark:text-white"
-            type="text"
-            {...register("city")}
-            defaultValue={data?.city}
-            placeholder={data?.city}
-          />
-          <label className="dark:text-white">From</label>
-          <input
-            className="w-full h-12 mb-3 bg-transparent rounded-lg px-2 dark:text-white"
-            type="text"
-            {...register("from")}
-            defaultValue={data?.from}
-            placeholder={data?.from}
-          />
-          <label className="dark:text-white">Workplace</label>
-          <input
-            className="w-full h-12 mb-3 bg-transparent rounded-lg px-2 dark:text-white"
-            type="text"
-            {...register("workplace")}
-            defaultValue={data?.workplace}
-            placeholder={data?.workplace}
-          />
-          <label className="dark:text-white">Relationship</label>
-          <select
-            id=""
-            className="w-full h-12 mb-3 dark:bg-zinc-900 rounded-lg dark:text-white px-3"
-            {...register("relationship")}
-            placeholder={data?.relationship}
-            defaultValue={data?.relationship}>
-            <option value="Single">Single</option>
-            <option value="In a relationship">In a relationship </option>
-            <option value="Engaged">Engaged </option>
-            <option value="Married">Married </option>
-          </select>
 
-          <div className="my-3 flex justify-end space-x-3 ">
+        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Education</label>
+            <input
+              className={inputClass}
+              type="text"
+              {...register("education")}
+              defaultValue={data?.education}
+              placeholder="University, school..."
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Lives in</label>
+            <input
+              className={inputClass}
+              type="text"
+              {...register("city")}
+              defaultValue={data?.city}
+              placeholder="Current city"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">From</label>
+            <input
+              className={inputClass}
+              type="text"
+              {...register("from")}
+              defaultValue={data?.from}
+              placeholder="Hometown"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Workplace</label>
+            <input
+              className={inputClass}
+              type="text"
+              {...register("workplace")}
+              defaultValue={data?.workplace}
+              placeholder="Where you work"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Relationship</label>
+            <select
+              className={inputClass}
+              {...register("relationship")}
+              defaultValue={data?.relationship || "Single"}
+            >
+              <option value="Single">Single</option>
+              <option value="In a relationship">In a relationship</option>
+              <option value="Engaged">Engaged</option>
+              <option value="Married">Married</option>
+            </select>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+            <button
+              type="button"
+              onClick={() => setOpenDetailsModal(false)}
+              className="h-9 px-4 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-sm font-semibold text-gray-700 dark:text-gray-300 transition-colors"
+            >
+              Cancel
+            </button>
             <button
               type="submit"
-              className="px-5 py-2 font-semibold bg-green-500 text-gray-200 hover:bg-green-700 rounded-md">
-              Update
+              className="h-9 px-5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold transition-colors"
+            >
+              Save changes
             </button>
           </div>
         </form>
