@@ -44,7 +44,7 @@ const Profile: React.FC<IProps> = ({ userData, user, profileData }) => {
 
   if (userData) {
     return (
-      <>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
         <SocialProfileJsonLd
           type="Person"
           name={userData.username}
@@ -53,7 +53,7 @@ const Profile: React.FC<IProps> = ({ userData, user, profileData }) => {
         />
 
         <Navigation />
-        <div className="max-w-4xl mx-auto gap-4 bg-gray-100 dark:bg-zinc-900 pt-2 w-full ">
+        <div className="max-w-4xl mx-auto px-4 py-4 w-full">
           <UserProfile
             userData={userData}
             profileData={profileData}
@@ -61,7 +61,7 @@ const Profile: React.FC<IProps> = ({ userData, user, profileData }) => {
           />
           <DynamicWidgetMessage />
         </div>
-      </>
+      </div>
     );
   } else {
     return <Error />;

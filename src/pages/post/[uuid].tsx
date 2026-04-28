@@ -37,7 +37,7 @@ const Post: React.FC<IProps> = ({ postData }) => {
 
   if (postData) {
     return (
-      <>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
         <ArticleJsonLd
           type="BlogPosting"
           url={`${process.env.NEXT_PUBLIC_URL_APP}post/${postData.uuid}`}
@@ -50,7 +50,7 @@ const Post: React.FC<IProps> = ({ postData }) => {
           authorName={postData.user.username}
         />
         {user.id !== "" ? <Navigation /> : null}
-        <div className="max-w-4xl mx-auto gap-4 bg-gray-100 dark:bg-zinc-900 pt-2 w-full ">
+        <div className="max-w-2xl mx-auto px-4 py-6 w-full">
           <SinglePost
             post={postData}
             loading={false}
@@ -61,7 +61,7 @@ const Post: React.FC<IProps> = ({ postData }) => {
           />
           <DynamicWidgetMessage />
         </div>
-      </>
+      </div>
     );
   } else {
     return <Error />;

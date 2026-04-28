@@ -1,21 +1,19 @@
-import React from 'react'
+import React from "react";
 
 const UserListSkeleton = () => {
   return (
-    <div className="space-y-3 flex-1 flex flex-col">
-      {[...Array(10)].map((_, i) => (
-        <div key={i} className="p-3 px-5 w-full rounded-md mx-auto">
-          <div className="flex w-full animate-pulse flex-row items-center justify-center space-x-5">
-            <div className="w-12 bg-gray-300 dark:bg-zinc-900 h-12 rounded-full "></div>
-            <div className="flex flex-col space-y-3 flex-1">
-              <div className="w-full bg-gray-300 dark:bg-zinc-900 h-4 rounded-md "></div>
-              <div className="w-2/3 bg-gray-300 dark:bg-zinc-900 h-4 rounded-md "></div>
-            </div>
+    <div className="space-y-2">
+      {[...Array(6)].map((_, i) => (
+        <div key={i} className="flex items-center gap-3 p-3 animate-pulse">
+          <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-800 flex-shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="w-1/2 h-3 rounded bg-gray-200 dark:bg-gray-800" />
+            <div className="w-1/3 h-2.5 rounded bg-gray-100 dark:bg-gray-800" />
           </div>
         </div>
       ))}
     </div>
   );
-}
+};
 
-export default UserListSkeleton
+export default UserListSkeleton;
