@@ -23,24 +23,27 @@ const Home: React.FC<IProps> = ({ userData }) => {
   useInitUser(userData);
 
   return (
-    <div className="bg-neutral-100 dark:bg-zinc-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Navigation />
-      <div className="mt-2 w-max inline">
-        <div className="grid grid-cols-12 mx-auto 2xl:max-w-[1560px] gap-6">
-          <div className="col-span-3 max-w-2xl hidden lg:block h-[89vh] overflow-y-scroll scrollbar	scrollbar-hide hover:scrollbar-default px-2">
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="grid grid-cols-12 gap-5">
+          {/* Left sidebar */}
+          <aside className="col-span-3 hidden lg:block h-[calc(100vh-72px)] overflow-y-auto scrollbar-hide sticky top-[57px]">
             <LeftSideBar />
-          </div>
-          <div className="col-span-12 lg:col-span-6 w-full mx-auto h-[89vh] scrollbar-hide overflow-y-scroll scrollbar scroll-ml-5">
-            <div className="col-span-12 max-w-2xl mx-auto">
-              <MiddleLeftBar />
-            </div>
-          </div>
-          <div className="col-span-3 max-w-2xl hidden lg:block h-[89vh] overflow-y-scroll scrollbar	scrollbar-hide hover:scrollbar-default px-2">
+          </aside>
+
+          {/* Main feed */}
+          <main className="col-span-12 lg:col-span-6 h-[calc(100vh-72px)] overflow-y-auto scrollbar-hide">
+            <MiddleLeftBar />
+          </main>
+
+          {/* Right sidebar */}
+          <aside className="col-span-3 hidden lg:block h-[calc(100vh-72px)] overflow-y-auto scrollbar-hide sticky top-[57px]">
             <RightSideBar />
-          </div>
+          </aside>
         </div>
-        <DynamicWidgetMessage />
       </div>
+      <DynamicWidgetMessage />
     </div>
   );
 };

@@ -55,8 +55,8 @@ const WidgetMessage = () => {
   if (chatWindows) {
     return (
       <>
-        <div className="fixed bottom-0 right-0 mb-14 mr-4">
-          <div className="flex flex-col space-y-4 p-4">
+        <div className="fixed bottom-4 right-4 z-40">
+          <div className="flex flex-col gap-3">
             {chatWindows.map((chat) => (
               <AvatarWidget
                 key={chat.id}
@@ -66,8 +66,8 @@ const WidgetMessage = () => {
             ))}
           </div>
         </div>
-        <div className="fixed bottom-0 right-0 mb-14 mr-32">
-          <div className="flex items-center space-x-4">
+        <div className="fixed bottom-4 right-20 z-40">
+          <div className="flex items-end gap-3">
             {chatWindows.map((chat) => (
               <ChatWindow
                 key={chat.id}

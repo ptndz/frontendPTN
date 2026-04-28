@@ -1,18 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
 import autosize from "autosize";
 import { BsX } from "react-icons/bs";
-import { BiMessageSquareEdit } from "react-icons/bi";
 import { MdOutlinePhotoSizeSelectActual } from "react-icons/md";
+import { HiPaperAirplane } from "react-icons/hi2";
 import Image from "next/image";
 import axios from "axios";
 import { toast } from "react-toastify";
 import jsonP from "@ptndev/json";
 import { useStoreUser } from "../../store/user";
 import { mutationCreatePost } from "../../graphql/post";
-import {
-  graphQLClient,
-  graphQLClientErrorCheck,
-} from "../../plugins/graphql.plugin";
+import { graphQLClient, graphQLClientErrorCheck } from "../../plugins/graphql.plugin";
 
 interface IProps {
   setNewPost: (newPost: boolean) => void;
@@ -23,39 +20,36 @@ const CreatePost: React.FC<IProps> = ({ setNewPost }) => {
   const [postImagePreview, setPostImagePreview] = useState<string[]>();
   const [postContents, setPostContents] = useState("");
 
-  const textareaRef = useRef<any>(null);
-  const filePickerRef = useRef<any>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const filePickerRef = useRef<HTMLInputElement>(null);
   const { user } = useStoreUser();
 
   useEffect(() => {
-    autosize(textareaRef.current);
+    if (textareaRef.current) autosize(textareaRef.current);
   }, [postContents]);
 
   useEffect(() => {
-    return () => {
-      postImagePreview?.forEach(URL.revokeObjectURL);
-    };
+    return () => { postImagePreview?.forEach(URL.revokeObjectURL); };
   }, [postImagePreview]);
+
   const onSubmit = async () => {
-    toast("🦄 Posting....");
+    toast("Posting...");
     const formData = new FormData();
     let imagesData: string[] = [];
-    if (postImages) {
-      postImages.map((image: File) => {
-        formData.append("images", image);
-      });
 
+    if (postImages) {
+      postImages.forEach((image: File) => formData.append("images", image));
       const resImages = await axios.post("/image", formData);
-      if (resImages.data.code === 200) {
-        if (resImages.data.images) {
-          imagesData = resImages.data.images;
-        }
+      if (resImages.data.code === 200 && resImages.data.images) {
+        imagesData = resImages.data.images;
       }
     }
+
     const resPost = await graphQLClient.request(mutationCreatePost, {
       content: jsonP.stringify(postContents),
-      images: imagesData ? imagesData : [],
+      images: imagesData,
     });
+
     if (resPost.createPost.code !== 200) {
       toast(resPost.createPost.message);
       return;
@@ -70,124 +64,97 @@ const CreatePost: React.FC<IProps> = ({ setNewPost }) => {
     }
   };
 
+  const clearImages = () => {
+    postImagePreview?.forEach(URL.revokeObjectURL);
+    setPostImagePreview(undefined);
+    setPostImages(undefined);
+  };
+
   return (
-    <div>
-      <form
-        onSubmit={(e) => { e.preventDefault(); onSubmit(); }}
-        className="sm:rounded-lg bg-white dark:bg-black overflow-hidden">
-        <div className="px-2 sm:px-4 pb-2 pt-5 sm:pb-6">
-          <div className="flex gap-1 items-start">
-            <div className="flex-shrink-0 relative mx-auto sm:h-14 sm:w-14 h-12 w-12 rounded-full overflow-hidden bg-gray-300 dark:bg-zinc-800">
-              {user?.avatar && (
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+      <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
+        <div className="p-4">
+          <div className="flex gap-3">
+            {/* Avatar */}
+            <div className="relative w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
+              {user?.avatar ? (
                 <Image
-                  src={user.avatar || "/images/user-avatar.png"}
+                  src={user.avatar}
                   alt={user.fullName}
-                  layout="fill"
-                  objectFit="cover"
+                  fill
+                  className="object-cover"
                 />
+              ) : (
+                <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded-xl" />
               )}
             </div>
-            <div className="flex flex-col w-full space-y-2">
-              <div className="pl-3">
-                <h1 className="font-medium sm:text-lg leading-6">
-                  {user?.fullName}
-                </h1>
-              </div>
+
+            {/* Textarea */}
+            <div className="flex-1">
               <textarea
-                id="postContent"
                 ref={textareaRef}
                 value={postContents}
                 onChange={(e) => setPostContents(e.target.value)}
-                placeholder="What's on your mind?"
+                placeholder={`What's on your mind, ${user?.fullName?.split(" ")[0]}?`}
                 rows={2}
-                className="w-full placeholder:text-sm dark:text-zinc-200 resize-none max-h-40 focus:outline-none focus:border-none focus:ring-0 bg-transparent border-none scrollbar-hide overflow-y-scroll scrollbar scroll-ml-5"></textarea>
+                className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/30 border border-transparent focus:border-emerald-200 dark:focus:border-emerald-800 transition-all max-h-40 scrollbar-hide"
+              />
             </div>
           </div>
         </div>
-        {/* image preview */}
-        {postImagePreview ? (
-          <div className="relative w-full">
-            {postImagePreview.map((image, index: number) => (
-              <div className="sm:p-2" key={index}>
-                <div className="relative h-72 w-full sm:rounded-lg overflow-hidden border border-gray-300 dark:border-zinc-600">
-                  <Image
-                    src={image}
-                    alt="Pham Thanh Nam"
-                    layout="fill"
-                    objectFit="cover"
-                  />
-                </div>
+
+        {/* Image preview */}
+        {postImagePreview && postImagePreview.length > 0 && (
+          <div className="px-4 pb-3 space-y-2">
+            {postImagePreview.map((image, index) => (
+              <div key={index} className="relative rounded-xl overflow-hidden h-56 bg-gray-100 dark:bg-gray-800">
+                <Image src={image} alt="Preview" fill className="object-cover" />
               </div>
             ))}
-
             <button
-              className="absolute top-3 right-1 mr-2.5"
               type="button"
-              onClick={() => {
-                postImagePreview?.forEach(URL.revokeObjectURL);
-                setPostImagePreview(undefined);
-                setPostImages(undefined);
-              }}>
-              <BsX className="h-5 w-5 box-content p-2 rounded-full bg-white border dark:border-zinc-600 dark:bg-zinc-700" />
+              onClick={clearImages}
+              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-500 transition-colors"
+            >
+              <BsX className="text-base" /> Remove image
             </button>
           </div>
-        ) : (
-          ""
         )}
 
-        <div className="border m-2 rounded-lg overflow-hidden border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-black grid divide-gray-200 dark:divide-zinc-700 grid-cols-2 divide-y-0 divide-x">
+        {/* Action bar */}
+        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-gray-800">
           <button
             type="button"
-            onClick={() => filePickerRef.current.click()}
-            className="py-2.5 text-sm font-medium flex gap-2 items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-800">
-            <MdOutlinePhotoSizeSelectActual className="text-green-400 w-7 h-7" />
-            <span className="hidden sm:block text-gray-600 dark:text-zinc-200">
-              Image
-            </span>
-            <input
-              ref={filePickerRef}
-              accept="image/*"
-              type="file"
-              name="file"
-              id="file"
-              onChange={(e) => {
-                const files = e.target.files;
-                const images: any = [];
-                if (files) {
-                  for (let i = 0; i < files.length; i++) {
-                    images.push(URL.createObjectURL(files[i]));
-                  }
-
-                  if (postImagePreview === undefined) {
-                    setPostImagePreview([...images]);
-                  }
-                  if (postImagePreview) {
-                    setPostImagePreview((result: any) => [
-                      ...result,
-                      ...images,
-                    ]);
-                  }
-                  if (postImages === undefined) {
-                    setPostImages([files[0]]);
-                  }
-                  if (postImages) {
-                    setPostImages((result: any) => [...result, files[0]]);
-                  }
-                }
-              }}
-              className="hidden"
-            />
+            onClick={() => filePickerRef.current?.click()}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+          >
+            <MdOutlinePhotoSizeSelectActual className="text-xl text-emerald-500" />
+            Photo
           </button>
+          <input
+            ref={filePickerRef}
+            accept="image/*"
+            type="file"
+            className="hidden"
+            onChange={(e) => {
+              const files = e.target.files;
+              if (!files) return;
+              const images: string[] = [];
+              for (let i = 0; i < files.length; i++) {
+                images.push(URL.createObjectURL(files[i]));
+              }
+              setPostImagePreview((prev) => prev ? [...prev, ...images] : images);
+              setPostImages((prev) => prev ? [...prev, files[0]] : [files[0]]);
+            }}
+          />
+
           <button
-            disabled={
-              !postContents && postImagePreview && postImagePreview.length > 0
-            }
             type="submit"
-            className="py-2.5 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:dark:hover:bg-transparent text-sm font-medium flex gap-2 items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-800">
-            <BiMessageSquareEdit className="text-red-500 w-7 h-7" />
-            <span className="hidden sm:block text-gray-600 dark:text-zinc-200">
-              Post
-            </span>
+            disabled={!postContents.trim() && !postImagePreview?.length}
+            className="flex items-center gap-2 px-4 py-1.5 rounded-xl text-sm font-medium bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-colors"
+          >
+            <HiPaperAirplane className="text-base" />
+            Post
           </button>
         </div>
       </form>
