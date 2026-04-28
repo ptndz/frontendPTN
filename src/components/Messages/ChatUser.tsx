@@ -26,6 +26,7 @@ const ChatUser: React.FC<IProps> = ({
     (u: User) => u.id !== currentUser.id
   );
   const [isOnline, setIsOnline] = useState(false);
+
   useEffect(() => {
     const getUser = async () => {
       try {
@@ -47,46 +48,42 @@ const ChatUser: React.FC<IProps> = ({
       setIsOnline(!!Array.from(onlineUsers).find((u) => u === userData?.id));
     }
   }, [onlineUsers, userData?.id]);
-  return (
-    <>
-      <div
-        className={`relative lg:px-4 px-2 py-2 rounded-lg flex items-center space-x-3 focus-within:ring-1 focus-within:ring-inset focus-within:ring-white hover:bg-gray-200 dark:hover:bg-zinc-800 ${
-          currentChat?.id === conversation.id
-            ? "bg-gray-200 dark:bg-zinc-800"
-            : ""
-        }`}>
-        <div className="flex-shrink-0 relative md:w-14 md:h-14 w-9 h-9">
-          {userData?.avatar ? (
-            <Image
-              layout="fill"
-              objectFit="cover"
-              className="h-full w-full rounded-full object-cover mr-2"
-              src={userData?.avatar || "/images/user-avatar.png"}
-              alt={userData?.fullName}
-            />
-          ) : (
-            <div className="md:w-14 md:h-14 w-9 h-9 rounded-full object-cover mr-2 bg-gray-300 dark:bg-zinc-900">
-              <RiUserSmileLine className="w-full h-full object-cover p-2" />
-            </div>
-          )}
 
-          {isOnline ? (
-            <div className="absolute w-3 h-3 rounded-full bg-green-600 ring-2 ring-white dark:ring-black bottom-0 right-0"></div>
-          ) : (
-            <div className="absolute w-3 h-3 rounded-full bg-zinc-600 ring-2 ring-white dark:ring-black bottom-0 right-0"></div>
-          )}
-        </div>
-        <div className="flex-1 min-w-0 lg:block">
-          <a className="focus:outline-none">
-            <span className="absolute inset-0" aria-hidden="true"></span>
-            <p className="truncate text-base font-medium">
-              {userData?.fullName}
-            </p>
-          </a>
-        </div>
+  const isActive = currentChat?.id === conversation.id;
+
+  return (
+    <div
+      className={`px-3 py-2.5 rounded-xl flex items-center gap-3 transition-colors cursor-pointer ${
+        isActive
+          ? "bg-emerald-50 dark:bg-emerald-950/30"
+          : "hover:bg-gray-100 dark:hover:bg-gray-800"
+      }`}
+    >
+      <div className="flex-shrink-0 relative w-10 h-10">
+        {userData?.avatar ? (
+          <Image
+            fill
+            className="object-cover rounded-full"
+            src={userData.avatar}
+            alt={userData?.fullName || ""}
+          />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+            <RiUserSmileLine className="w-5 h-5 text-gray-400" />
+          </div>
+        )}
+        <div
+          className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-white dark:ring-gray-900 ${
+            isOnline ? "bg-emerald-500" : "bg-gray-400"
+          }`}
+        />
       </div>
-      <div className="absolute -bottom-[1px] lg:-bottom-[1px] dark:bg-white bg-black w-1/2 lg:w-3/4 h-1 left-1/2 -translate-x-1/2 rounded"></div>
-    </>
+      <div className="flex-1 min-w-0">
+        <p className={`text-sm font-medium truncate ${isActive ? "text-emerald-700 dark:text-emerald-400" : "text-gray-900 dark:text-gray-100"}`}>
+          {userData?.fullName}
+        </p>
+      </div>
+    </div>
   );
 };
 

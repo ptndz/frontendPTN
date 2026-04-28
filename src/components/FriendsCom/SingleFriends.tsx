@@ -9,29 +9,34 @@ interface IProps {
 
 const SingleFriends: React.FC<IProps> = ({ user }) => {
   const router = useRouter();
-  const { avatar, fullName, username } = user;
+  const { fullName, username, avatar } = user;
+
   return (
-    <div className="md:col-span-3 lg:col-span-3 sm:col-span-4 xs:col-span-6 text-center rounded bg-white dark:bg-black">
-      <div className="mt-5 ml-16">
-        <Image
-          src={user.avatar || "/images/user-avatar.png"}
-          height={100}
-          width={100}
-          className="rounded-full"
-          alt="Friends image"></Image>
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col">
+      <div className="relative h-32 bg-gradient-to-br from-emerald-400 to-teal-500">
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
+          <div className="relative w-16 h-16 ring-4 ring-white dark:ring-gray-900 rounded-full overflow-hidden">
+            <Image
+              src={avatar || "/images/user-avatar.png"}
+              fill
+              className="object-cover"
+              alt={fullName || ""}
+            />
+          </div>
+        </div>
       </div>
-      <h1 className="text-lg font-semibold dark:text-white text-black">
-        {fullName}
-      </h1>
-      {/* <p className='text-sm text-slate-400'>{userId}</p> */}
-      <button
-        onClick={() => router.push(`/${username}`)}
-        className={`${
-          avatar === "FRIEND" ? "bg-red-600" : "bg-green-500"
-        } py-2.5 px-4 mt-4 mb-6 rounded-full text-white font-medium text-sm`}>
-        See profile
-      </button>
-      {/* <p>whay you want to be a developer</p> */}
+      <div className="pt-10 pb-4 px-4 flex flex-col items-center text-center gap-3">
+        <div>
+          <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{fullName}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">@{username}</p>
+        </div>
+        <button
+          onClick={() => router.push(`/${username}`)}
+          className="w-full h-8 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold transition-colors"
+        >
+          View profile
+        </button>
+      </div>
     </div>
   );
 };
