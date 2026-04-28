@@ -29,6 +29,7 @@ const securityHeaders = [
 
 module.exports = withSerwist({
   reactStrictMode: true,
+  turbopack: {},
   images: {
     remotePatterns: [
       { protocol: "http", hostname: "localhost" },
