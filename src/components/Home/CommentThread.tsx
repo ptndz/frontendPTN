@@ -17,34 +17,33 @@ const CommentThread: React.FC<IProps> = ({ comment, isRoot }) => {
 
   const body = (
     <>
-      <div className={`w-10 h-10 rounded-full${isRoot ? " ml-1" : ""}`}>
-        <Link href={`/${comment.user.username}`} passHref>
-          <Image
-            className="rounded-full cursor-pointer"
-            src={comment.user.avatar || "/images/user-avatar.png"}
-            alt={comment.user.username}
-            height={32}
-            width={32}
-          />
-        </Link>
-      </div>
-      <div className="flex flex-col">
-        <div className="dark:bg-zinc-800 bg-slate-200 px-3 py-2 rounded-2xl ml-2">
-          <div className="font-bold">
-            <Link href={`/${comment.user.username}`} passHref>
-              <h1 className="text-sm cursor-pointer">{comment.user.fullName}</h1>
-            </Link>
-          </div>
-          <div className="text-gray-600">{comment.content}</div>
-          <div className={isRoot ? "pt-1" : undefined}>
-            <button
-              onClick={() => setIsComment(!isComment)}
-              className="text-gray-600 hover:text-blue-400">
-              Reply
-            </button>
-            <span className="mx-2">|</span>
-            <Like comment={comment} />
-          </div>
+      <Link href={`/${comment.user.username}`} className="flex-shrink-0">
+        <Image
+          className="rounded-full cursor-pointer object-cover"
+          src={comment.user.avatar || "/images/user-avatar.png"}
+          alt={comment.user.username || ""}
+          height={32}
+          width={32}
+        />
+      </Link>
+      <div className="flex flex-col flex-1 min-w-0">
+        <div className="bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-2xl">
+          <Link href={`/${comment.user.username}`}>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 hover:underline">
+              {comment.user.fullName}
+            </p>
+          </Link>
+          <p className="text-sm text-gray-700 dark:text-gray-300 break-words">{comment.content}</p>
+        </div>
+        <div className="flex items-center gap-3 mt-1 px-3 text-xs text-gray-500 dark:text-gray-400">
+          <button
+            onClick={() => setIsComment(!isComment)}
+            className="font-medium hover:text-emerald-500 transition-colors"
+          >
+            Reply
+          </button>
+          <span>·</span>
+          <Like comment={comment} />
         </div>
         <AddComment
           setNewComment={setNewComment}
@@ -60,17 +59,13 @@ const CommentThread: React.FC<IProps> = ({ comment, isRoot }) => {
 
   if (isRoot) {
     return (
-      <div className="w-full space-y-4">
-        <div className="drop-shadow-sm p-3 rounded-lg">
-          <div className="flex pt-3">
-            <div className="flex py-2">{body}</div>
-          </div>
-        </div>
+      <div className="flex gap-2 items-start py-2">
+        {body}
       </div>
     );
   }
 
-  return <div className="flex py-2 ml-10">{body}</div>;
+  return <div className="flex gap-2 items-start py-2 ml-10">{body}</div>;
 };
 
 export default CommentThread;

@@ -1,81 +1,63 @@
 import Image from "next/image";
-import { FcNext } from "react-icons/fc";
-import { MdOutlineArrowBackIosNew } from "react-icons/md";
-import { useRef } from "react";
+import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { useState } from "react";
 
 interface IProps {
   images: string[];
 }
 
 const Carousel: React.FC<IProps> = ({ images }) => {
-  const refsView = useRef<any>(null);
-  const refsImg = useRef<any>(null);
+  const [index, setIndex] = useState(0);
 
-  const nextImage = () => {
-    const liImage = refsImg.current.querySelectorAll("li").length;
-    if (liImage === 1) {
-      return;
-    }
-    refsView.current?.insertBefore(
-      refsImg.current?.lastElementChild as any,
-      null
-    );
-  };
+  if (!images.length) return null;
 
-  const previousImage = () => {
-    const liView = refsView.current.querySelectorAll("li").length;
-
-    if (liView === 0) {
-      return;
-    }
-    refsImg.current?.insertBefore(
-      refsView.current?.lastElementChild as any,
-      null
-    );
-  };
-
-  const arrowStyle =
-    "absolute text-white text-2xl z-10 h-10 w-20 rounded-full opacity-75 flex items-center justify-center";
+  const next = () => setIndex((i) => (i + 1) % images.length);
+  const prev = () => setIndex((i) => (i - 1 + images.length) % images.length);
 
   return (
-    <>
-      <ul ref={refsView} className="hidden"></ul>
-      <div className="relative w-full max-w-4xl">
-        {images.length > 0 ? (
-          <ul
-            ref={refsImg}
-            className="pt-3 relative h-96 rounded-lg overflow-hidden w-full">
-            {images.map((img, i) => (
-              <li key={i}>
-                <Image
-                  layout="fill"
-                  objectFit="cover"
-                  src={img}
-                  className="w-full object-contain"
-                  alt="Pham Thanh Nam"
-                />
-              </li>
-            ))}
-          </ul>
-        ) : null}
-
-        {images.length > 1 ? (
-          <div className="absolute bottom-0 left-0 right-0 flex justify-center mb-6">
-            <button
-              onClick={previousImage}
-              className="bg-inherit rounded-full shadow-lg px-28 py-2 ml-2 text-white font-medium hover:bg-white hover:text-blue-500 transition duration-300 ease-in-out focus:outline-none">
-              &#8249;
-            </button>
-
-            <button
-              onClick={nextImage}
-              className="bg-inherit rounded-full shadow-lg px-28 py-2 ml-2 text-white font-medium hover:bg-white hover:text-blue-500 transition duration-300 ease-in-out focus:outline-none">
-              &#8250;
-            </button>
-          </div>
-        ) : null}
+    <div className="relative w-full rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800">
+      <div className="relative w-full aspect-[4/3] max-h-[500px]">
+        <Image
+          fill
+          src={images[index]}
+          className="object-contain"
+          alt={`Image ${index + 1}`}
+          sizes="(max-width: 768px) 100vw, 600px"
+        />
       </div>
-    </>
+
+      {images.length > 1 && (
+        <>
+          <button
+            onClick={prev}
+            aria-label="Previous"
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 dark:bg-gray-900/80 hover:bg-white dark:hover:bg-gray-900 backdrop-blur-sm flex items-center justify-center text-gray-700 dark:text-gray-200 shadow-md transition-colors"
+          >
+            <FiChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            onClick={next}
+            aria-label="Next"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 dark:bg-gray-900/80 hover:bg-white dark:hover:bg-gray-900 backdrop-blur-sm flex items-center justify-center text-gray-700 dark:text-gray-200 shadow-md transition-colors"
+          >
+            <FiChevronRight className="w-5 h-5" />
+          </button>
+
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+            {images.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setIndex(i)}
+                aria-label={`Go to image ${i + 1}`}
+                className={`h-1.5 rounded-full transition-all ${
+                  i === index ? "w-6 bg-emerald-500" : "w-1.5 bg-white/70 hover:bg-white"
+                }`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   );
 };
 
