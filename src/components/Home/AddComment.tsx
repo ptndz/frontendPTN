@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useStoreUser } from "../../store/user";
-import Image from "next/image";
 import { FaArrowUp } from "react-icons/fa";
 import { IComment } from "../../gql/graphql";
 import {
@@ -8,6 +7,11 @@ import {
   graphQLClientErrorCheck,
 } from "../../plugins/graphql.plugin";
 import { graphql } from "../../gql";
+import { useI18n } from "../../i18n/I18nProvider";
+import { Avatar } from "@astryxdesign/core/Avatar";
+import { IconButton } from "@astryxdesign/core/IconButton";
+import { HStack } from "@astryxdesign/core/HStack";
+import { StackItem } from "@astryxdesign/core/Stack";
 interface IProps {
   comment: IComment;
   isOpenComment: boolean;
@@ -21,6 +25,7 @@ const AddComment: React.FC<IProps> = ({
   setIsComment
 }) => {
   const { user } = useStoreUser();
+  const { t } = useI18n();
   const [commentValue, setCommentValue] = useState("");
   const handleSubmit = async () => {
     const queryCommentComment = graphql(`
@@ -59,7 +64,10 @@ const AddComment: React.FC<IProps> = ({
 
     if (graphQLClientErrorCheck(res)) {
       if (res.commentComment.comment) {
-        setNewComment(res.commentComment.comment);
+        // W6: mutation này không select `verified` của user nên kết quả
+        // không gán trực tiếp được cho IComment (verified: Boolean!) —
+        // cast, không đổi dữ liệu runtime (đối tượng vốn đã thiếu verified).
+        setNewComment(res.commentComment.comment as IComment);
         setCommentValue("");
         setIsComment(false);
       }
@@ -67,43 +75,38 @@ const AddComment: React.FC<IProps> = ({
   };
   if (isOpenComment) {
     return (
-      <div>
-        <div className="flex gap-2 items-center pt-5">
-          <div className="relative">
-            <Image
-              src={user.avatar || "/images/user-avatar.png"}
-              alt={user.fullName}
-              height="50"
-              width="50"
-              className="rounded-full"
-            />
-          </div>
-          <div className="w-full">
-            <input
-              onChange={(e) => setCommentValue(e.target.value)}
-              value={commentValue}
-              onKeyPress={(e) => {
-                if (commentValue.length > 0) {
-                  if (e.charCode === 13) {
-                    handleSubmit();
-                  }
+      <HStack gap={2} vAlign="center" className="pt-5">
+        <Avatar
+          src={user.avatar || "/images/user-avatar.png"}
+          name={user.fullName}
+          size={48}
+          tooltip={false}
+        />
+        <StackItem size="fill">
+          <input
+            onChange={(e) => setCommentValue(e.target.value)}
+            value={commentValue}
+            onKeyPress={(e) => {
+              if (commentValue.length > 0) {
+                if (e.charCode === 13) {
+                  handleSubmit();
                 }
-              }}
-              className="w-full h-10 dark:bg-zinc-800 bg-gray-200 rounded-full p-2 resize-none scrollbar-hide"
-              placeholder="Wright a comment ..."
-            />
-          </div>
-          <div className="w-10 flex  items-center justify-center p-3 rounded-full bg-blue-600">
-            <button
-              disabled={!commentValue.trim()}
-              type="submit"
-              onClick={handleSubmit}
-              className="disabled:cursor-not-allowed">
-              <FaArrowUp className=" text-white" />
-            </button>
-          </div>
-        </div>
-      </div>
+              }
+            }}
+            className="field rounded-full resize-none scrollbar-hide"
+            placeholder={t("feed.post.writeComment")}
+          />
+        </StackItem>
+        <IconButton
+          label={t("feed.post.writeComment")}
+          icon={<FaArrowUp />}
+          variant="primary"
+          size="lg"
+          isDisabled={!commentValue.trim()}
+          type="button"
+          onClick={handleSubmit}
+        />
+      </HStack>
     );
   } else {
     return null;

@@ -1,6 +1,6 @@
 const down = (number: string) => {
   return (
-    <span className="flex items-center text-xl font-bold text-red-500">
+    <span className="flex items-center text-xl font-bold text-danger">
       <svg
         width={20}
         fill="currentColor"
@@ -16,7 +16,7 @@ const down = (number: string) => {
 };
 const up = (number: string) => {
   return (
-    <span className="flex items-center text-xl font-bold text-green-500">
+    <span className="flex items-center text-xl font-bold text-success">
       <svg
         width={20}
         fill="currentColor"

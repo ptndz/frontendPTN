@@ -1,4 +1,4 @@
-import { DefaultSeoProps } from "next-seo";
+import { DefaultSeoProps } from "next-seo/pages";
 
 const config: DefaultSeoProps = {
   title: "Pham Thanh Nam",

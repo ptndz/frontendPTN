@@ -19,6 +19,7 @@ export const queryUser = graphql(`
         sex
         role
         statusEmail
+        verified
         createAt
         updateAt
       }
@@ -49,6 +50,7 @@ export const queryGetUserByUsername = graphql(`
         sex
         role
         statusEmail
+        verified
         createAt
         updateAt
       }
@@ -79,6 +81,7 @@ export const queryGetUserByUuid = graphql(`
         sex
         role
         statusEmail
+        verified
         createAt
         updateAt
       }
@@ -97,6 +100,8 @@ export const queryLogin = graphql(`
       message
       accessToken
       refreshToken
+      requiresTwoFactor
+      twoFactorToken
       user {
         id
         fullName
@@ -110,6 +115,7 @@ export const queryLogin = graphql(`
         sex
         role
         statusEmail
+        verified
         coverImage
         createAt
         updateAt
@@ -168,6 +174,7 @@ export const queryRegister = graphql(`
         sex
         role
         statusEmail
+        verified
         coverImage
         createAt
         updateAt
@@ -179,6 +186,43 @@ export const queryRegister = graphql(`
     }
   }
 `);
+/**
+ * P3.3 — bước 2 đăng nhập. Raw string (không qua graphql() codegen) để
+ * khỏi phải regenerate bảng documents — xem ghi chú P1 ở post.ts.
+ */
+export const QUERY_VERIFY_TWO_FACTOR_LOGIN = `
+  mutation verifyTwoFactorLogin($token: String!, $code: String!) {
+    verifyTwoFactorLogin(token: $token, code: $code) {
+      code
+      success
+      message
+      accessToken
+      refreshToken
+      user {
+        id
+        fullName
+        lastName
+        firstName
+        username
+        email
+        avatar
+        phone
+        birthday
+        sex
+        role
+        statusEmail
+        verified
+        coverImage
+        createAt
+        updateAt
+      }
+      errors {
+        message
+        field
+      }
+    }
+  }
+`;
 export const queryResetPassword = graphql(`
   mutation resetPassword($password: String!, $token: String!) {
     resetPassword(password: $password, token: $token)
@@ -292,6 +336,7 @@ export const queryUpdateUser = graphql(`
         createAt
         updateAt
         statusEmail
+        verified
       }
       errors {
         message

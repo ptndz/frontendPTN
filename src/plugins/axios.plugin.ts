@@ -1,5 +1,6 @@
 import axios from "axios";
-import { getCookie } from "cookies-next";
+import { getCookie } from "cookies-next/client";
+import socket from "./socket";
 import {
   clearAuthCookies,
   getRefreshToken,
@@ -68,5 +69,8 @@ export async function refreshToken(): Promise<string> {
   });
   const { accessToken } = rs.data;
   setAccessToken(accessToken);
+  // F5 fix: if the shared socket was destroyed after a CONNECT_ERROR
+  // (no/invalid token at import), revive it now that the token is fresh.
+  if (socket.disconnected) socket.connect();
   return accessToken;
 }

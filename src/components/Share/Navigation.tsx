@@ -1,9 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import Logo from "./Logo";
 import { useRouter } from "next/router";
 import {
-  BsX,
   BsGear,
   BsSun,
   BsChatSquare,
@@ -13,127 +12,193 @@ import {
   BsMoon,
 } from "react-icons/bs";
 import { VscListSelection } from "react-icons/vsc";
-import { FiUsers, FiLogOut, FiSearch } from "react-icons/fi";
+import { FiUsers, FiLogOut, FiCompass } from "react-icons/fi";
+import { FaCalendarAlt, FaFlag, FaStore, FaTasks } from "react-icons/fa";
 import { MdOutlineNotificationsNone } from "react-icons/md";
 import { useStoreUser } from "../../store/user";
 import { useStoreTheme } from "../../store/state";
 import { graphql } from "../../gql";
 import { graphQLClient } from "../../plugins/graphql.plugin";
-import axios from "axios";
 import socket from "../../plugins/socket";
 import { clearAuthCookies } from "../../lib/auth/session";
+import { useI18n } from "../../i18n/I18nProvider";
+import LanguageSwitcher from "./LanguageSwitcher";
+import BottomNav from "./BottomNav";
+import moment from "moment";
+import {
+  AppNotification,
+  fetchNotifications,
+  fetchUnreadCount,
+  markNotificationRead,
+  notificationTarget,
+  notificationText,
+} from "../../lib/notifications";
+import { TopNav, TopNavItem } from "@astryxdesign/core/TopNav";
+import { SideNavItem, SideNavSection } from "@astryxdesign/core/SideNav";
+import { MobileNav } from "@astryxdesign/core/MobileNav";
+import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
+import { Avatar, AvatarStatusDot } from "@astryxdesign/core/Avatar";
+import { Badge } from "@astryxdesign/core/Badge";
+import { IconButton } from "@astryxdesign/core/IconButton";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import { Text } from "@astryxdesign/core/Text";
+import { StatusDot } from "@astryxdesign/core/StatusDot";
+import { HStack } from "@astryxdesign/core/HStack";
+import { Stack } from "@astryxdesign/core/Stack";
+
 const topCenterNavlinks = [
   {
     href: "/",
     icon: <BsHouse />,
-    label: "Home",
+    label: "nav.home",
   },
   {
     href: "/friends",
     icon: <FiUsers />,
-    label: "Friends",
+    label: "nav.friends",
   },
   {
     href: "/messenger",
     icon: <BsChatSquare />,
-    label: "Messages",
+    label: "nav.messages",
   },
   {
     href: "/posts/bookmarked",
     icon: <BsBookmark />,
-    label: "Bookmarked posts",
+    label: "nav.bookmarked",
+  },
+  {
+    href: "/groups",
+    icon: <FiUsers />,
+    label: "nav.groups",
+  },
+  {
+    href: "/projects",
+    icon: <FaTasks />,
+    label: "nav.projects",
+  },
+  {
+    href: "/explore",
+    icon: <FiCompass />,
+    label: "nav.explore",
+  },
+  {
+    href: "/events",
+    icon: <FaCalendarAlt />,
+    label: "nav.events",
+  },
+  {
+    href: "/pages",
+    icon: <FaFlag />,
+    label: "nav.pages",
+  },
+  {
+    href: "/marketplace",
+    icon: <FaStore />,
+    label: "nav.marketplace",
   },
 ];
-interface INotion {
-  id: number;
-  isRead: boolean;
-  notification: {
-    id: number;
-    content: string;
-    createAt: string;
-    senderID: string;
-    url: string;
-  };
-}
-
-function countUnreadNotifications(notifications: INotion[]) {
-  let count = 0;
-  for (let i = 0; i < notifications.length; i++) {
-    if (!notifications[i].isRead) {
-      count++;
-    }
-  }
-  return count;
-}
+/**
+ * Mục nav đang active: khớp chính xác, hoặc là trang con của mục đó
+ * (vd /projects/1/tasks vẫn highlight mục /projects; riêng "/" chỉ
+ * khớp chính xác để không highlight mọi trang).
+ */
+const isNavActive = (href: string, pathname: string) =>
+  href === "/"
+    ? pathname === "/"
+    : pathname === href || pathname.startsWith(`${href}/`);
 
 const Navigation = () => {
   const [mounted, setMounted] = useState(false);
 
   const { user } = useStoreUser();
+  const { t, locale } = useI18n();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isNotion, setIsNotion] = useState(false);
   const closeProfileMenu = () => setIsProfileMenuOpen(false);
-  const toggleProfileMenu = () => setIsProfileMenuOpen(!isProfileMenuOpen);
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
   const openMobileMenu = () => setIsMobileMenuOpen(true);
   const { theme, setTheme } = useStoreTheme();
-  const menuRef: any = useRef(null);
-  const menuNotionRef: any = useRef(null);
 
-  const [listNotion, setListNotion] = useState<INotion[]>();
+  const [listNotion, setListNotion] = useState<AppNotification[]>();
   const [numberNotion, setNumberNotion] = useState<number>();
   const fetchData = async () => {
-    const res = await axios.get("/notification/all");
-    setListNotion(res.data.notifications);
-    setNumberNotion(countUnreadNotifications(res.data.notifications));
+    try {
+      const [count, list] = await Promise.all([
+        fetchUnreadCount().catch(() => null),
+        fetchNotifications({ page: 1, limit: 10 }).catch(() => null),
+      ]);
+      if (list) {
+        setListNotion(list.items);
+        setNumberNotion(count ?? list.unreadCount);
+      } else if (count !== null) {
+        setNumberNotion(count);
+      }
+    } catch (error) {
+      // Giữ nguyên badge cũ khi backend chưa trả được.
+    }
   };
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Ô search trên nav: gõ -> debounce 400ms -> sang /search?q=...
+  const [searchInput, setSearchInput] = useState("");
+  const searchQuery =
+    typeof router.query.q === "string" ? router.query.q : "";
+  useEffect(() => {
+    if (router.pathname === "/search" && searchQuery !== searchInput) {
+      setSearchInput(searchQuery);
+    }
+    // Chỉ đồng bộ khi ?q= trên URL đổi, không đồng bộ khi đang gõ.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.pathname, searchQuery]);
+  useEffect(() => {
+    const value = searchInput.trim();
+    if (!value || value === searchQuery) return;
+    const timer = setTimeout(() => {
+      router.push({ pathname: "/search", query: { q: value } });
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchInput, searchQuery, router]);
 
   useEffect(() => {
     socket.on("notification", (data) => {
       fetchData();
     });
   }, []);
-  // Hàm này sẽ được gọi mỗi khi isProfileMenuOpen thay đổi
-  useEffect(() => {
-    // Nếu menu mở, thì ta sẽ thêm event listener để lắng nghe sự kiện click trên document
-    if (isProfileMenuOpen || isNotion) {
-      document.addEventListener("click", handleClickOutsideMenu);
-    } else {
-      document.removeEventListener("click", handleClickOutsideMenu);
+  const readNotion = async (notion: AppNotification) => {
+    setIsNotion(false);
+    if (!notion.read) {
+      try {
+        await markNotificationRead(notion.id);
+      } catch (error) {
+        // Điều hướng vẫn diễn ra dù đánh dấu đọc lỗi.
+      }
+      setListNotion((prev) =>
+        prev?.map((n) => (n.id === notion.id ? { ...n, read: true } : n))
+      );
+      setNumberNotion((prev) => Math.max(0, (prev ?? 1) - 1));
     }
-
-    // Hàm này sẽ được gọi khi component unmount
-    return () => {
-      document.removeEventListener("click", handleClickOutsideMenu);
-    };
-  }, [isProfileMenuOpen, isNotion]);
-
-  // Hàm này sẽ được gọi mỗi khi click trên document
-  const handleClickOutsideMenu = (event: any) => {
-    // Nếu click nằm ngoài menu, ta sẽ đóng menu
-    if (menuRef.current && !menuRef.current.contains(event.target)) {
-      setIsMobileMenuOpen(false);
-      setIsProfileMenuOpen(false);
-    }
-    if (
-      menuNotionRef.current &&
-      !menuNotionRef.current.contains(event.target)
-    ) {
-      setIsNotion(false);
-    }
-  };
-  const readNotion = async (notion: INotion) => {
-    const res = await axios.post(`/notification/read/${notion.id}`);
-    if (res.data.status) {
-      router.push(notion.notification.url);
+    const target = notificationTarget(notion);
+    if (target) {
+      router.push(target);
     }
   };
   useEffect(() => setMounted(true), []);
+
+  // Bottom nav (pill nổi, mobile) render cùng Navigation nên chỉ có ở
+  // các trang đã đăng nhập; class này cho body chừa padding-bottom dưới
+  // lg (xem globals.css) để nội dung không bị pill che. Gỡ khi unmount
+  // (sang trang auth) để trang auth không bị thừa khoảng trống.
+  useEffect(() => {
+    document.body.classList.add("has-bottom-nav");
+    return () => {
+      document.body.classList.remove("has-bottom-nav");
+    };
+  }, []);
   const handleLogout = async () => {
     try {
       const queryLogout = graphql(`
@@ -150,275 +215,323 @@ const Navigation = () => {
       console.warn(error);
     }
   };
-  const renderThemeChanger = () => {
+  // Nút đổi theme. Trên mobile (<lg) nó ẩn khỏi TopNav và nằm trong
+  // MobileNav (drawer) thay vì chiếm hàng thứ hai của header.
+  const renderThemeChanger = (className?: string) => {
     if (!mounted) return null;
 
     if (theme === "dark") {
       return (
-        <button
-          className="w-11 h-11 items-center justify-center flex text-2xl border border-gray-300 dark:border-zinc-600 rounded-full"
-          onClick={() => setTheme("light")}>
-          <BsSun className="p-0.5" />
-        </button>
+        <IconButton
+          label={t("nav.switchToLight")}
+          tooltip={t("nav.switchToLight")}
+          icon={<BsSun />}
+          variant="ghost"
+          size="lg"
+          className={className}
+          onClick={() => setTheme("light")}
+        />
       );
     } else {
       return (
-        <button
-          className="w-11 h-11 items-center justify-center flex text-2xl border border-gray-300 dark:border-zinc-600 rounded-full"
-          onClick={() => setTheme("dark")}>
-          <BsMoon className="p-0.5" />
-        </button>
+        <IconButton
+          label={t("nav.switchToDark")}
+          tooltip={t("nav.switchToDark")}
+          icon={<BsMoon />}
+          variant="ghost"
+          size="lg"
+          className={className}
+          onClick={() => setTheme("dark")}
+        />
       );
     }
   };
 
+  const hasNotifications = listNotion && listNotion.length > 0;
+
   return (
     <>
-      <header className="px-2 md:px-4 lg:px-6 dark:bg-black bg-white sm:border-b border-gray-300 dark:border-zinc-800 mx-auto sticky top-0 w-full z-40">
-        {/* Desktop menu */}
-        <div className="flex gap-4 2xl:container mx-auto justify-between items-center py-2">
-          {/* Menu open button */}
-          <div className="lg:hidden">
-            <button
+    <header className="bg-surface sm:border-b border-line sticky top-0 w-full z-40">
+      {/* Desktop: nội dung header căn giữa theo đúng khung 1560px của
+          feed (chỉ có tác dụng khi viewport > 1560px; dưới đó Stack
+          rộng 100% như cũ nên mobile không đổi). */}
+      <Stack width="100%" maxWidth={1560} className="mx-auto">
+      <TopNav
+        heading={
+          <HStack gap={2} vAlign="center">
+            {/* Menu open button */}
+            <IconButton
+              className="lg:hidden"
+              label={t("nav.openMenu")}
+              icon={<VscListSelection />}
+              variant="ghost"
+              size="lg"
               onClick={openMobileMenu}
-              className="whitespace-nowrap text-xl md:text-xl p-2.5 flex items-center justify-center rounded-full border dark:border-zinc-600 border-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-900 dark:text-white">
-              <VscListSelection />
-            </button>
-          </div>
-          {/* Logo & search */}
-          <div className="flex gap-2 items-center justify-start mr-20">
-            {/* Logo */}
-            <Link href="/" className="relative flex gap-3 items-center ml-24">
-              {theme === "dark" ? (
-                <Image
-                  width="110"
-                  height="55"
-                  alt="Pham Thanh Nam"
-                  src="/favicon/logo.png"
-                />
-              ) : (
-                <Image
-                  width="110"
-                  height="55"
-                  alt="Pham Thanh Nam"
-                  src="/favicon/logo.png"
+            />
+            {/* Logo mới (2026-11-14): monogram "P" 32px + wordmark chỉ
+                từ lg (mobile chỉ mark để header gọn 1 hàng). */}
+            <Link href="/" className="relative flex gap-3 items-center">
+              <Logo
+                size={32}
+                showWordmark
+                wordmarkClassName="hidden whitespace-nowrap text-sm font-bold tracking-widest lg:inline"
+              />
+            </Link>
+          </HStack>
+        }
+        startContent={
+          <HStack gap={2} vAlign="center">
+            {/* Search — gõ rồi debounce 400ms sẽ sang /search?q=... */}
+            <HStack className="hidden md:flex" vAlign="center">
+              <TextInput
+                label={t("nav.searchPlaceholder")}
+                isLabelHidden
+                type="search"
+                enterKeyHint="search"
+                startIcon="search"
+                value={searchInput}
+                onChange={(value) => setSearchInput(value)}
+                onEnter={() => {
+                  const value = searchInput.trim();
+                  if (value && value !== searchQuery) {
+                    router.push({
+                      pathname: "/search",
+                      query: { q: value },
+                    });
+                  }
+                }}
+                placeholder={t("nav.searchPlaceholder")}
+                containerClassName="w-40 lg:w-56 xl:w-72"
+              />
+            </HStack>
+          </HStack>
+        }
+        centerContent={
+          /* Desktop: 10 icon nav căn giữa thật sự (TopNav 3 vùng) thay
+             vì dồn trái sau ô search — thẳng trục với cột feed giữa.
+             Dưới lg vẫn ẩn (hidden lg:flex) và nằm trong MobileNav. */
+          <HStack gap={1} vAlign="center" className="hidden lg:flex">
+            {topCenterNavlinks.map((navlink, index) => (
+              <TopNavItem
+                key={index}
+                href={navlink.href}
+                label={t(navlink.label)}
+                icon={navlink.icon}
+                isIconOnly
+                isSelected={isNavActive(navlink.href, router.pathname)}
+              />
+            ))}
+          </HStack>
+        }
+        endContent={
+          <HStack gap={1} vAlign="center">
+            {/* theme button — ẩn trên mobile, có trong MobileNav */}
+            {renderThemeChanger("hidden lg:inline-flex")}
+
+            {/* P5b — chuyển ngôn ngữ VI/EN, ẩn trên mobile, có trong MobileNav */}
+            <LanguageSwitcher className="hidden lg:flex" />
+
+            {/* notifications dropdown */}
+            <DropdownMenu
+              isMenuOpen={isNotion}
+              onOpenChange={setIsNotion}
+              menuWidth={320}
+              placement="below"
+              alignment="end"
+              renderTrigger={(triggerProps) => (
+                <IconButton
+                  {...triggerProps}
+                  label={t("notifications.title")}
+                  tooltip={t("notifications.title")}
+                  variant="ghost"
+                  size="lg"
+                  icon={
+                    <HStack className="relative" vAlign="center">
+                      <MdOutlineNotificationsNone className="h-9 w-9" />
+                      {numberNotion && numberNotion > 0 ? (
+                        <Badge
+                          label={numberNotion}
+                          variant="error"
+                          className="absolute -top-1 -right-1 pointer-events-none"
+                        />
+                      ) : null}
+                    </HStack>
+                  }
                 />
               )}
-            </Link>
-          </div>
-
-          {/* Navigations */}
-          <nav className="hidden lg:flex lg:flex-1 lg:justify-start lg:items-center space-x-4 ml-32">
-            {topCenterNavlinks.map((navlink, index) => (
-              <Link
-                href={navlink.href}
-                key={index}
-                className={`${
-                  navlink.href === router.pathname
-                    ? "text-2xl font-semibold dark:bg-zinc-800 bg-gray-100 py-3 px-7 rounded-lg"
-                    : "text-2xl dark:text-zinc-400 py-3 px-8 text-gray-600 dark:hover:bg-zinc-900 hover:bg-gray-100 rounded-lg dark:hover:text-white hover:text-gray-800"
-                } `}
-                title={navlink.label}>
-                {navlink.icon}
-              </Link>
-            ))}
-          </nav>
-          {/* end of Navigations */}
-          {/* right side */}
-          <div className="flex items-center gap-1.5 md:gap-2.5">
-            {/* theme button */}
-            {renderThemeChanger()}
-
-            <div ref={menuNotionRef} className="relative">
-              <div className="relative">
-                <button
-                  onClick={() => setIsNotion(!isNotion)}
-                  className="whitespace-nowrap relative h-11 w-11 border border-gray-300 dark:border-zinc-600 dark:hover:bg-zinc-900 hover:bg-gray-100 rounded-full text-lg focus:outline-none focus:ring-offset-0">
-                  <MdOutlineNotificationsNone className="h-9 w-9" />
-
-                  {numberNotion && numberNotion > 0 ? (
-                    <div className="absolute top-0 right-0 px-1 bg-red-500 rounded-full text-white text-sm">
-                      {numberNotion}
-                    </div>
-                  ) : null}
-                </button>
-              </div>
-              {/* dropdowns */}
-              <div
-                className={`${
-                  isNotion
-                    ? "opacity-100 translate-y-0 z-50"
-                    : "opacity-0 translate-y-4 pointer-events-none"
-                }  transform transition-all divide-y divide-gray-300 dark:divide-zinc-600 duration-200 absolute z-50 right-4 mt-2 p-1 w-64 rounded-md shadow-lg overflow-hidden dark:bg-black bg-white ring-1 ring-gray-100 dark:ring-zinc-600 focus:outline-none`}>
-                <div className="py-1">
-                  {listNotion?.map((item) => (
-                    <div
-                      key={item.id}
-                      onClick={() => readNotion(item)}
-                      className={`flex items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg ${
-                        item.isRead ? "text-gray-400" : "text-gray-700"
-                      }`}>
-                      <p className="flex items-center gap-2">
-                        <span>{item.notification.content}</span>
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+              header={
+                hasNotifications ? undefined : (
+                  <Text color="secondary">{t("nav.noNotifications")}</Text>
+                )
+              }
+              items={
+                hasNotifications
+                  ? listNotion!.map((item) => ({
+                      id: item.id,
+                      label: (
+                        <Text
+                          color={item.read ? "secondary" : "primary"}>
+                          {notificationText(item, locale)}
+                        </Text>
+                      ),
+                      description: item.createdAt
+                        ? moment(item.createdAt).fromNow()
+                        : undefined,
+                      icon: (
+                        <Avatar
+                          src={
+                            item.actor?.avatar || "/images/user-avatar.png"
+                          }
+                          name={
+                            item.actor?.fullName ||
+                            t("notifications.userFallback")
+                          }
+                          size={36}
+                          tooltip={false}
+                        />
+                      ),
+                      endContent: !item.read ? (
+                        <StatusDot
+                          variant="accent"
+                          label={t("notifications.unread")}
+                        />
+                      ) : undefined,
+                      onClick: () => readNotion(item),
+                    }))
+                  : []
+              }
+              footer={
+                <Link
+                  href="/notification"
+                  onClick={() => setIsNotion(false)}
+                  className="block rounded-lg p-3 text-center text-sm text-accent-bright hover:bg-paper">
+                  {t("nav.viewAllNotifications")}
+                </Link>
+              }
+            />
 
             {/* profile options */}
-            <div ref={menuRef} className="relative">
-              <div className="relative">
-                <button
-                  onClick={toggleProfileMenu}
-                  className="whitespace-nowrap relative h-11 w-11 border border-gray-300 dark:border-zinc-600 dark:hover:bg-zinc-900 hover:bg-gray-100 rounded-full text-lg focus:outline-none focus:ring-offset-0">
-                  {user?.avatar ? (
-                    <Image
-                      src={user?.avatar || "/images/user-avatar.png"}
-                      alt={user?.fullName}
-                      layout="fill"
-                      objectFit="cover"
-                      className="h-full w-full rounded-full"
-                    />
-                  ) : (
-                    <div className="h-full w-full rounded-full bg-gray-200 dark:bg-zinc-800"></div>
-                  )}
-                  <div className="absolute w-3 h-3 rounded-full bg-green-400 ring-2 ring-white dark:ring-black bottom-0"></div>
-                </button>
-              </div>
-              {/* dropdowns */}
-              <div
-                className={`${
-                  isProfileMenuOpen
-                    ? "opacity-100 translate-y-0 z-50"
-                    : "opacity-0 translate-y-4 pointer-events-none"
-                }  transform transition-all divide-y divide-gray-300 dark:divide-zinc-600 duration-200 absolute z-50 right-4 mt-2 p-1 w-64 rounded-md shadow-lg overflow-hidden dark:bg-black bg-white ring-1 ring-gray-100 dark:ring-zinc-600 focus:outline-none`}>
+            <DropdownMenu
+              isMenuOpen={isProfileMenuOpen}
+              onOpenChange={setIsProfileMenuOpen}
+              menuWidth={256}
+              placement="below"
+              alignment="end"
+              renderTrigger={(triggerProps) => (
+                <Avatar
+                  {...triggerProps}
+                  src={user?.avatar}
+                  fallbackSrc="/images/user-avatar.png"
+                  name={user?.fullName}
+                  size={40}
+                  tooltip={false}
+                  status={<AvatarStatusDot />}
+                />
+              )}
+              header={
                 <Link
                   href={`/${user?.username}`}
                   onClick={closeProfileMenu}
-                  className="relative p-3 mb-1 rounded-lg flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-zinc-800 focus-within:ring-1 focus-within:ring-inset focus-within:ring-white">
-                  <div className="flex-shrink-0 relative w-11 h-11 rounded-full overflow-hidden">
-                    {user?.avatar ? (
-                      <Image
-                        src={user?.avatar || "/images/user-avatar.png"}
-                        alt={user?.fullName}
-                        layout="fill"
-                        objectFit="cover"
-                      />
-                    ) : (
-                      <div className="h-full w-full bg-gray-200 dark:bg-zinc-800"></div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="truncate text-sm">{user?.fullName}</p>
-                    <p className="text-sm text-gray-400 dark:text-zinc-400 truncate">
-                      See profile
-                    </p>
-                  </div>
+                  className="block rounded-lg p-2 hover:bg-paper">
+                  <HStack gap={2} vAlign="center">
+                    <Avatar
+                      src={user?.avatar}
+                      fallbackSrc="/images/user-avatar.png"
+                      name={user?.fullName}
+                      size={48}
+                      tooltip={false}
+                    />
+                    <Stack gap={0}>
+                      <Text>{user?.fullName}</Text>
+                      <Text color="secondary" size="sm">
+                        {t("nav.seeProfile")}
+                      </Text>
+                    </Stack>
+                  </HStack>
                 </Link>
-                <div className="py-1">
-                  <Link
-                    href="/friends"
-                    onClick={closeProfileMenu}
-                    className="flex items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg">
-                    <p className="flex items-center gap-2">
-                      <FiUsers />
-                      <span>Friends</span>
-                    </p>
-                    <BsChevronRight />
-                  </Link>
-                  <Link
-                    href="/messenger"
-                    onClick={closeProfileMenu}
-                    className="flex items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg">
-                    <p className="flex items-center gap-2">
-                      <BsChatSquare />
-                      <span>Messenger</span>
-                    </p>
-                    <BsChevronRight />
-                  </Link>
-                  {user.role === "admin" && (
-                    <Link
-                      href={`/dashboard`}
-                      onClick={closeProfileMenu}
-                      className="flex items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg">
-                      <p className="flex items-center gap-2">
-                        <BsGear />
-                        <span>Dashboard</span>
-                      </p>
-                      <BsChevronRight />
-                    </Link>
-                  )}
-                </div>
-                <div>
-                  <button
-                    onClick={() => {
-                      handleLogout();
-                    }}
-                    className="mt-1 flex w-full items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg">
-                    <p className="flex items-center gap-2">
-                      <FiLogOut />
-                      <span>Log out</span>
-                    </p>
-                    <BsChevronRight />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        {/* Mobile menu */}
-        <div
-          className={`${
-            isMobileMenuOpen
-              ? "opacity-100 translate-x-0"
-              : "opacity-0 pointer-events-none -translate-x-10"
-          } duration-300 z-50 absolute top-0 inset-x-0 p-2 transition transform lg:hidden`}>
-          <div className="rounded-lg shadow-lg dark:bg-black bg-white border dark:border-zinc-600 divide-y dark:divide-zinc-600">
-            <div className="pt-5 pb-6 px-5">
-              <div className="flex items-center justify-between">
-                <Link href="/" className="relative flex gap-3 items-center">
-                  <Image
-                    src="/favicon/logo.png"
-                    width="110"
-                    height="55"
-                    alt="Pham Thanh Nam"
-                  />
-                </Link>
-                {/* close mobile menu button */}
-                <div className="-mr-0.5">
-                  <button
-                    onClick={closeMobileMenu}
-                    className="whitespace-nowrap text-xl md:text-xl p-3 flex gap-1.5 items-center justify-between rounded-full border dark:border-zinc-600 hover:bg-gray-100 dark:hover:bg-zinc-900 bg-transparent dark:hover:bg-opacity-90 dark:text-white">
-                    <BsX />
-                  </button>
-                </div>
-              </div>
-              <div className="mt-6">
-                <nav className="grid gap-y-1">
-                  {topCenterNavlinks.map((navlink) => (
-                    <Link
-                      href={navlink.href}
-                      key={navlink.label}
-                      className={`${
-                        router.pathname === navlink.href
-                          ? "bg-gray-100 dark:bg-zinc-800"
-                          : ""
-                      } flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800`}>
-                      <p className="flex items-center gap-6 text-2xl">
-                        {navlink.icon}
-                        <span className="text-base">{navlink.label}</span>
-                      </p>
-                      <BsChevronRight />
-                    </Link>
-                  ))}
-                </nav>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+              }
+              items={[
+                {
+                  id: "friends",
+                  label: t("nav.friends"),
+                  icon: <FiUsers />,
+                  href: "/friends",
+                  endContent: <BsChevronRight />,
+                },
+                {
+                  id: "messenger",
+                  label: t("nav.messenger"),
+                  icon: <BsChatSquare />,
+                  href: "/messenger",
+                  endContent: <BsChevronRight />,
+                },
+                {
+                  id: "settings",
+                  label: t("nav.settings"),
+                  icon: <BsGear />,
+                  href: "/settings",
+                  endContent: <BsChevronRight />,
+                },
+                ...(user.role === "admin"
+                  ? [
+                      {
+                        id: "dashboard",
+                        label: t("nav.dashboard"),
+                        icon: <BsGear />,
+                        href: "/dashboard",
+                        endContent: <BsChevronRight />,
+                      },
+                    ]
+                  : []),
+                { type: "divider" as const },
+                {
+                  id: "logout",
+                  label: t("nav.logOut"),
+                  icon: <FiLogOut />,
+                  variant: "destructive" as const,
+                  endContent: <BsChevronRight />,
+                  onClick: () => {
+                    void handleLogout();
+                  },
+                },
+              ]}
+            />
+          </HStack>
+        }
+      />
+      </Stack>
+      {/* Mobile menu */}
+      <MobileNav
+        isOpen={isMobileMenuOpen}
+        onOpenChange={setIsMobileMenuOpen}
+        side="start"
+        header={
+          <Link href="/" className="relative flex gap-3 items-center">
+            <Logo size={32} showWordmark />
+          </Link>
+        }>
+        <SideNavSection title={t("nav.navigation")} isHeaderHidden>
+          {topCenterNavlinks.map((navlink) => (
+            <SideNavItem
+              key={navlink.label}
+              label={t(navlink.label)}
+              icon={navlink.icon}
+              href={navlink.href}
+              isSelected={isNavActive(navlink.href, router.pathname)}
+              onClick={closeMobileMenu}
+            />
+          ))}
+        </SideNavSection>
+        {/* Hàng 2 của header trên mobile (theme + ngôn ngữ) gập vào đây. */}
+        <HStack gap={3} vAlign="center" className="px-4 py-3">
+          {renderThemeChanger()}
+          <LanguageSwitcher />
+        </HStack>
+      </MobileNav>
+    </header>
+    {/* Bottom nav pill nổi (mobile, dưới lg) — cùng điều kiện hiển thị
+        với top nav: chỉ các trang render Navigation mới có nó. */}
+    <BottomNav unreadCount={numberNotion} />
     </>
   );
 };

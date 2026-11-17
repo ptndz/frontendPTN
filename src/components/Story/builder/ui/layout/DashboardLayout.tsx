@@ -1,0 +1,136 @@
+import { HelpCircle, LayoutGrid, Sparkles, X } from 'lucide-react';
+import React from 'react';
+import { cn } from '../../utils/cn';
+
+interface DashboardLayoutProps {
+  children: React.ReactNode;
+  activeTab?: 'stories' | 'builder' | 'settings';
+  /** MXH: nut dong (vd dong modal builder tren MXH). Khong co -> khong hien. */
+  onClose?: () => void;
+}
+
+export function DashboardLayout({ children, activeTab = 'stories', onClose }: DashboardLayoutProps) {
+  return (
+    <div className="min-h-screen bg-paper text-ink">
+      {/* Floating Navigation Bar */}
+      <style>{`
+        @keyframes navSlideDown {
+          from { opacity: 0; transform: translateY(-20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes logoPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.3); }
+          50% { box-shadow: 0 0 20px 4px rgba(59, 130, 246, 0.15); }
+        }
+      `}</style>
+      <nav
+        className="fixed top-4 left-4 right-4 z-50 bg-paper/80 backdrop-blur-xl border border-line/50 rounded-2xl shadow-2xl shadow-black/20"
+        style={{ animation: 'navSlideDown 0.5s ease-out' }}
+        role="navigation"
+        aria-label="Điều hướng chính"
+      >
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16 sm:h-20">
+          {/* Logo */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-accent rounded-xl flex items-center justify-center shadow-sm" style={{ animation: 'logoPulse 3s ease-in-out infinite' }}>
+              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-accent-ink" aria-hidden="true" />
+            </div>
+            <div className="hidden sm:block">
+              <h1 className="text-xl font-semibold font-heading text-ink">Story Builder</h1>
+              <p className="text-xs text-muted">Quản lý bản tin</p>
+            </div>
+          </div>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-2">
+            <NavButton
+              icon={<LayoutGrid className="w-5 h-5" />}
+              label="Stories"
+              isActive={activeTab === 'stories'}
+  
+            />
+          </div>
+
+          {/* Help Button */}
+          <button
+            type="button"
+            className="p-2 sm:p-3 rounded-xl bg-surface/50 hover:bg-surface border border-line/50 hover:border-line transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent active:scale-95"
+            aria-label="Help and documentation"
+          >
+            <HelpCircle className="w-5 h-5 text-muted hover:text-ink transition-colors" aria-hidden="true" />
+          </button>
+          {/* MXH: dong trinh thiet ke */}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 sm:p-3 rounded-xl bg-surface/50 hover:bg-surface border border-line/50 hover:border-line transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent active:scale-95"
+              aria-label="Đóng trình thiết kế"
+              title="Đóng trình thiết kế"
+            >
+              <X className="w-5 h-5 text-muted hover:text-ink transition-colors" aria-hidden="true" />
+            </button>
+          )}
+        </div>
+
+        {/* Mobile Navigation */}
+        <div className="md:hidden border-t border-line/50 px-4 py-2 flex items-center gap-2">
+          <NavButton
+            icon={<LayoutGrid className="w-5 h-5" />}
+            label="Stories"
+            isActive={activeTab === 'stories'}
+
+            compact
+          />
+        </div>
+      </nav>
+
+      {/* Main Content Area with proper spacing for fixed nav */}
+      <main className="pt-24 sm:pt-28 px-4 sm:px-6 lg:px-8 pb-8">
+        <div className="max-w-7xl mx-auto">{children}</div>
+      </main>
+    </div>
+  );
+}
+
+interface NavButtonProps {
+  icon: React.ReactNode;
+  label: string;
+  isActive?: boolean;
+  href?: string;
+  onClick?: () => void;
+  compact?: boolean;
+}
+
+function NavButton({ icon, label, isActive, href, onClick, compact }: NavButtonProps) {
+  const baseClasses = cn(
+    'flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 cursor-pointer',
+    'font-medium text-sm',
+    'focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-paper',
+    isActive
+      ? 'bg-accent text-accent-ink shadow-lg'
+      : 'text-muted hover:text-ink hover:bg-surface/50',
+    compact && 'flex-1 justify-center'
+  );
+
+  const content = (
+    <>
+      <span aria-hidden="true">{icon}</span>
+      <span className={cn(compact && 'text-xs')}>{label}</span>
+    </>
+  );
+
+  if (href) {
+    return (
+      <a href={href} className={baseClasses}>
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <button type="button" onClick={onClick} className={baseClasses}>
+      {content}
+    </button>
+  );
+}

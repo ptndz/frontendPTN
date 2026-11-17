@@ -1,8 +1,6 @@
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
 
-import Modal from "react-responsive-modal";
-import "react-responsive-modal/styles.css";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -14,6 +12,13 @@ import {
 } from "../../plugins/graphql.plugin";
 import { queryUpdateUser } from "../../graphql/user";
 import { useForm } from "react-hook-form";
+import { Button } from "@astryxdesign/core/Button";
+import { Center } from "@astryxdesign/core/Center";
+import { Dialog, DialogHeader } from "@astryxdesign/core/Dialog";
+import { HStack } from "@astryxdesign/core/HStack";
+import { Stack } from "@astryxdesign/core/Stack";
+import { Text } from "@astryxdesign/core/Text";
+import { useI18n } from "../../i18n/I18nProvider";
 
 interface IProps {
   data: User;
@@ -35,6 +40,7 @@ const ProfileModal: React.FC<IProps> = ({
   const [coverImg, setCoverImg] = useState<File>();
 
   const { register, handleSubmit } = useForm();
+  const { t } = useI18n();
 
   const handleProfileImg = (file: File) => {
     setProfileImg(file);
@@ -76,61 +82,60 @@ const ProfileModal: React.FC<IProps> = ({
     });
     if (graphQLClientErrorCheck(res)) {
       setUpdateUserData(true);
-      toast("🦄 Profile updated!");
+      toast(t("profile.updated"));
     }
   };
   return (
     <>
-      <Modal
-        open={open}
-        onClose={() => setOpenProfileModal(false)}
-        center
-        classNames={{
-          modal: "customModal",
-        }}>
-        <div className="bg-white dark:bg-zinc-900 px-7 py-3 shadow-xl text-gray-800">
-          <div className="flex justify-between items-center border-b-2 py-3 border-gray-500">
-            <h4 className="text-lg font-bold dark:text-white">Edit profile</h4>
-          </div>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="flex justify-between items-center pt-5">
-              <h4 className="text-lg font-bold dark:text-white">
-                Profile Picture
-              </h4>
-              <div>
-                <label htmlFor="files1">
-                  <span className="text-lg text-blue-600 font-bold hover:bg-gray-300 px-3 py-1 rounded-md cursor-pointer">
-                    Update
-                  </span>
-                </label>
-                <input
-                  type="file"
-                  name="file"
-                  id="files1"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const files = e.target.files;
-                    if (files) handleProfileImg(files[0]);
-                  }}
-                />
-              </div>
-            </div>
-            <div className="flex justify-center">
+      <Dialog
+        isOpen={open}
+        onOpenChange={(isOpen) => setOpenProfileModal(isOpen)}
+        purpose="form"
+        width={560}>
+        <DialogHeader
+          title={t("profile.editProfile")}
+          onOpenChange={(isOpen) => setOpenProfileModal(isOpen)}
+        />
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <Stack gap={4} padding={4}>
+            <HStack justify="between" vAlign="center">
+              <Text type="large" weight="bold">
+                {t("profile.profilePicture")}
+              </Text>
+              <label htmlFor="files1">
+                <Text type="large" weight="bold" color="accent">
+                  {t("profile.update")}
+                </Text>
+              </label>
+              <input
+                type="file"
+                name="file"
+                id="files1"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const files = e.target.files;
+                  if (files) handleProfileImg(files[0]);
+                }}
+              />
+            </HStack>
+            <Center axis="horizontal">
               <Image
-                className="object-cover rounded-full border-2 bg-no-repeat"
+                className="object-cover rounded-full border-2 border-line bg-no-repeat"
                 src={preProfileImg || data.avatar || "/images/user-avatar.png"}
-                alt="profile image"
+                alt={t("profile.imageAlt")}
                 width="120"
                 height="120"
               />
-            </div>
-            <div className="flex justify-between items-center py-5">
-              <h4 className="text-lg font-bold dark:text-white">Cover Photo</h4>
+            </Center>
+            <HStack justify="between" vAlign="center">
+              <Text type="large" weight="bold">
+                {t("profile.coverPhoto")}
+              </Text>
               <label htmlFor="files2">
-                <span className="text-lg text-blue-600 font-bold hover:bg-gray-300 px-3 py-1 rounded-md cursor-pointer ">
-                  Update
-                </span>
+                <Text type="large" weight="bold" color="accent">
+                  {t("profile.update")}
+                </Text>
               </label>
               <input
                 type="file"
@@ -143,51 +148,49 @@ const ProfileModal: React.FC<IProps> = ({
                   if (files) handleCoverImg(files[0]);
                 }}
               />
-            </div>
+            </HStack>
 
-            <div className="flex justify-center">
+            <Center axis="horizontal">
               <Image
                 className="object-cover"
                 src={
                   preCoverImg || data.coverImage || "/images/user-avatar.png"
                 }
-                alt="profile image"
+                alt={t("profile.imageAlt")}
                 width="500"
                 height="200"
               />
-            </div>
-            <div className="flex flex-col space-y-1 py-6 px-2">
-              <div className="text-lg font-medium dark:text-white">
-                Change First Name:
-              </div>
+            </Center>
+            <Stack gap={1}>
+              <Text type="large" weight="medium">
+                {t("profile.changeFirstName")}
+              </Text>
               <input
                 placeholder={data.firstName}
                 defaultValue={data.firstName}
-                className="w-full h-10  focus:outline-none dark:bg-transparent rounded-lg dark:text-white"
+                className="field"
                 type="text"
                 {...register("firstName")}
               />
-            </div>
-            <div className="flex flex-col space-y-1 py-6 px-2">
-              <div className="text-lg font-medium dark:text-white">
-                Change Last Name:
-              </div>
+            </Stack>
+            <Stack gap={1}>
+              <Text type="large" weight="medium">
+                {t("profile.changeLastName")}
+              </Text>
               <input
                 placeholder={data.lastName}
                 defaultValue={data.lastName}
-                className="w-full h-10  focus:outline-none dark:bg-transparent rounded-lg dark:text-white"
+                className="field"
                 type="text"
                 {...register("lastName")}
               />
-            </div>
-            <div className="mt-3 flex justify-end space-x-3 pb-5">
-              <button className="px-8 py-2.5 bg-black text-gray-200 dark:hover:bg-opacity-50 rounded-md">
-                Update
-              </button>
-            </div>
-          </form>
-        </div>
-      </Modal>
+            </Stack>
+            <HStack justify="end">
+              <Button label={t("profile.update")} type="submit" variant="primary" />
+            </HStack>
+          </Stack>
+        </form>
+      </Dialog>
       <ToastContainer />
     </>
   );

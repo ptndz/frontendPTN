@@ -1,3 +1,15 @@
+/* Reaction picker — Like.tsx (comments) + SinglePost.tsx (posts) share this file.
+   Animation language (2026-11-14, like/react effect redo):
+   - Entrance: staggered spring pop-in (icons bounce in one after another).
+   - Toolbox: fades + scales in from the Like button (transform/opacity only).
+   - Exit: quick ease-out shrink/fade; `clip`/`visibility` are delayed so the
+     exit animation plays instead of cutting instantly.
+   - Hover on one reaction: spring grow + soft drop-shadow + legend rises in.
+   - Press feedback (`.like-pop` / `.like-float` / `.count-pop`) is driven by
+     React state in Like.tsx / SinglePost.tsx — see those files.
+   - Only `transform` / `opacity` / `filter` are animated (no layout thrash).
+   - `prefers-reduced-motion` disables the motion (elements still appear). */
+
 .text-desc,
 [class*="reaction-"],
 .field-reactions,
@@ -26,6 +38,9 @@
   width: 100%;
 }
 
+/* The 6 reaction icons. Hidden state: tiny + transparent. The `clip` change
+   on exit is delayed 0.22s so the shrink/fade plays before the icon is
+   clipped away; on enter the clip flips immediately (see the hover rule). */
 [class*="reaction-"] {
   border: none;
   background-image: url(/images/facebook-reactions.png);
@@ -39,9 +54,12 @@
   top: -28;
   transform-origin: 50% 100%;
   transform: scale(0.1);
-  transition: all 0.3s;
+  transition:
+    transform 0.22s ease-out,
+    opacity 0.15s ease-out,
+    clip 0s 0.22s;
   outline: none;
-  will-change: transform;
+  will-change: transform, opacity;
   opacity: 0;
 }
 
@@ -63,7 +81,8 @@
 }
 
 .field-reactions:focus ~ .label-reactions {
-  border-color: rgba(88, 144, 255, 0.3);
+  /* Mono: accent at 30% (was a hardcoded Facebook blue). */
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 .field-reactions:checked:focus ~ .label-reactions {
@@ -71,7 +90,7 @@
 }
 
 .field-reactions:checked:focus ~ .text-desc {
-  background: red;
+  background: var(--danger);
 }
 
 .label-reactions {
@@ -85,10 +104,17 @@
   cursor: pointer;
 }
 
+/* Toolbox (the white pill behind the icons). Grows in from the Like button
+   (scale 0.92 -> 1, origin bottom-center) + fades; on exit it shrinks/fades
+   and only then becomes hidden (`visibility` delayed 0.22s). Soft mono
+   shadow (was a hard 1px ring + 2px shadow). */
 .toolbox {
-  background: #fff;
+  background: var(--surface);
+  color: var(--ink);
   height: 52px;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 2px 2px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 8px 24px rgba(0, 0, 0, 0.1);
   width: 300px;
   border-radius: 40px;
   top: -30px;
@@ -96,16 +122,21 @@
   position: absolute;
   visibility: hidden;
   opacity: 0;
-  transition: opacity 0.15s;
+  transform: scale(0.92);
+  transform-origin: 50% 100%;
+  transition:
+    opacity 0.15s ease-out,
+    transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+    visibility 0s 0.22s;
 }
 
 .legend-reaction {
-  background: rgba(0, 0, 0, 0.75);
+  background: var(--ink);
   border-radius: 10px;
   box-sizing: border-box;
-  color: #fff;
+  color: var(--paper);
   display: inline-block;
-  font-size: 11px;
+  font-size: 12px;
   text-overflow: ellipsis;
   font-weight: bold;
   line-height: 20px;
@@ -113,41 +144,52 @@
   opacity: 0;
   overflow: hidden;
   padding: 0 6px;
-  transition: opacity 50ms ease;
+  transition:
+    opacity 0.15s ease-out,
+    transform 0.15s ease-out;
   left: 50%;
   position: absolute;
   text-align: center;
   top: -28px;
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateY(4px);
 }
 
+/* --- Entrance: staggered spring pop-in (one icon after another). --- */
 .box:hover [class*="reaction-"] {
   transform: scale(0.8) translateY(-40px);
+  transition:
+    transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.18s ease-out,
+    clip 0s 0s;
 }
 .box:hover [class*="reaction-"]:hover,
 .box:hover [class*="reaction-"]:focus {
-  transition: all 0.2s ease-in;
-  transform: scale(1) translateY(-35px);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform: scale(1.15) translateY(-38px);
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.18));
 }
 .box:hover [class*="reaction-"]:hover .legend-reaction,
 .box:hover [class*="reaction-"]:focus .legend-reaction {
   opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 .box:hover .toolbox {
   opacity: 1;
-}
-
-.box:hover .toolbox {
+  transform: scale(1);
   visibility: visible;
+  transition:
+    opacity 0.15s ease-out,
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+    visibility 0s 0s;
 }
 
 .box:hover .reaction-love {
-  transition-delay: 0.03s;
+  transition-delay: 0.04s;
 }
 
 .box:hover .reaction-haha {
-  transition-delay: 0.09s;
+  transition-delay: 0.08s;
 }
 
 .box:hover .reaction-wow {
@@ -155,28 +197,40 @@
 }
 
 .box:hover .reaction-sad {
-  transition-delay: 0.15s;
+  transition-delay: 0.16s;
 }
 
 .box:hover .reaction-angry {
-  transition-delay: 0.18s;
+  transition-delay: 0.2s;
 }
 
+/* --- Keyboard path (checkbox checked): same spring entrance. --- */
 .field-reactions:checked ~ [class*="reaction-"] {
   transform: scale(0.8) translateY(-40px);
+  transition:
+    transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.18s ease-out,
+    clip 0s 0s;
 }
 .field-reactions:checked ~ [class*="reaction-"]:hover,
 .field-reactions:checked ~ [class*="reaction-"]:focus {
-  transition: all 0.2s ease-in;
-  transform: scale(1) translateY(-35px);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform: scale(1.15) translateY(-38px);
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.18));
 }
 .field-reactions:checked ~ [class*="reaction-"]:hover .legend-reaction,
 .field-reactions:checked ~ [class*="reaction-"]:focus .legend-reaction {
   opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 .field-reactions:checked ~ .toolbox {
   opacity: 1;
+  transform: scale(1);
+  transition:
+    opacity 0.15s ease-out,
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+    visibility 0s 0s;
 }
 
 .field-reactions:checked ~ .toolbox,
@@ -185,11 +239,11 @@
 }
 
 .field-reactions:checked ~ .reaction-love {
-  transition-delay: 0.03s;
+  transition-delay: 0.04s;
 }
 
 .field-reactions:checked ~ .reaction-haha {
-  transition-delay: 0.09s;
+  transition-delay: 0.08s;
 }
 
 .field-reactions:checked ~ .reaction-wow {
@@ -197,11 +251,20 @@
 }
 
 .field-reactions:checked ~ .reaction-sad {
-  transition-delay: 0.15s;
+  transition-delay: 0.16s;
 }
 
 .field-reactions:checked ~ .reaction-angry {
-  transition-delay: 0.18s;
+  transition-delay: 0.2s;
+}
+
+/* --- Selected reaction: a subtle ring so the current one is obvious
+   inside the open picker. (Class is set in Like.tsx / SinglePost.tsx.) --- */
+[class*="reaction-"].reaction-current {
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--ink);
 }
 
 .reaction-like {
@@ -232,4 +295,145 @@
 .reaction-angry {
   background-position: -240px 0;
   left: 250px;
+}
+
+/* --- Press feedback (driven by React state in Like.tsx / SinglePost.tsx).
+   `.like-action` is the relative anchor around the Like button;
+   `.like-pop` is added for ~400ms when a reaction is chosen;
+   `.like-float` is the chosen reaction's icon rising up and fading;
+   `.count-pop` is re-mounted (via React `key`) when the count changes. --- */
+.like-action {
+  position: relative;
+  display: inline-block;
+}
+
+/* Applied to the reaction icon itself (inside the Like button, a sibling of
+   the picker — never on an element that contains the picker, so the pop
+   never resets the picker checkbox). Keyed by the burst counter in React
+   so it restarts when the same reaction is picked twice fast. */
+.like-pop {
+  display: inline-block;
+  animation: like-pop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes like-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.28);
+  }
+  70% {
+    transform: scale(0.94);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.like-float {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 2px);
+  z-index: 12;
+  pointer-events: none;
+  opacity: 0;
+  animation: like-float 0.65s ease-out forwards;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.18));
+}
+
+@keyframes like-float {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(0) scale(0.5);
+  }
+  25% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-14px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-44px) scale(1);
+  }
+}
+
+.count-pop {
+  display: inline-block;
+  animation: count-pop 0.25s ease-out;
+}
+
+@keyframes count-pop {
+  0% {
+    opacity: 0.4;
+    transform: scale(0.92);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* --- Reduced motion: no animation, elements still appear instantly. --- */
+@media (prefers-reduced-motion: reduce) {
+  [class*="reaction-"],
+  .toolbox,
+  .legend-reaction,
+  .like-action,
+  .like-pop,
+  .like-float,
+  .count-pop {
+    transition: none !important;
+    animation: none !important;
+  }
+  .like-float {
+    display: none;
+  }
+}
+
+/* Mobile (<=640px): picker của Like trong bình luận (`.box` nằm trong
+   <button>, trigger ở ~176px từ mép trái viewport) mở sang trái thay vì
+   sang phải — toolbox 300px vẫn vừa trong viewport và đủ 6 reaction
+   (like..angry) đều nhìn thấy, kể cả reply lùi sâu hơn (ml-10).
+   Picker của bài viết (trigger ở mép trái card) giữ nguyên hướng mở
+   phải. Chỉ đổi vị trí, không đổi hành vi (hover/click/reactions).
+   2026-11-14 (Worker C): toàn bộ cụm picker bình luận dịch phải thêm
+   4px so với bản mobile-pass (toolbox right -24 -> -28, các icon dịch
+   cùng 4px để giữ thẳng hàng trong pill). Lý do: trên explore, cột bài
+   full-bleed (-mx-2) làm nút Like của bình luận nằm ở x=174 thay vì
+   ~176 như feed, nên mép trái toolbox chạm -2px (B=274 < 276 tối thiểu).
+   Dịch +4px -> toolbox 2..302 ở 375px, vẫn chừa 73px bên phải cho cả
+   reply lùi sâu (ml-10). */
+@media (max-width: 640px) {
+  button .box .toolbox {
+    left: auto;
+    right: -28px;
+  }
+  button .box .reaction-like {
+    left: auto;
+    right: 224px;
+  }
+  button .box .reaction-love {
+    left: auto;
+    right: 174px;
+  }
+  button .box .reaction-haha {
+    left: auto;
+    right: 124px;
+  }
+  button .box .reaction-wow {
+    left: auto;
+    right: 74px;
+  }
+  button .box .reaction-sad {
+    left: auto;
+    right: 24px;
+  }
+  button .box .reaction-angry {
+    left: auto;
+    right: -26px;
+  }
 }

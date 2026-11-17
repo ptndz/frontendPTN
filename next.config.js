@@ -11,8 +11,11 @@ const withSerwist = withSerwistInit({
 
 module.exports = withSerwist({
   reactStrictMode: true,
-  swcMinify: true,
   images: {
-    domains: ["localhost", "i.imgur.com", "mxhserver.test", "mxhclient.test"],
+    remotePatterns: [
+      { protocol: "http", hostname: "localhost" },
+      { protocol: "http", hostname: "100.111.68.103" },
+      { protocol: "https", hostname: "i.imgur.com" },
+    ],
   },
 });

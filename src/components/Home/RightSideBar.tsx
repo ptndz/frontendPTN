@@ -1,8 +1,6 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { FiChevronRight } from "react-icons/fi";
-import Image from "next/image";
-import Link from "next/link";
 import UserListSkeleton from "../Loaders/UserListSkeleton";
 
 import { graphql } from "../../gql";
@@ -12,6 +10,14 @@ import {
 } from "../../plugins/graphql.plugin";
 import { toast } from "react-toastify";
 import { useStoreUser } from "../../store/user";
+import { useI18n } from "../../i18n/I18nProvider";
+import { Card } from "@astryxdesign/core/Card";
+import { Divider } from "@astryxdesign/core/Divider";
+import { List } from "@astryxdesign/core/List";
+import { ListItem } from "@astryxdesign/core/List";
+import { Avatar } from "@astryxdesign/core/Avatar";
+import { Text } from "@astryxdesign/core/Text";
+import { VStack } from "@astryxdesign/core/VStack";
 
 interface IUser {
   fullName: string;
@@ -19,6 +25,7 @@ interface IUser {
   username: string;
 }
 const RightSideBar = () => {
+  const { t } = useI18n();
   const [users, setUsers] = useState<IUser[]>([]);
   const [loading, setLoading] = useState(false);
   const { user } = useStoreUser();
@@ -52,9 +59,13 @@ const RightSideBar = () => {
         }
         if (graphQLClientErrorCheck(res)) {
           if (res.getUsersYouMayKnow.users) {
-            const data = res.getUsersYouMayKnow.users.filter((userData) => {
-              return userData.id !== user.id;
-            });
+            // W6: users là Maybe<...>[] — lọc phần tử null. Dùng
+            // NonNullable thay vì `is IUser`: IUser cục bộ của file này
+            // không có field `id` nên không dùng làm type predicate được.
+            const data = res.getUsersYouMayKnow.users.filter(
+              (userData): userData is NonNullable<typeof userData> =>
+                userData != null && userData.id !== user.id
+            );
             setUsers(data);
           }
         }
@@ -67,33 +78,31 @@ const RightSideBar = () => {
     fetchData();
   }, [queryGetUsersYouMayKnow, user]);
   return (
-    <div>
-      <div className="bg-white dark:bg-black drop-shadow-sm p-3 rounded-lg">
-        <p className="mb-3">You may know</p>
-        <ul className="space-y-2">
-          {loading && <UserListSkeleton />}
-          {users.map((user) => (
-            <Link href={`${user.username}`} key={user.username} passHref>
-              <li className="dark:hover:bg-zinc-900 hover:bg-gray-200 p-2 rounded-md">
-                <span className="flex items-center cursor-pointer">
-                  <Image
-                    src={user.avatar || "/images/user-avatar.png"}
-                    width="40"
-                    height="40"
-                    alt={user.fullName}
-                    className="rounded-full"
-                  />
-                  <span className="ml-3 contact-users" title={user.fullName}>
-                    {user.fullName}
-                  </span>
-                  <FiChevronRight className="ml-auto" />
-                </span>
-              </li>
-            </Link>
+    <Card>
+      <VStack gap={3}>
+        <Text weight="semibold">{t("sidebar.youMayKnow")}</Text>
+        <Divider />
+        {loading && <UserListSkeleton />}
+        <List>
+          {users.map((suggestedUser) => (
+            <ListItem
+              key={suggestedUser.username}
+              href={`/${suggestedUser.username}`}
+              label={suggestedUser.fullName}
+              startContent={
+                <Avatar
+                  src={suggestedUser.avatar || "/images/user-avatar.png"}
+                  name={suggestedUser.fullName}
+                  size={40}
+                  tooltip={false}
+                />
+              }
+              endContent={<FiChevronRight />}
+            />
           ))}
-        </ul>
-      </div>
-    </div>
+        </List>
+      </VStack>
+    </Card>
   );
 };
 

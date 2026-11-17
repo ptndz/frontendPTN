@@ -4,12 +4,36 @@ import { Theme, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "nprogress/nprogress.css";
 import "../styles/globals.css";
+/* Mono theme CSS — imported here (the Custom App) on purpose:
+   Next.js Pages Router forbids global CSS imports from any other file, so
+   the `theme add`-generated CSS imports were moved here from
+   src/astryx-themes.ts (see the note there). */
+import "../themes/mono/mono.css";
+import "../themes/mono/mono.fonts.css";
 import "../styles/reaction.css";
 
 import Router from "next/router";
+import Link from "next/link";
 import type { AppProps } from "next/app";
 import type { ReactElement, ReactNode } from "react";
 import type { NextPage } from "next";
+
+/* Astryx theme provider (Pages Router adaptation of the App Router
+   providers.tsx from the core README): Theme + LinkProvider wrap the
+   whole app. The theme is the app's own Mono theme
+   (src/themes/mono, built + registered via `theme add`, default via
+   `theme use mono`); its `mode` follows the app's theme store, so the
+   Astryx dark mode and the Tailwind `.dark` class (set by
+   useThemeBootstrap from the same store) always switch together.
+   Pages Router note: _app.tsx imports the built theme JS + CSS directly
+   (paired in this file). src/astryx-themes.ts is the CLI-generated
+   registry — kept byte-pristine for `astryx doctor` and NOT imported:
+   importing it would pull its CSS imports into the bundle and break
+   `next build` ("Global CSS cannot be imported from files other than
+   your Custom <App>"). Do not re-route the theme through it. */
+import {Theme as AstryxTheme} from "@astryxdesign/core/theme";
+import {LinkProvider} from "@astryxdesign/core/Link";
+import {monoTheme} from "../themes/mono/mono.js";
 
 import {
   HydrationBoundary,
@@ -17,14 +41,16 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { DefaultSeo } from "next-seo";
+import { generateDefaultSeo } from "next-seo/pages";
 import "../plugins/axios.plugin";
 import SEO from "../../next-seo.config";
 import { useStoreTheme } from "../store/state";
-import { getCookie } from "cookies-next";
+import { getCookie } from "cookies-next/client";
 import { useOnlineHeartbeat } from "../hooks/useOnlineHeartbeat";
 import { usePushSubscription } from "../hooks/usePushSubscription";
 import { useThemeBootstrap } from "../hooks/useThemeBootstrap";
+import CallProvider from "../components/Messages/CallProvider";
+import { I18nProvider } from "../i18n/I18nProvider";
 import "../plugins/socket";
 
 export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
@@ -49,7 +75,10 @@ function MyApp({ Component, pageProps }: AppProps) {
   });
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <AstryxTheme theme={monoTheme} mode={theme === "dark" ? "dark" : "light"}>
+    <LinkProvider component={Link}>
+    <I18nProvider>
+      <QueryClientProvider client={queryClient}>
       <HydrationBoundary state={pageProps?.dehydratedState}>
         <ToastContainer
           position="top-right"
@@ -59,12 +88,16 @@ function MyApp({ Component, pageProps }: AppProps) {
           pauseOnHover={true}
           theme={theme ? (theme as Theme) : "light"}
         />
-        <DefaultSeo {...SEO} />
+        {generateDefaultSeo(SEO)}
         <Component {...pageProps} />
+        <CallProvider />
       </HydrationBoundary>
 
       <ReactQueryDevtools />
     </QueryClientProvider>
+    </I18nProvider>
+    </LinkProvider>
+    </AstryxTheme>
   );
 }
 export default MyApp;

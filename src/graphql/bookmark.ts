@@ -20,6 +20,8 @@ export const queryBookmarkPost = graphql(`
           createAt
           updateAt
           shares
+          likesCount
+          commentsCount
           images
           user {
             id

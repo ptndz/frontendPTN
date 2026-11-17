@@ -1,13 +1,16 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 
-import Modal from "react-responsive-modal";
-import "react-responsive-modal/styles.css";
 import { toast } from "react-toastify";
 import { ProfileUser } from "../../gql/graphql";
 import { graphQLClient, graphQLClientErrorCheck } from "../../plugins/graphql.plugin";
 import { queryUpdateProfile } from "../../graphql/user";
+import { Button } from "@astryxdesign/core/Button";
+import { Dialog, DialogHeader } from "@astryxdesign/core/Dialog";
+import { HStack } from "@astryxdesign/core/HStack";
+import { Stack } from "@astryxdesign/core/Stack";
+import { Text } from "@astryxdesign/core/Text";
+import { useI18n } from "../../i18n/I18nProvider";
 
 interface IProps {
   data: ProfileUser;
@@ -23,6 +26,7 @@ const AboutModal: React.FC<IProps> = ({
   setUpdateUserData,
 }) => {
   const { register, handleSubmit } = useForm();
+  const { t } = useI18n();
 
   const onSubmit = async (data: any) => {
     const res = await graphQLClient.request(queryUpdateProfile, {
@@ -34,78 +38,82 @@ const AboutModal: React.FC<IProps> = ({
     });
     if (graphQLClientErrorCheck(res)) {
       setUpdateUserData(true);
-      toast("Profile updated successfully");
+      toast(t("profile.aboutUpdated"));
       setOpenDetailsModal(false);
     }
   };
   return (
-    <Modal
-      open={openDetailsModal}
-      onClose={() => setOpenDetailsModal(false)}
-      center
-      classNames={{
-        modal: "customModal",
-      }}>
-      <div className="bg-white dark:bg-zinc-900 p-5 shadow-xl text-gray-800 md:w-[500px]">
-        <div className="flex justify-between items-center border-b-2 py-3 mb-5 border-gray-500">
-          <h4 className="text-lg font-bold dark:text-white">Edit about</h4>
-        </div>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <label className="dark:text-white">Educations</label>
-          <input
-            className="w-full h-12 mb-3 bg-transparent rounded-lg px-2 dark:text-white"
-            type="text"
-            {...register("education")}
-            defaultValue={data?.education}
-            placeholder={data?.education}
-          />
-          <label className="dark:text-white">Lives in </label>
-          <input
-            className="w-full h-12 mb-3 bg-transparent rounded-lg px-2 dark:text-white"
-            type="text"
-            {...register("city")}
-            defaultValue={data?.city}
-            placeholder={data?.city}
-          />
-          <label className="dark:text-white">From</label>
-          <input
-            className="w-full h-12 mb-3 bg-transparent rounded-lg px-2 dark:text-white"
-            type="text"
-            {...register("from")}
-            defaultValue={data?.from}
-            placeholder={data?.from}
-          />
-          <label className="dark:text-white">Workplace</label>
-          <input
-            className="w-full h-12 mb-3 bg-transparent rounded-lg px-2 dark:text-white"
-            type="text"
-            {...register("workplace")}
-            defaultValue={data?.workplace}
-            placeholder={data?.workplace}
-          />
-          <label className="dark:text-white">Relationship</label>
-          <select
-            id=""
-            className="w-full h-12 mb-3 dark:bg-zinc-900 rounded-lg dark:text-white px-3"
-            {...register("relationship")}
-            placeholder={data?.relationship}
-            defaultValue={data?.relationship}>
-            <option value="Single">Single</option>
-            <option value="In a relationship">In a relationship </option>
-            <option value="Engaged">Engaged </option>
-            <option value="Married">Married </option>
-          </select>
+    <Dialog
+      isOpen={openDetailsModal}
+      onOpenChange={(isOpen) => setOpenDetailsModal(isOpen)}
+      purpose="form"
+      width={500}>
+      <DialogHeader
+        title={t("profile.editAbout")}
+        onOpenChange={(isOpen) => setOpenDetailsModal(isOpen)}
+      />
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Stack gap={3} padding={4}>
+          <Stack gap={1}>
+            <Text>{t("profile.education")}</Text>
+            <input
+              className="field"
+              type="text"
+              {...register("education")}
+              defaultValue={data?.education}
+              placeholder={data?.education}
+            />
+          </Stack>
+          <Stack gap={1}>
+            <Text>{t("profile.livesInLabel")}</Text>
+            <input
+              className="field"
+              type="text"
+              {...register("city")}
+              defaultValue={data?.city}
+              placeholder={data?.city}
+            />
+          </Stack>
+          <Stack gap={1}>
+            <Text>{t("profile.fromLabel")}</Text>
+            <input
+              className="field"
+              type="text"
+              {...register("from")}
+              defaultValue={data?.from}
+              placeholder={data?.from}
+            />
+          </Stack>
+          <Stack gap={1}>
+            <Text>{t("profile.workplace")}</Text>
+            <input
+              className="field"
+              type="text"
+              {...register("workplace")}
+              defaultValue={data?.workplace}
+              placeholder={data?.workplace}
+            />
+          </Stack>
+          <Stack gap={1}>
+            <Text>{t("profile.relationship")}</Text>
+            <select
+              id=""
+              className="field"
+              {...register("relationship")}
+              defaultValue={data?.relationship}>
+              <option value="Single">{t("profile.single")}</option>
+              <option value="In a relationship">{t("profile.inRelationship")}</option>
+              <option value="Engaged">{t("profile.engaged")}</option>
+              <option value="Married">{t("profile.married")}</option>
+            </select>
+          </Stack>
 
-          <div className="my-3 flex justify-end space-x-3 ">
-            <button
-              type="submit"
-              className="px-5 py-2 font-semibold bg-green-500 text-gray-200 hover:bg-green-700 rounded-md">
-              Update
-            </button>
-          </div>
-        </form>
-      </div>
-    </Modal>
+          <HStack justify="end">
+            <Button label={t("profile.update")} type="submit" variant="primary" />
+          </HStack>
+        </Stack>
+      </form>
+    </Dialog>
   );
 };
 

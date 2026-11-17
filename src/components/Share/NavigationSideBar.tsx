@@ -1,100 +1,101 @@
-import Link from "next/link";
 import React from "react";
+import { useRouter } from "next/router";
+import { useI18n } from "../../i18n/I18nProvider";
+import {
+  SideNav,
+  SideNavItem,
+  SideNavSection,
+} from "@astryxdesign/core/SideNav";
+import {
+  FaBolt,
+  FaCalendarAlt,
+  FaChartPie,
+  FaCog,
+  FaComment,
+  FaFlag,
+  FaGlobe,
+  FaHome,
+  FaInbox,
+  FaMapMarkerAlt,
+  FaRegUser,
+  FaRibbon,
+  FaSignOutAlt,
+  FaStore,
+  FaTv,
+  FaYoutube,
+} from "react-icons/fa";
 
 const NavigationSideBar = () => {
+  const { t } = useI18n();
+  const router = useRouter();
   return (
-    <div className="bg-gray-100 dark:bg-gray-900 relative z-50 h-full overflow-y-scroll">
-      <div className="bg-white dark:bg-gray-800 p-3 rounded-lg drop-shadow-sm ">
-        <p className="mb-3">New Feeds</p>
-        <ul className="left-sidebar">
-          <Link href="/">
-            <li className="mb-3">
-              <i className="fa-solid fa-tv p-3 bg-blue-500 text-white rounded-full"></i>
-              NewsFeed
-            </li>
-          </Link>
-          <li className="mb-3">
-            <a href="">
-              <i className="fa-solid fa-ribbon p-3 bg-red-400 text-white rounded-full"></i>
-              Bedges
-            </a>
-          </li>
-          <li className="mb-3">
-            <a href="">
-              <i className="fa-solid fa-globe p-3 bg-yellow-400 text-white rounded-full"></i>
-              Explore Stories
-            </a>
-          </li>
-          <li className="mb-3">
-            <a href="">
-              <i className="fa-solid fa-bolt p-3 bg-red-400 text-white rounded-full"></i>
-              Popular Groups
-            </a>
-          </li>
-          <Link href="/profile">
-            <li className="mb-3">
-              <i className="fa-regular fa-user p-3 bg-blue-400 text-white rounded-full"></i>
-              Author Profile
-            </li>
-          </Link>
-        </ul>
-      </div>
-      <div className="my-5 bg-white dark:bg-gray-800 p-3 rounded-lg drop-shadow-sm">
-        <p className="mb-3">More pages</p>
-        <ul className="left-second-sidebar">
-          <li>
-            <a href="">
-              <i className="fa-solid fa-inbox p-3 text-indigo-500 text-2xl"></i>{" "}
-              Email Box
-            </a>
-          </li>
-          <li>
-            <a href="">
-              <i className="fa-solid fa-home p-3 text-indigo-500 text-2xl"></i>{" "}
-              Near Hotel
-            </a>
-          </li>
-          <li>
-            <a href="">
-              <i className="fa-solid fa-location-dot p-3 text-indigo-500 text-2xl"></i>{" "}
-              Latest Event
-            </a>
-          </li>
-          <li>
-            <a href="">
-              <i className="fa-brands fa-youtube p-3 text-indigo-500 text-2xl"></i>{" "}
-              Live Stream
-            </a>
-          </li>
-        </ul>
-      </div>
-      <div className="my-5 bg-white dark:bg-gray-800 p-3 rounded-lg drop-shadow-sm">
-        <p className="mb-3">Account</p>
-        <ul className="left-second-sidebar">
-          <li>
-            <a href="">
-              <i className="fa-solid fa-gear p-3 text-gray-400 text-2xl"></i>{" "}
-              Settings
-            </a>
-          </li>
-          <li>
-            <a href="">
-              <i className="fa-solid fa-chart-pie p-3 text-gray-400 text-2xl"></i>{" "}
-              Analytics
-            </a>
-          </li>
-          <li>
-            <Link href="/chat">
-              <i className="fa-solid fa-comment p-3 text-gray-400 text-2xl"></i>{" "}
-              Chat
-            </Link>
-          </li>
-          <li className="signout mb-3 ">
-            <i className="fa-solid fa-right-from-bracket p-3 "></i> Sign Out
-          </li>
-        </ul>
-      </div>
-    </div>
+    <SideNav className="h-full">
+      <SideNavSection title={t("sidebar.newFeeds")}>
+        <SideNavItem
+          label={t("sidebar.newsFeed")}
+          icon={<FaTv />}
+          href="/"
+          isSelected={router.pathname === "/"}
+        />
+        <SideNavItem label={t("sidebar.bedges")} icon={<FaRibbon />} />
+        <SideNavItem
+          label={t("sidebar.exploreStories")}
+          icon={<FaGlobe />}
+          href="/explore"
+          isSelected={router.pathname === "/explore"}
+        />
+        <SideNavItem
+          label={t("sidebar.popularGroups")}
+          icon={<FaBolt />}
+          href="/groups"
+          isSelected={router.pathname === "/groups"}
+        />
+        <SideNavItem
+          label={t("sidebar.events")}
+          icon={<FaCalendarAlt />}
+          href="/events"
+          isSelected={router.pathname === "/events"}
+        />
+        <SideNavItem
+          label={t("sidebar.pages")}
+          icon={<FaFlag />}
+          href="/pages"
+          isSelected={router.pathname === "/pages"}
+        />
+        <SideNavItem
+          label={t("sidebar.marketplace")}
+          icon={<FaStore />}
+          href="/marketplace"
+          isSelected={router.pathname === "/marketplace"}
+        />
+        <SideNavItem
+          label={t("sidebar.authorProfile")}
+          icon={<FaRegUser />}
+          href="/profile"
+          isSelected={router.pathname === "/profile"}
+        />
+      </SideNavSection>
+      <SideNavSection title={t("sidebar.morePages")}>
+        <SideNavItem label={t("sidebar.emailBox")} icon={<FaInbox />} />
+        <SideNavItem label={t("sidebar.nearHotel")} icon={<FaHome />} />
+        <SideNavItem
+          label={t("sidebar.latestEvent")}
+          icon={<FaMapMarkerAlt />}
+        />
+        <SideNavItem label={t("sidebar.liveStream")} icon={<FaYoutube />} />
+      </SideNavSection>
+      <SideNavSection title={t("sidebar.account")}>
+        <SideNavItem label={t("sidebar.settings")} icon={<FaCog />} />
+        <SideNavItem label={t("sidebar.analytics")} icon={<FaChartPie />} />
+        <SideNavItem
+          label={t("sidebar.chat")}
+          icon={<FaComment />}
+          href="/chat"
+          isSelected={router.pathname === "/chat"}
+        />
+        <SideNavItem label={t("sidebar.signOut")} icon={<FaSignOutAlt />} />
+      </SideNavSection>
+    </SideNav>
   );
 };
 

@@ -1,15 +1,20 @@
 import { IPost } from "../../gql/graphql";
+import type { PostWithExtras } from "../../types/social";
 import { GetStaticPaths, GetStaticProps } from "next";
 import { graphQLClient, graphQLServer } from "../../plugins/graphql.plugin";
-import { queryGetAllPostIds, queryPostByUuid } from "../../graphql/post";
+import {
+  fetchPostByUuid,
+  queryGetAllPostIds,
+} from "../../graphql/post";
 import Navigation from "../../components/Share/Navigation";
 import SinglePost from "../../components/Home/SinglePost";
 import { useEffect, useState } from "react";
 import Error from "../404";
 import { queryUser } from "../../graphql/user";
 import { useStoreUser } from "../../store/user";
-import { ArticleJsonLd, NextSeoProps } from "next-seo";
+import { ArticleJsonLd } from "next-seo";
 import dynamic from "next/dynamic";
+import { VStack } from "@astryxdesign/core/VStack";
 
 const DynamicWidgetMessage = dynamic(
   () => import("../../components/Messages/WidgetMessage"),
@@ -41,18 +46,22 @@ const Post: React.FC<IProps> = ({ postData }) => {
         <ArticleJsonLd
           type="BlogPosting"
           url={`${process.env.NEXT_PUBLIC_URL_APP}post/${postData.uuid}`}
-          title={postData.content}
-          canonical={`${process.env.NEXT_PUBLIC_URL_APP}post/${postData.uuid}`}
+          headline={postData.content}
+          mainEntityOfPage={`${process.env.NEXT_PUBLIC_URL_APP}post/${postData.uuid}`}
           description={postData.content}
-          images={postData.images as string[]}
-          datePublished={postData.createAt}
-          dateModified={postData.updateAt}
-          authorName={postData.user.username}
+          image={postData.images as string[]}
+          // W6: createAt/updateAt là Maybe<string> — ArticleJsonLd chỉ
+          // nhận string | undefined nên đổi null thành undefined.
+          datePublished={postData.createAt ?? undefined}
+          dateModified={postData.updateAt ?? undefined}
+          author={postData.user.username}
         />
         {user.id !== "" ? <Navigation /> : null}
-        <div className="max-w-4xl mx-auto gap-4 bg-gray-100 dark:bg-zinc-900 pt-2 w-full ">
+        <VStack gap={4} className="mx-auto w-full max-w-4xl bg-paper pt-2">
           <SinglePost
-            post={postData}
+            // W6: IPost (schema: mảng/poll nullable) không gán trực tiếp
+            // được cho PostWithExtras — cast, không đổi dữ liệu runtime.
+            post={postData as PostWithExtras}
             loading={false}
             isBookmarkPage={false}
             deletePost={deletePost}
@@ -60,7 +69,7 @@ const Post: React.FC<IProps> = ({ postData }) => {
             bookmarkedPostsId={[]}
           />
           <DynamicWidgetMessage />
-        </div>
+        </VStack>
       </>
     );
   } else {
@@ -70,24 +79,37 @@ const Post: React.FC<IProps> = ({ postData }) => {
 export default Post;
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const postsId = await graphQLServer("", "").request(queryGetAllPostIds);
-  const paths = postsId.getAllPostIds.map((id) => ({
-    params: {
-      uuid: id,
-    },
-  }));
+  try {
+    const postsId = await graphQLServer("", "").request(queryGetAllPostIds);
+    // W6: getAllPostIds là (string | null)[] — lọc id null (GetStaticPaths
+    // không nhận params.uuid null).
+    const paths = postsId.getAllPostIds
+      .filter((id): id is string => id != null)
+      .map((id) => ({
+        params: {
+          uuid: id,
+        },
+      }));
 
-  return { paths, fallback: "blocking" };
+    return { paths, fallback: "blocking" };
+  } catch (error) {
+    // P0.5 — Backend down thì build vẫn pass: không prerender bài nào,
+    // trang chi tiết sẽ render on-demand nhờ fallback: "blocking".
+    console.warn("getStaticPaths: cannot reach backend, building with no pre-rendered posts:", error);
+    return { paths: [], fallback: "blocking" };
+  }
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const res = await graphQLServer("", "").request(queryPostByUuid, {
-    uuid: params?.uuid as string,
-  });
+  // P1 — lấy cả poll/audience, fallback về query cũ nếu backend chưa có.
+  const postData = await fetchPostByUuid(
+    params?.uuid as string,
+    graphQLServer("", "")
+  );
 
   return {
     props: {
-      postData: res.post?.post,
+      postData: postData ?? null,
     },
     revalidate: 10,
   };

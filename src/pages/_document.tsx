@@ -22,6 +22,16 @@ class MyDocument extends Document {
       <Html lang="en">
         <Head>
           <link rel="icon" href="/favicon/favicon.ico" />
+          <link
+            rel="icon"
+            type="image/png"
+            sizes="32x32"
+            href="/favicon/favicon-32x32.png"
+          />
+          <link
+            rel="apple-touch-icon"
+            href="/favicon/apple-touch-icon.png"
+          />
           <link rel="manifest" href="/manifest.json" />
           <script
             async

@@ -1,61 +1,80 @@
 import { useState } from "react";
 import { BsEye, BsEyeSlash } from "react-icons/bs";
-import Image from "next/image";
 import Link from "next/link";
+import Logo from "../Share/Logo";
+import LanguageSwitcher from "../Share/LanguageSwitcher";
 
-import { useForm } from "react-hook-form";
-import { queryLogin } from "../../graphql/user";
+import { Controller, useForm } from "react-hook-form";
+import {
+  queryLogin,
+  QUERY_VERIFY_TWO_FACTOR_LOGIN,
+} from "../../graphql/user";
 import { graphQLClient } from "../../plugins/graphql.plugin";
+import socket from "../../plugins/socket";
 import { toast } from "react-toastify";
 
 import { useStoreUser } from "../../store/user";
+import { useI18n } from "../../i18n/I18nProvider";
 import { useRouter } from "next/router";
-import { setCookies } from "cookies-next";
+import { setCookie } from "cookies-next/client";
+
+import { FormLayout } from "@astryxdesign/core/FormLayout";
+import { InputGroup } from "@astryxdesign/core/InputGroup";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import { Button } from "@astryxdesign/core/Button";
+import { Link as AstryxLink } from "@astryxdesign/core/Link";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import { Divider } from "@astryxdesign/core/Divider";
+import { Stack } from "@astryxdesign/core/Stack";
+import { StackItem } from "@astryxdesign/core/Stack";
+import { VStack } from "@astryxdesign/core/VStack";
+import { HStack } from "@astryxdesign/core/HStack";
 
 const Login = () => {
   const [showPass, setShowPass] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  // P3.3 — bước 2 đăng nhập (2FA): login trả về token tạm thay vì token thật.
+  const [twoFactorToken, setTwoFactorToken] = useState<string | null>(null);
+  const [twoFactorCode, setTwoFactorCode] = useState("");
 
-  const { register, handleSubmit } = useForm();
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
 
   const { setUser } = useStoreUser();
+  const { t } = useI18n();
   const router = useRouter();
-  const onSubmit = async (data: any) => {
-    setIsLoading(true);
-    const res = await graphQLClient.request(queryLogin, {
-      email: data.email,
-      password: data.password,
-    });
-    if (res.login.code === 400) {
-      toast.error(res.login.message);
-      setIsLoading(false);
-      return;
-    }
-    const accessToken = res.login.accessToken;
+
+  /** Hoàn tất đăng nhập khi đã có access/refresh token thật. */
+  const finishLogin = (res: any) => {
+    const accessToken = res.accessToken;
     if (!accessToken) {
-      toast.error("loi he thong");
+      toast.error(t("common.systemError"));
       setIsLoading(false);
       return;
     }
-    const refreshToken = res.login.refreshToken;
+    const refreshToken = res.refreshToken;
     if (!refreshToken) {
-      toast.error("loi he thong");
+      toast.error(t("common.systemError"));
       setIsLoading(false);
       return;
     }
-    if (!res.login.user) {
-      toast.error("loi he thong");
+    if (!res.user) {
+      toast.error(t("common.systemError"));
       setIsLoading(false);
       return;
     }
     try {
-      setCookies("uuid", res.login.user.id, {
+      setCookie("uuid", res.user.id, {
         maxAge: 60 * 60 * 24 * 30,
       });
-      setCookies(process.env.NEXT_PUBLIC_COOKIE_NAME as string, accessToken, {
+      setCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string, accessToken, {
         maxAge: 60 * 60 * 24 * 30,
       });
-      setCookies(
+      setCookie(
         process.env.NEXT_PUBLIC_REFRESH_TOKEN_COOKIE_NAME as string,
         refreshToken,
         {
@@ -66,156 +85,206 @@ const Login = () => {
       console.log(error);
     }
 
-    setUser(res.login.user);
+    // F5 fix: the shared socket is imported at module load, when no token
+    // exists yet — the first handshake is rejected (CONNECT_ERROR) and the
+    // socket destroys itself with no auto-reconnect. Now that we have a
+    // valid token, revive it explicitly; the auth function in socket.ts
+    // re-reads the fresh cookie on this handshake.
+    if (socket.disconnected) socket.connect();
+
+    setUser(res.user);
     setIsLoading(false);
     return router.push("/");
   };
 
+  const onSubmitTwoFactor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!twoFactorToken) return;
+    setIsLoading(true);
+    try {
+      const res: any = await graphQLClient.request(
+        QUERY_VERIFY_TWO_FACTOR_LOGIN,
+        { token: twoFactorToken, code: twoFactorCode }
+      );
+      const payload = res.verifyTwoFactorLogin;
+      if (!payload || payload.code !== 200) {
+        toast.error(payload?.message || t("auth.wrongCode"));
+        setIsLoading(false);
+        return;
+      }
+      finishLogin(payload);
+    } catch {
+      toast.error(t("auth.wrongCode"));
+      setIsLoading(false);
+    }
+  };
+
+  const onSubmit = async (data: any) => {
+    setIsLoading(true);
+    try {
+      const res = await graphQLClient.request(queryLogin, {
+        email: data.email,
+        password: data.password,
+      });
+      if (res.login.code !== 200) {
+        toast.error(res.login.message || t("auth.loginFailed"));
+        return;
+      }
+      // P3.3 — tài khoản bật 2FA: chuyển sang nhập mã bước 2.
+      if (res.login.requiresTwoFactor && res.login.twoFactorToken) {
+        setTwoFactorToken(res.login.twoFactorToken);
+        return;
+      }
+      finishLogin(res.login);
+    } catch {
+      // Lỗi GraphQL/mạng (vd: 429) cũng phải trả nút về trạng thái thường
+      // và báo lỗi cho người dùng, tránh kẹt ở "Loading...".
+      toast.error(t("auth.loginFailed"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <section className="lg:py-10 lg:px-6">
-      <div className="max-w-5xl mx-auto rounded-lg overflow-hidden grid min-h-screen lg:grid-cols-5 grid-cols-2">
-        <div className="hidden lg:flex col-span-2 dark:bg-black bg-white bg-pattern-login">
-          <div className="flex flex-col justify-start items-start py-10 pl-16"></div>
-        </div>
-        <div className="bg-white dark:bg-black col-span-3 flex flex-col">
-          <div className="my-8 mx-auto w-full max-w-md">
-            <div className="flex flex-col justify-start items-start mb-10">
+      <Stack
+        direction="horizontal"
+        maxWidth={1024}
+        minHeight="100vh"
+        className="mx-auto overflow-hidden rounded-xl">
+        <StackItem className="hidden bg-surface bg-pattern-login lg:block lg:basis-2/5" />
+        <StackItem size="fill" className="bg-surface">
+          <VStack className="mx-auto my-8 w-full max-w-md px-4 lg:px-0" gap={6}>
+            <VStack gap={2} paddingBlockEnd={4}>
+              <HStack justify="end">
+                <LanguageSwitcher />
+              </HStack>
               <Link href="/">
-                <Image
-                  src="/favicon/logo.png"
-                  alt="Pham Thanh Nam"
-                  width={300}
-                  height={100}
+                <Logo
+                  size={48}
+                  showWordmark
+                  wordmarkClassName="whitespace-nowrap text-lg font-bold tracking-widest"
                 />
               </Link>
-              <h1 className="text-gray-900 dark:text-white font-bold text-3xl font-title pl-4">
-                Sign in to Pham Thanh Nam
-              </h1>
-            </div>
-            <div className="rounded-lg px-4">
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-lg text-gray-900 dark:text-white">
-                    Email address<span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="email"
-                      {...register("email", { required: true })}
-                      type="text"
-                      autoComplete="text"
-                      placeholder="Enter your email"
-                      required
-                      className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between">
-                    <label
-                      htmlFor="password"
-                      className="block text-lg text-gray-900 dark:text-white">
-                      Password<span className="text-red-500">*</span>
-                    </label>
-                    <button
-                      type="button"
-                      className="mr-2"
-                      onClick={() => setShowPass(!showPass)}>
-                      {showPass ? <BsEye /> : <BsEyeSlash />}
-                    </button>
-                  </div>
-                  <div className="mt-1">
-                    <p>Aa@12345678</p>
-                    <input
-                      id="password"
-                      {...register("password", { required: true })}
-                      type={showPass ? "text" : "password"}
-                      autoComplete="current-password"
-                      placeholder="Enter your password"
-                      required
-                      className="appearance-none bg-transparent block w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  {isLoading ? (
-                    <button
-                      disabled
-                      type="button"
-                      className="w-full flex justify-center py-2 px-4 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm text-center mr-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 items-center">
-                      <svg
-                        role="status"
-                        className="inline mr-3 w-4 h-4 text-white animate-spin"
-                        viewBox="0 0 100 101"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path
-                          d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9184 73.1895 90.9184 50.5908C90.9184 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                          fill="#E5E7EB"
+              <Heading level={1} weight="bold">
+                {t("auth.loginTitle")}
+              </Heading>
+            </VStack>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <VStack gap={6}>
+                <FormLayout>
+                  <Controller
+                    name="email"
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field }) => (
+                      <TextInput
+                        label={t("auth.emailLabel")}
+                        isRequired
+                        type="text"
+                        autoComplete="text"
+                        placeholder={t("auth.emailPlaceholder")}
+                        htmlName={field.name}
+                        value={field.value ?? ""}
+                        onChange={(value) => field.onChange(value)}
+                        status={
+                          errors.email ? { type: "error" } : undefined
+                        }
+                      />
+                    )}
+                  />
+                  <Controller
+                    name="password"
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field }) => (
+                      <InputGroup
+                        label={t("auth.passwordLabel")}
+                        isRequired
+                        status={
+                          errors.password ? { type: "error" } : undefined
+                        }>
+                        <TextInput
+                          label={t("auth.passwordLabel")}
+                          isLabelHidden
+                          type={showPass ? "text" : "password"}
+                          autoComplete="current-password"
+                          placeholder={t("auth.passwordPlaceholder")}
+                          htmlName={field.name}
+                          value={field.value ?? ""}
+                          onChange={(value) => field.onChange(value)}
                         />
-                        <path
-                          d="M93.9676 39.0409C96.393 38.4038 97.8424 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8442 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 84.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                          fill="currentColor"
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          isIconOnly
+                          icon={showPass ? <BsEye /> : <BsEyeSlash />}
+                          label={t("auth.passwordLabel")}
+                          onClick={() => setShowPass(!showPass)}
                         />
-                      </svg>
-                      Loading...
-                    </button>
-                  ) : (
-                    <button
-                      type="submit"
-                      className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium dark:text-black text-white dark:bg-white bg-black hover:bg-opacity-80 dark:hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white">
-                      Sign in
-                    </button>
-                  )}
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="text-sm">
-                    <Link
-                      href="/forgotpassword"
-                      className="font-medium text-indigo-500 hover:text-indigo-600">
-                      Forgot your password?
-                    </Link>
-                  </div>
-                </div>
+                      </InputGroup>
+                    )}
+                  />
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    label={isLoading ? t("auth.loading") : t("auth.signIn")}
+                    isLoading={isLoading}
+                    width="100%"
+                  />
+                </FormLayout>
+                <AstryxLink href="/forgotpassword" size="sm" isStandalone>
+                  {t("auth.forgot")}
+                </AstryxLink>
+              </VStack>
+            </form>
+
+            {/* P3.3 — bước 2: nhập mã TOTP (hoặc 1 mã dự phòng). */}
+            {twoFactorToken && (
+              <form onSubmit={onSubmitTwoFactor}>
+                <FormLayout>
+                  <TextInput
+                    label={t("auth.twoFactorTitle")}
+                    isRequired
+                    description={t("auth.twoFactorHint")}
+                    type="text"
+                    autoComplete="one-time-code"
+                    placeholder="123456"
+                    value={twoFactorCode}
+                    onChange={(value) => setTwoFactorCode(value)}
+                  />
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    label={isLoading ? t("auth.checking") : t("auth.confirm")}
+                    isLoading={isLoading}
+                    width="100%"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    label={t("auth.backToLogin")}
+                    onClick={() => {
+                      setTwoFactorToken(null);
+                      setTwoFactorCode("");
+                    }}
+                  />
+                </FormLayout>
               </form>
+            )}
 
-              <div className="mt-6">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    {/* <span className="px-2 bg-gray-50 dark:bg-black text-gray-900 dark:text-white font-medium">
-                      Or
-                    </span> */}
-                  </div>
-                </div>
-
-                <div className="mt-6">
-                  {/* <div>
-                    <button className="w-full inline-flex justify-center items-center py-2 px-4 rounded-md shadow-sm bg-black dark:bg-white text-sm font-medium text-white dark:text-black hover:bg-opacity-90 dark:hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white">
-                      <BsGoogle className="w-6 h-6" />
-                      &nbsp;Sign in with Google
-                    </button>
-                  </div> */}
-                </div>
-                <p className="mt-6 text-center text-base font-medium text-gray-900 dark:text-white">
-                  New to Pham Thanh Nam?
-                  <Link
-                    href="/register"
-                    className="text-indigo-500 hover:text-indigo-600 font-medium">
-                    &nbsp;&nbsp;Sign up
-                  </Link>
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+            <VStack gap={6}>
+              <Divider />
+              <Text justify="center" weight="medium">
+                {t("auth.newTo")}
+                <AstryxLink href="/register" type="inherit">
+                  &nbsp;&nbsp;{t("auth.signUp")}
+                </AstryxLink>
+              </Text>
+            </VStack>
+          </VStack>
+        </StackItem>
+      </Stack>
     </section>
   );
 };

@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useState, useId } from "react";
-import Image from "next/image";
-import moment from "moment";
+import { formatRelativeTime } from "../../lib/time";
 import { FaArrowUp, FaRegSurprise } from "react-icons/fa";
-import { FiTrash, FiBookOpen } from "react-icons/fi";
+import { FiTrash, FiBookOpen, FiEdit } from "react-icons/fi";
+import { FaGlobe, FaLock, FaUserFriends } from "react-icons/fa";
 import { BiShare } from "react-icons/bi";
 import { AiOutlineLike } from "react-icons/ai";
 import { TbMoodCry } from "react-icons/tb";
 import Comments from "./Comments";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import {
   BsChatLeft,
   BsBookmark,
@@ -18,7 +19,8 @@ import {
 } from "react-icons/bs";
 import { MdBugReport } from "react-icons/md";
 import { toast } from "react-toastify";
-import { IComment, IPost } from "../../gql/graphql";
+import { IComment } from "../../gql/graphql";
+import type { PostWithExtras } from "../../types/social";
 import { useStoreUser } from "../../store/user";
 import { graphql } from "../../gql";
 import {
@@ -26,11 +28,26 @@ import {
   graphQLClientErrorCheck,
 } from "../../plugins/graphql.plugin";
 import { CgSmileMouthOpen } from "react-icons/cg";
-import Carousel from "./Carousel";
+import PostMedia from "./PostMedia";
+import PollCard from "./PollCard";
+import EditPostModal from "./EditPostModal";
+import RichText from "../../lib/richText";
 import axios from "axios";
+import VerifiedBadge from "../Share/VerifiedBadge";
+import { useI18n } from "../../i18n/I18nProvider";
+import { Card } from "@astryxdesign/core/Card";
+import { Avatar } from "@astryxdesign/core/Avatar";
+import { Button } from "@astryxdesign/core/Button";
+import { IconButton } from "@astryxdesign/core/IconButton";
+import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
+import { HStack } from "@astryxdesign/core/HStack";
+import { VStack } from "@astryxdesign/core/VStack";
+import { StackItem } from "@astryxdesign/core/Stack";
+import { Text } from "@astryxdesign/core/Text";
+import { TextInput } from "@astryxdesign/core/TextInput";
 
 interface IProps {
-  post: IPost;
+  post: PostWithExtras;
   setDeletePost: (deletePost: boolean) => void;
   bookmarkedPostsId: string[];
   deletePost: boolean;
@@ -46,41 +63,70 @@ const SinglePost: React.FC<IProps> = ({
   isBookmarkPage,
   loading,
 }) => {
+  const [displayPost, setDisplayPost] = useState(post);
+  const [editOpen, setEditOpen] = useState(false);
   const [alreadyBookmarked, setAlreadyBookmarked] = useState(
-    bookmarkedPostsId?.some((p: string) => p === post.uuid)
+    bookmarkedPostsId?.some((p: string) => p === displayPost.uuid)
   );
   const [like, setLike] = useState<string>("");
+  // Like/react press feedback: `burst` triggers the pop + floating icon
+  // (CSS `.like-pop` / `.like-float` in reaction.css). Cleared after 650ms;
+  // `n` restarts the animation when the same reaction is picked twice fast.
+  const [burst, setBurst] = useState<{ type: string; n: number } | null>(null);
+  const burstTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isSeeMore, setIsSeeMore] = useState<boolean>(false);
   const [dbComments, setDbComments] = useState<IComment[]>([]);
   const [comment, setComment] = useState("");
-  const [menu, setMenu] = useState("hidden");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("Spam");
+  const [reportDetail, setReportDetail] = useState("");
+  const [reporting, setReporting] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
   const idLike = useId();
   const { user } = useStoreUser();
+  const { t } = useI18n();
+  const router = useRouter();
+  // Counts used for singular/plural labels (English inflects, Vietnamese does not).
+  const likesCount =
+    displayPost?.likesCount ?? displayPost?.likes?.length ?? 0;
+  const commentsCount =
+    displayPost.commentsCount ?? displayPost.comments?.length ?? 0;
+  const sharesCount = displayPost.shares ?? 0;
 
   useEffect(() => {
-    const isLikePost = post?.likes?.find(
+    setDisplayPost(post);
+  }, [post]);
+
+  useEffect(() => {
+    return () => {
+      if (burstTimeout.current) clearTimeout(burstTimeout.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    const isLikePost = displayPost?.likes?.find(
       (item) => item.user.username === user.username
     );
     setLike(isLikePost ? isLikePost.reactions : "");
-  }, [post, user.username]);
+  }, [displayPost, user.username]);
 
   useEffect(() => {
-    if (post.comments) {
-      setDbComments(post.comments);
+    if (displayPost.comments) {
+      setDbComments(displayPost.comments);
     }
-  }, [post.comments]);
+  }, [displayPost.comments]);
 
   useEffect(() => {
-    if (post.content.split("\n").length >= 6) {
+    if (displayPost.content.split("\n").length >= 6) {
       setIsSeeMore(false);
     }
-  }, [post.content]);
+  }, [displayPost.content]);
 
   const handleSubmitComment = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
     if (comment.length < 1) {
-      toast.error("Comment is required");
+      toast.error(t("feed.post.commentRequired"));
       return;
     }
 
@@ -134,12 +180,27 @@ const SinglePost: React.FC<IProps> = ({
       }
     `);
     const res = await graphQLClient.request(queryCommentPost, {
-      postUuid: post.uuid,
+      postUuid: displayPost.uuid,
       content: comment,
     });
     if (graphQLClientErrorCheck(res)) {
       if (res.commentPost.comments) {
-        setDbComments(res.commentPost.comments);
+        // C1/tsc: commentPost không select `verified` nên user thiếu field
+        // bắt buộc của IUser; lọc null 2 tầng rồi cast (type-only, giống
+        // mẫu đã làm ở CommentChild) — runtime không đổi.
+        setDbComments(
+          res.commentPost.comments
+            .filter(
+              (comment): comment is NonNullable<typeof comment> =>
+                comment != null
+            )
+            .map((comment) => ({
+              ...comment,
+              likes: comment.likes?.filter(
+                (like): like is NonNullable<typeof like> => like != null
+              ),
+            })) as unknown as IComment[]
+        );
       }
       if (ref.current?.value) {
         ref.current.value = "";
@@ -149,6 +210,10 @@ const SinglePost: React.FC<IProps> = ({
   };
 
   const handleLike = async (typeReact: string) => {
+    // Optimistic press feedback (the mutation updates `like` on success).
+    if (burstTimeout.current) clearTimeout(burstTimeout.current);
+    setBurst((b) => ({ type: typeReact, n: (b?.n ?? 0) + 1 }));
+    burstTimeout.current = setTimeout(() => setBurst(null), 650);
     const queryLike = graphql(`
       mutation likePost($postUuid: String!, $typeReact: String!) {
         likePost(postUuid: $postUuid, typeReact: $typeReact) {
@@ -168,7 +233,7 @@ const SinglePost: React.FC<IProps> = ({
     `);
     try {
       const res = await graphQLClient.request(queryLike, {
-        postUuid: post.uuid,
+        postUuid: displayPost.uuid,
         typeReact: typeReact,
       });
       if (graphQLClientErrorCheck(res)) {
@@ -229,6 +294,8 @@ const SinglePost: React.FC<IProps> = ({
                 createAt
                 updateAt
                 shares
+                likesCount
+                commentsCount
                 images
                 user {
                   username
@@ -275,287 +342,380 @@ const SinglePost: React.FC<IProps> = ({
       toast.error(uuid);
     }
   };
+  const REPORT_REASONS = [
+    t("feed.post.reportReasons.spam"),
+    t("feed.post.reportReasons.violence"),
+    t("feed.post.reportReasons.harassment"),
+    t("feed.post.reportReasons.misinformation"),
+    t("feed.post.reportReasons.adult"),
+    t("feed.post.reportReasons.other"),
+  ];
   const handleReport = async (uuid: string) => {
-    const res = await axios.post(`/bookmark/report/${uuid}`);
-    toast.error("Report");
+    const reason = reportDetail.trim() || reportReason;
+    setReporting(true);
+    try {
+      await axios.post("/reports", {
+        targetType: "post",
+        targetId: uuid,
+        reason,
+      });
+      toast.success(t("feed.post.reportSuccess"));
+      setReportOpen(false);
+      setReportDetail("");
+      setMenuOpen(false);
+    } catch (error) {
+      toast.error(t("feed.post.reportFailed"));
+    } finally {
+      setReporting(false);
+    }
   };
+  // Icon for a reaction type (used by the Like button + the float effect).
+  const reactionIconFor = (type: string) => {
+    switch (type) {
+      case "LIKE":
+        return <AiOutlineLike className="text-2xl text-accent-bright" />;
+      case "LOVE":
+        return <BsHeart className="text-2xl text-danger" />;
+      case "HAHA":
+        return <CgSmileMouthOpen className="text-2xl text-warning" />;
+      case "SAD":
+        return <TbMoodCry className="text-2xl text-warning" />;
+      case "WOW":
+        return <FaRegSurprise className="text-2xl text-warning" />;
+      case "ANGRY":
+        return <BsEmojiAngry className="text-2xl text-warning" />;
+      default:
+        return <BsHeart className="text-2xl" />;
+    }
+  };
+
   const renderLike = () => {
-    const reactions = [
-      {
-        type: "LIKE",
-        icon: (
-          <button>
-            <AiOutlineLike className="text-2xl text-sky-600" />
-          </button>
-        ),
-      },
-      {
-        type: "LOVE",
-        icon: (
-          <button>
-            <BsHeart className="text-2xl text-red-500" />
-          </button>
-        ),
-      },
-      {
-        type: "HAHA",
-        icon: (
-          <button>
-            <CgSmileMouthOpen className="text-2xl text-yellow-400" />
-          </button>
-        ),
-      },
-      {
-        type: "SAD",
-        icon: (
-          <button>
-            <TbMoodCry className="text-2xl text-yellow-400" />
-          </button>
-        ),
-      },
-      {
-        type: "WOW",
-        icon: (
-          <button>
-            <FaRegSurprise className="text-2xl text-yellow-400" />
-          </button>
-        ),
-      },
-      {
-        type: "ANGRY",
-        icon: (
-          <button>
-            <BsEmojiAngry className="text-2xl text-yellow-400" />
-          </button>
-        ),
-      },
-    ];
-    const icon = reactions.find((item) => item.type === like)?.icon;
-    return icon ? (
-      icon
-    ) : (
+    const icon = like ? reactionIconFor(like) : <BsHeart className="text-2xl" />;
+    return (
       <button>
-        <BsHeart className="text-2xl" />
+        {/* Keyed by the burst counter so the pop restarts on a fast re-pick.
+            The span wraps only the icon (a sibling of the picker), never the
+            picker itself, so the pop never resets the picker checkbox. */}
+        <span key={burst?.n ?? 0} className={burst ? "like-pop" : ""}>
+          {icon}
+        </span>
       </button>
     );
   };
 
   return (
-    <div className="drop-shadow-sm bg-white dark:bg-black p-5 sm:rounded-xl my-4 ">
-      <div className="flex justify-between relative">
-        <div className=" flex">
-          <Link href={`/${post.user.username}`} passHref>
-            <div className="relative">
-              <Image
-                src={post.user.avatar || "/images/user-avatar.png"}
-                className="rounded-full cursor-pointer"
-                alt={post.user.fullName}
-                height={45}
-                width={45}
+    <Card padding={5}>
+      <VStack gap={3}>
+        <HStack gap={2} vAlign="center" hAlign="between">
+          <HStack gap={3} vAlign="center">
+            <Link href={`/${displayPost.user.username}`} passHref>
+              <Avatar
+                src={displayPost.user.avatar || "/images/user-avatar.png"}
+                name={displayPost.user.fullName}
+                size={48}
+                tooltip={false}
               />
-              <div className="absolute w-3 h-3 rounded-full bg-zinc-600 ring-2 ring-white dark:ring-black bottom-1 right-0"></div>
-            </div>
-          </Link>
-          <div className="ml-3">
-            <Link href={`/${post.user.username}`} passHref>
-              <h4 className="text-md font-semibold cursor-pointer">
-                {post.user.fullName}
-              </h4>
             </Link>
-            <span className="text-xs">{moment(post.createAt).fromNow()} </span>
-          </div>
-        </div>
-        <div onClick={() => setMenu(menu === "hidden" ? "block" : "hidden")}>
-          <div className="p-3 bg-gray-100 dark:bg-zinc-900 rounded-full cursor-pointer">
-            <BsThreeDotsVertical className="dark:text-white text-black" />
-          </div>
-        </div>
-      </div>
-      <div className={menu}>
-        <div className="absolute right-5 py-3 bg-gray-100 dark:bg-zinc-800 w-40 z-40 rounded-lg">
-          <ul>
-            {alreadyBookmarked ? (
-              <li
+            <VStack gap={0}>
+              <Link href={`/${displayPost.user.username}`} passHref>
+                <Text weight="semibold" as="span" className="flex items-center gap-1 cursor-pointer">
+                  {displayPost.user.fullName}
+                  <VerifiedBadge verified={displayPost.user.verified} />
+                </Text>
+              </Link>
+              <Text type="supporting" as="span" className="flex items-center gap-1">
+                {formatRelativeTime(displayPost.createAt)}{" "}
+                {/* P1.5 — icon quyền xem của bài */}
+                {displayPost.audience === "friends" ? (
+                  <FaUserFriends title={t("feed.post.audienceFriendsTitle")} />
+                ) : displayPost.audience === "only-me" ? (
+                  <FaLock title={t("feed.post.audienceOnlyMeTitle")} />
+                ) : (
+                  <FaGlobe title={t("feed.post.audiencePublicTitle")} />
+                )}
+              </Text>
+            </VStack>
+          </HStack>
+          <DropdownMenu
+            isMenuOpen={menuOpen}
+            onOpenChange={setMenuOpen}
+            menuWidth={256}
+            placement="below"
+            alignment="end"
+            renderTrigger={(triggerProps) => (
+              <IconButton
+                {...triggerProps}
+                label={t("feed.post.openPost")}
+                icon={<BsThreeDotsVertical />}
+                variant="ghost"
+                size="lg"
+              />
+            )}
+            items={[
+              alreadyBookmarked
+                ? {
+                    id: "remove-bookmark",
+                    label: t("feed.post.removeBookmark"),
+                    icon: <BsBookmarkX />,
+                    onClick: () => {
+                      handleBookmarkRemove(displayPost.uuid);
+                      setMenuOpen(false);
+                    },
+                  }
+                : {
+                    id: "bookmark",
+                    label: t("feed.post.bookmark"),
+                    icon: <BsBookmark />,
+                    onClick: () => {
+                      handleBookmark(displayPost.uuid);
+                      setMenuOpen(false);
+                    },
+                  },
+              {
+                id: "report",
+                label: t("feed.post.report"),
+                icon: <MdBugReport />,
+                onClick: () => {
+                  setReportOpen(true);
+                  setMenuOpen(false);
+                },
+              },
+              ...(user.username === displayPost.user.username
+                ? [
+                    {
+                      id: "edit",
+                      label: t("feed.post.editPost"),
+                      icon: <FiEdit />,
+                      onClick: () => {
+                        setEditOpen(true);
+                        setMenuOpen(false);
+                      },
+                    },
+                    {
+                      id: "delete",
+                      label: t("feed.post.deletePosts"),
+                      icon: <FiTrash />,
+                      onClick: () => {
+                        handleDelete(displayPost.uuid);
+                        setMenuOpen(false);
+                      },
+                    },
+                  ]
+                : []),
+              {
+                id: "open",
+                label: t("feed.post.openPost"),
+                icon: <FiBookOpen />,
+                onClick: () => {
+                  setMenuOpen(false);
+                  router.push(`/post/${displayPost.uuid}`);
+                },
+              },
+            ]}
+          />
+        </HStack>
+        {reportOpen ? (
+          <VStack gap={2} className="rounded-lg border border-line bg-paper p-3">
+            <Text weight="semibold">{t("feed.post.reportTitle")}</Text>
+            <select
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              className="field w-full">
+              {REPORT_REASONS.map((reason) => (
+                <option key={reason} value={reason}>
+                  {reason}
+                </option>
+              ))}
+            </select>
+            <TextInput
+              label={t("feed.post.reportDetailPlaceholder")}
+              isLabelHidden
+              value={reportDetail}
+              onChange={setReportDetail}
+              placeholder={t("feed.post.reportDetailPlaceholder")}
+            />
+            <HStack gap={2} hAlign="end">
+              <Button
+                label={t("common.cancel")}
+                variant="ghost"
+                size="sm"
                 onClick={() => {
-                  handleBookmarkRemove(post.uuid);
-                  setMenu("hidden");
+                  setReportOpen(false);
+                  setMenuOpen(false);
                 }}
-                className="py-1 flex items-center cursor-pointer hover:bg-white dark:hover:bg-zinc-600 px-3">
-                <BsBookmarkX className="mr-2" />
-                Remove
-              </li>
-            ) : (
-              <>
-                <li
-                  onClick={() => {
-                    handleBookmark(post.uuid);
-                    setMenu("hidden");
-                  }}
-                  className="py-1 flex items-center cursor-pointer hover:bg-white dark:hover:bg-zinc-600 px-3">
-                  <BsBookmark className="mr-2" /> Bookmark post
-                </li>
-                <li
-                  onClick={() => {
-                    handleReport(post.uuid);
-                    setMenu("hidden");
-                  }}
-                  className="py-1 flex items-center cursor-pointer hover:bg-white dark:hover:bg-zinc-600 px-3">
-                  <MdBugReport className="mr-2" /> Report
-                </li>
-              </>
-            )}
-            {user.username === post.user.username && (
-              <li
-                className="py-1 flex items-center cursor-pointer hover:bg-white dark:hover:bg-zinc-600 px-3"
-                onClick={() => {
-                  handleDelete(post.uuid);
-                  setMenu("hidden");
-                }}>
-                <FiTrash className="mr-2" /> Delete posts
-              </li>
-            )}
-
-            <Link href={`/post/${post.uuid}`}>
-              <li className="py-1 flex items-center cursor-pointer hover:bg-white dark:hover:bg-zinc-600 px-3">
-                <FiBookOpen className="mr-2" />
-                Open post
-              </li>
-            </Link>
-          </ul>
-        </div>
-      </div>
-      <div className="pt-3 mb-3">
-        {isSeeMore
-          ? post.content.split("\n").map(function (item, idx) {
-              return (
-                <p key={idx}>
-                  {item}
-                  <br />
-                </p>
-              );
-            })
-          : post.content.split("\n").map(function (item, idx) {
-              if (idx <= 5) {
+              />
+              <Button
+                label={
+                  reporting ? t("feed.post.sending") : t("feed.post.sendReport")
+                }
+                variant="primary"
+                size="sm"
+                isLoading={reporting}
+                onClick={() => handleReport(displayPost.uuid)}
+              />
+            </HStack>
+          </VStack>
+        ) : null}
+        <VStack gap={0}>
+          {isSeeMore
+            ? displayPost.content.split("\n").map(function (item, idx) {
                 return (
-                  <p key={idx}>
-                    {item}
-                    <br />
-                  </p>
+                  <Text as="p" key={idx}>
+                    <RichText text={item} />
+                  </Text>
                 );
-              }
-            })}
+              })
+            : displayPost.content.split("\n").map(function (item, idx) {
+                if (idx <= 5) {
+                  return (
+                    <Text as="p" key={idx}>
+                      <RichText text={item} />
+                    </Text>
+                  );
+                }
+              })}
 
-        {post.content.split("\n").length >= 6 && (
-          <button
-            onClick={() => setIsSeeMore(!isSeeMore)}
-            className="text-blue-600 pl-2">
-            {isSeeMore ? "See less" : "See more"}
-          </button>
-        )}
-      </div>
-      {/* {post.images
-        ? post.images.map((image: string, index: number) => (
-            <div
-              key={index}
-              className="pt-3 relative h-96 rounded-lg overflow-hidden w-full">
-              <Image src={image} layout="fill" objectFit="cover" alt="" />
-            </div>
-          ))
-        : ""} */}
-      {post.images ? <Carousel images={post.images} /> : null}
-      <div className="flex justify-between items-center">
-        <div className="pt-3 flex items-center">
-          <div className="box pt-2 pb-0 px-1.5">
-            <input type="checkbox" id={idLike} className="field-reactions" />
-            <label htmlFor={idLike} className="label-reactions">
-              Like
-            </label>
-            <span className="text-desc">
-              Press space and after tab key to navigation
-            </span>
-            <div className="toolbox" />
-            <label className="overlay" htmlFor={idLike} />
-            <button
-              className="reaction-like"
-              onClick={() => handleLike("LIKE")}>
-              <span className="legend-reaction">Like</span>
-            </button>
-            <button
-              className="reaction-love"
-              onClick={() => handleLike("LOVE")}>
-              <span className="legend-reaction">Love</span>
-            </button>
-            <button
-              className="reaction-haha"
-              onClick={() => handleLike("HAHA")}>
-              <span className="legend-reaction">Haha</span>
-            </button>
-            <button className="reaction-wow" onClick={() => handleLike("WOW")}>
-              <span className="legend-reaction">Wow</span>
-            </button>
-            <button className="reaction-sad" onClick={() => handleLike("SAD")}>
-              <span className="legend-reaction">Sad</span>
-            </button>
-            <button
-              className="reaction-angry"
-              onClick={() => handleLike("ANGRY")}>
-              <span className="legend-reaction">Angry</span>
-            </button>
-          </div>
-          <span className="p-1 pt-2 pb-0 px-1.5">{renderLike()}</span>
-          {like ? (
-            <span className="ml-2">Ban va {post?.likes?.length} nguoi</span>
-          ) : (
-            <span className="ml-2">{post?.likes?.length} Like</span>
+          {displayPost.content.split("\n").length >= 6 && (
+            <Button
+              label={isSeeMore ? t("feed.post.seeLess") : t("feed.post.seeMore")}
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsSeeMore(!isSeeMore)}
+            />
           )}
+        </VStack>
+        {/* P1.2 — ảnh qua Carousel cũ, video qua <video> (xem PostMedia) */}
+        {displayPost.images ? <PostMedia images={displayPost.images} /> : null}
+        {/* P1.3 — poll của bài (nếu có) */}
+        {displayPost.poll ? (
+          <PollCard poll={displayPost.poll} postUuid={displayPost.uuid} />
+        ) : null}
+        <HStack gap={2} vAlign="center" hAlign="between" className="relative">
+          <HStack gap={2} vAlign="center">
+            <div className="box pt-2 pb-0 px-1.5">
+              <input type="checkbox" id={idLike} className="field-reactions" />
+              <label htmlFor={idLike} className="label-reactions">
+                {t("feed.post.like")}
+              </label>
+              <span className="text-desc">
+                Press space and after tab key to navigation
+              </span>
+              <div className="toolbox" />
+              <label className="overlay" htmlFor={idLike} />
+              <button
+                className={`reaction-like${like === "LIKE" ? " reaction-current" : ""}`}
+                onClick={() => handleLike("LIKE")}>
+                <span className="legend-reaction">{t("feed.reaction.like")}</span>
+              </button>
+              <button
+                className={`reaction-love${like === "LOVE" ? " reaction-current" : ""}`}
+                onClick={() => handleLike("LOVE")}>
+                <span className="legend-reaction">{t("feed.reaction.love")}</span>
+              </button>
+              <button
+                className={`reaction-haha${like === "HAHA" ? " reaction-current" : ""}`}
+                onClick={() => handleLike("HAHA")}>
+                <span className="legend-reaction">{t("feed.reaction.haha")}</span>
+              </button>
+              <button className={`reaction-wow${like === "WOW" ? " reaction-current" : ""}`} onClick={() => handleLike("WOW")}>
+                <span className="legend-reaction">{t("feed.reaction.wow")}</span>
+              </button>
+              <button className={`reaction-sad${like === "SAD" ? " reaction-current" : ""}`} onClick={() => handleLike("SAD")}>
+                <span className="legend-reaction">{t("feed.reaction.sad")}</span>
+              </button>
+              <button
+                className={`reaction-angry${like === "ANGRY" ? " reaction-current" : ""}`}
+                onClick={() => handleLike("ANGRY")}>
+                <span className="legend-reaction">{t("feed.reaction.angry")}</span>
+              </button>
+            </div>
+            <span className="like-action p-1 pt-2 pb-0 px-1.5">
+              {renderLike()}
+              {burst && (
+                <span key={burst.n} className="like-float">
+                  {reactionIconFor(burst.type)}
+                </span>
+              )}
+            </span>
+            {/* Keyed by count + like state so the count pops when it changes. */}
+            <span key={`${likesCount}-${like}`} className="count-pop">
+              {like ? (
+                <Text as="span">
+                  {likesCount === 1
+                    ? t("feed.post.likedByOne", { count: likesCount })
+                    : t("feed.post.likedBy", { count: likesCount })}
+                </Text>
+              ) : (
+                <Text as="span">
+                  {likesCount === 1
+                    ? t("feed.post.likesCountOne", { count: likesCount })
+                    : t("feed.post.likesCount", { count: likesCount })}
+                </Text>
+              )}
+            </span>
 
-          <div className="ml-5 ">
-            <button className="items-center flex gap-1">
-              <BsChatLeft className="text-xl mt-1" />
-              <span className="ml-1">{post.comments?.length} Comments</span>
-            </button>
-          </div>
-        </div>
-        <div>
-          <button className="flex items-center">
-            <BiShare className="text-xl" />
-            <span className="ml-1">{post.shares} Share</span>
-          </button>
-        </div>
-      </div>
-      <form onSubmit={handleSubmitComment}>
-        <div className="flex gap-2 items-center pt-5">
-          <div className="relative">
-            <Image
+            <Button
+              label={
+                commentsCount === 1
+                  ? t("feed.post.commentsOne", { count: commentsCount })
+                  : t("feed.post.comments", { count: commentsCount })
+              }
+              icon={<BsChatLeft />}
+              variant="ghost"
+              size="sm"
+            />
+          </HStack>
+          <Button
+            label={
+              sharesCount === 1
+                ? t("feed.post.sharesOne", { count: sharesCount })
+                : t("feed.post.shares", { count: sharesCount })
+            }
+            icon={<BiShare />}
+            variant="ghost"
+            size="sm"
+          />
+        </HStack>
+        <form onSubmit={handleSubmitComment}>
+          <HStack gap={2} vAlign="center">
+            <Avatar
               src={user.avatar || "/images/user-avatar.png"}
-              alt={user.fullName}
-              height="50"
-              width="50"
-              className="rounded-full"
+              name={user.fullName}
+              size={48}
+              tooltip={false}
             />
-          </div>
-          <div className="w-full">
-            <input
-              onChange={(e) => setComment(e.target.value)}
-              ref={ref}
-              className="w-full h-10 dark:bg-zinc-800 bg-gray-200 rounded-full p-2 resize-none scrollbar-hide"
-              placeholder="Wright a comment ..."
-            />
-          </div>
-          <div className="w-10 flex  items-center justify-center p-3 rounded-full bg-blue-600">
-            <button
-              disabled={!comment.trim()}
+            <StackItem size="fill">
+              <input
+                onChange={(e) => setComment(e.target.value)}
+                ref={ref}
+                className="field rounded-full resize-none scrollbar-hide"
+                placeholder={t("feed.post.writeComment")}
+              />
+            </StackItem>
+            <IconButton
+              label={t("feed.post.writeComment")}
+              icon={<FaArrowUp />}
+              variant="primary"
+              size="lg"
+              isDisabled={!comment.trim()}
               type="submit"
-              className="disabled:cursor-not-allowed">
-              <FaArrowUp className=" text-white" />
-            </button>
-          </div>
-        </div>
-      </form>
-      {dbComments
-        ?.map((comment) => <Comments key={comment.id} comment={comment} />)
-        .reverse()}
-    </div>
+            />
+          </HStack>
+        </form>
+        {dbComments
+          ?.map((comment) => <Comments key={comment.id} comment={comment} />)
+          .reverse()}
+        {/* P1.5 — modal sửa bài (chỉ chủ bài mới mở được từ menu) */}
+        <EditPostModal
+          post={displayPost}
+          open={editOpen}
+          onClose={() => setEditOpen(false)}
+          onSaved={(updated) =>
+            setDisplayPost((prev) => ({ ...prev, ...updated }))
+          }
+        />
+      </VStack>
+    </Card>
   );
 };
 

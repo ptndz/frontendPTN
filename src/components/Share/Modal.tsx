@@ -17,8 +17,8 @@ const Modal: React.FC<IProps> = ({ isOpen, onClose, children }) => {
     <ReactModal
       isOpen={modalIsOpen}
       onRequestClose={handleModalClose}
-      className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-md p-6"
-      overlayClassName="fixed inset-0 bg-black bg-opacity-25"
+      className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-surface rounded-xl border border-line p-6 shadow-lg"
+      overlayClassName="fixed inset-0 bg-ink/25"
       closeTimeoutMS={500}
       ariaHideApp={false}>
       {children}

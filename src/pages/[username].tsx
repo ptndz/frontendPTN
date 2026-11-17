@@ -10,11 +10,13 @@ import {
 } from "../graphql/user";
 import { GetServerSideProps } from "next/types";
 import { graphQLServer } from "../plugins/graphql.plugin";
-import { getCookies } from "cookies-next";
+import { getCookies } from "cookies-next/server";
 import { useStoreUser } from "../store/user";
 
+import { Center } from "@astryxdesign/core/Center";
+import { Stack } from "@astryxdesign/core/Stack";
 import { useRouter } from "next/router";
-import { SocialProfileJsonLd } from "next-seo";
+import { ProfilePageJsonLd } from "next-seo";
 import dynamic from "next/dynamic";
 const DynamicWidgetMessage = dynamic(
   () => import("../components/Messages/WidgetMessage"),
@@ -45,22 +47,25 @@ const Profile: React.FC<IProps> = ({ userData, user, profileData }) => {
   if (userData) {
     return (
       <>
-        <SocialProfileJsonLd
-          type="Person"
-          name={userData.username}
-          url={`${process.env.NEXT_PUBLIC_URL_APP}/${userData.username}`}
-          sameAs={["http://www.facebook.com/ptn1411"]}
+        <ProfilePageJsonLd
+          mainEntity={{
+            name: userData.username,
+            url: `${process.env.NEXT_PUBLIC_URL_APP}/${userData.username}`,
+            sameAs: ["http://www.facebook.com/ptn1411"],
+          }}
         />
 
         <Navigation />
-        <div className="max-w-4xl mx-auto gap-4 bg-gray-100 dark:bg-zinc-900 pt-2 w-full ">
-          <UserProfile
-            userData={userData}
-            profileData={profileData}
-            setUpdateUserData={setUpdateUserData}
-          />
-          <DynamicWidgetMessage />
-        </div>
+        <Center axis="horizontal">
+          <Stack width="100%" maxWidth={896} gap={4} paddingBlockStart={2}>
+            <UserProfile
+              userData={userData}
+              profileData={profileData}
+              setUpdateUserData={setUpdateUserData}
+            />
+            <DynamicWidgetMessage />
+          </Stack>
+        </Center>
       </>
     );
   } else {
@@ -73,7 +78,7 @@ export default Profile;
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { username } = context.query;
   try {
-    const cookie = getCookies({ req: context.req });
+    const cookie = await getCookies({ req: context.req });
     const accessToken = cookie[process.env.NEXT_PUBLIC_COOKIE_NAME as string];
     if (accessToken) {
       const res = await graphQLServer(

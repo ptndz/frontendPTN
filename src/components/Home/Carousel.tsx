@@ -1,7 +1,8 @@
 import Image from "next/image";
-import { FcNext } from "react-icons/fc";
-import { MdOutlineArrowBackIosNew } from "react-icons/md";
 import { useRef } from "react";
+import { Button } from "@astryxdesign/core/Button";
+import { HStack } from "@astryxdesign/core/HStack";
+import { VStack } from "@astryxdesign/core/VStack";
 
 interface IProps {
   images: string[];
@@ -34,48 +35,44 @@ const Carousel: React.FC<IProps> = ({ images }) => {
     );
   };
 
-  const arrowStyle =
-    "absolute text-white text-2xl z-10 h-10 w-20 rounded-full opacity-75 flex items-center justify-center";
-
   return (
-    <>
+    <VStack gap={2} className="relative w-full max-w-4xl">
       <ul ref={refsView} className="hidden"></ul>
-      <div className="relative w-full max-w-4xl">
-        {images.length > 0 ? (
-          <ul
-            ref={refsImg}
-            className="pt-3 relative h-96 rounded-lg overflow-hidden w-full">
-            {images.map((img, i) => (
-              <li key={i}>
-                <Image
-                  layout="fill"
-                  objectFit="cover"
-                  src={img}
-                  className="w-full object-contain"
-                  alt="Pham Thanh Nam"
-                />
-              </li>
-            ))}
-          </ul>
-        ) : null}
+      {images.length > 0 ? (
+        <ul
+          ref={refsImg}
+          className="pt-3 relative h-96 rounded-xl overflow-hidden w-full">
+          {images.map((img, i) => (
+            <li key={i}>
+              <Image
+                layout="fill"
+                objectFit="cover"
+                src={img}
+                className="w-full object-contain"
+                alt="Pham Thanh Nam"
+              />
+            </li>
+          ))}
+        </ul>
+      ) : null}
 
-        {images.length > 1 ? (
-          <div className="absolute bottom-0 left-0 right-0 flex justify-center mb-6">
-            <button
-              onClick={previousImage}
-              className="bg-inherit rounded-full shadow-lg px-28 py-2 ml-2 text-white font-medium hover:bg-white hover:text-blue-500 transition duration-300 ease-in-out focus:outline-none">
-              &#8249;
-            </button>
-
-            <button
-              onClick={nextImage}
-              className="bg-inherit rounded-full shadow-lg px-28 py-2 ml-2 text-white font-medium hover:bg-white hover:text-blue-500 transition duration-300 ease-in-out focus:outline-none">
-              &#8250;
-            </button>
-          </div>
-        ) : null}
-      </div>
-    </>
+      {images.length > 1 ? (
+        <HStack gap={2} hAlign="center" className="absolute bottom-0 left-0 right-0 mb-6">
+          <Button
+            label="‹"
+            variant="ghost"
+            size="lg"
+            onClick={previousImage}
+          />
+          <Button
+            label="›"
+            variant="ghost"
+            size="lg"
+            onClick={nextImage}
+          />
+        </HStack>
+      ) : null}
+    </VStack>
   );
 };
 

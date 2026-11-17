@@ -3,24 +3,47 @@ import Image from "next/image";
 import ProfileModal from "./ProfileModal";
 import AboutModal from "./AboutModal";
 import axios from "axios";
-import { TiTick } from "react-icons/ti";
 import SinglePost from "../Home/SinglePost";
+import VerifiedBadge from "../Share/VerifiedBadge";
+import {
+  blockUser,
+  getBlockStatus,
+  requestVerification,
+  unblockUser,
+} from "../../lib/p3";
+import {
+  fetchFollowStatus,
+  FollowStatus,
+} from "../../lib/social";
+import FollowButton from "../Share/FollowButton";
+import { useI18n } from "../../i18n/I18nProvider";
+import FollowListModal from "../Share/FollowListModal";
+import { toast } from "react-toastify";
 import { useRouter } from "next/router";
-import "react-responsive-modal/styles.css";
 import CreatePost from "../Home/CreatePost";
 import { useStoreUser } from "../../store/user";
 import { User, ProfileUser } from "../../gql/graphql";
-import {
-  graphQLClient,
-  graphQLClientErrorCheck,
-} from "../../plugins/graphql.plugin";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 
 import moment from "moment";
-import Link from "next/link";
-import { queryGetPostsUserByUserName } from "../../graphql/post";
+import { fetchUserPostsPage } from "../../graphql/post";
 import { FriendRequestStatus } from "../../types/friends";
 import Head from "next/head";
+import { Avatar } from "@astryxdesign/core/Avatar";
+import { Button } from "@astryxdesign/core/Button";
+import { Card } from "@astryxdesign/core/Card";
+import { Center } from "@astryxdesign/core/Center";
+import { Heading } from "@astryxdesign/core/Heading";
+import { HStack } from "@astryxdesign/core/HStack";
+import { Link } from "@astryxdesign/core/Link";
+import { List, ListItem } from "@astryxdesign/core/List";
+import {
+  SegmentedControl,
+  SegmentedControlItem,
+} from "@astryxdesign/core/SegmentedControl";
+import { Stack, StackItem } from "@astryxdesign/core/Stack";
+import { Text } from "@astryxdesign/core/Text";
+import { TextArea } from "@astryxdesign/core/TextArea";
 
 interface IProps {
   userData: User;
@@ -30,12 +53,17 @@ interface IProps {
 interface IFriendRequestStatus extends FriendRequestStatus {
   id: number;
 }
+// Số bài mỗi trang khi tải bài của user (dùng chung cho label số bài).
+const POSTS_PAGE_SIZE = 10;
 const UserProfile: React.FC<IProps> = ({
   userData,
   setUpdateUserData,
   profileData,
 }) => {
   const router = useRouter();
+  // useI18n() đăng ký render lại khi đổi ngôn ngữ — cần cho "Joined {fromNow()}"
+  // bên dưới vì fromNow() đọc locale moment toàn cục, không phải t().
+  const { t } = useI18n();
 
   const [deletePost, setDeletePost] = useState(false);
   const { user } = useStoreUser();
@@ -44,6 +72,44 @@ const UserProfile: React.FC<IProps> = ({
   const [openDetailsModal, setOpenDetailsModal] = useState(false);
   const [statusFriends, setStatusFriends] = useState<IFriendRequestStatus>();
   const [newPost, setNewPost] = useState(false);
+  // P3.2/P3.4 — chặn user + xin xác minh.
+  const [blocked, setBlocked] = useState(false);
+  const [verifyOpen, setVerifyOpen] = useState(false);
+  const [verifyReason, setVerifyReason] = useState("");
+  const [verifySent, setVerifySent] = useState(false);
+  // P4.1 — theo dõi: trạng thái + số lượng, modal danh sách.
+  const [followStatus, setFollowStatus] = useState<FollowStatus | null>(null);
+  const [followListKind, setFollowListKind] = useState<
+    "followers" | "following" | null
+  >(null);
+  // Tab nội dung: Bài viết / Giới thiệu (Bạn bè là link sang /friends).
+  const [tab, setTab] = useState<"posts" | "about">("posts");
+
+  useEffect(() => {
+    const fetchBlock = async () => {
+      try {
+        setBlocked(await getBlockStatus(userData.id));
+      } catch {
+        // Không chặn được thì mặc định chưa chặn.
+      }
+    };
+    if (userData?.id && userData.id !== user.id) {
+      fetchBlock();
+    }
+  }, [userData, user]);
+
+  useEffect(() => {
+    const fetchFollow = async () => {
+      try {
+        setFollowStatus(await fetchFollowStatus(userData.id));
+      } catch {
+        // Không lấy được thì ẩn số follow, nút follow vẫn dùng mặc định.
+      }
+    };
+    if (userData?.id) {
+      fetchFollow();
+    }
+  }, [userData]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,23 +123,17 @@ const UserProfile: React.FC<IProps> = ({
 
   const getPost = async (pageParam: number) => {
     const username = userData.username;
-    const resPost = await graphQLClient.request(queryGetPostsUserByUserName, {
-      username: username,
-      page: pageParam,
-      limit: 10,
-    });
-    if (graphQLClientErrorCheck(resPost)) {
-      return resPost.getPostsUserByUserName;
-    }
-    return resPost.getPostsUserByUserName;
+    // P1 — query có poll/audience, tự fallback về query cũ nếu backend
+    // chưa có field mới (xem fetchUserPostsPage trong src/graphql/post.ts).
+    return fetchUserPostsPage(username, pageParam, POSTS_PAGE_SIZE);
   };
+  const queryClient = useQueryClient();
   const {
     data,
     fetchNextPage,
     hasNextPage,
     isFetching,
     isFetchingNextPage,
-    remove,
   } = useInfiniteQuery({
     queryKey: ["userPosts"],
     queryFn: ({ pageParam }) => getPost(pageParam),
@@ -84,7 +144,7 @@ const UserProfile: React.FC<IProps> = ({
     },
   });
 
-  const loadMoreRef = useRef() as React.RefObject<HTMLButtonElement>;
+  const loadMoreRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (newPost) {
@@ -122,18 +182,19 @@ const UserProfile: React.FC<IProps> = ({
     }
   }, [userData, user]);
   useEffect(() => {
-    remove();
+    queryClient.removeQueries({ queryKey: ["userPosts"] });
     return () => {
-      remove();
+      queryClient.removeQueries({ queryKey: ["userPosts"] });
     };
-  }, [router.pathname, remove]);
+  }, [router.pathname, queryClient]);
   const renderFriendsButton = () => {
     const componentStatus = [
       {
         status: "not-sent",
         component: (
-          <button
-            className="bg-blue-500 hover:bg-blue-700	text-white font-bold text-xs p-3 rounded-md"
+          <Button
+            label={t("profile.addFriends")}
+            variant="primary"
             onClick={async () => {
               const res = await axios.post(`/friends/send/${userData.id}`);
 
@@ -143,16 +204,16 @@ const UserProfile: React.FC<IProps> = ({
                   status: res.data.status,
                 });
               }
-            }}>
-            Add Friends
-          </button>
+            }}
+          />
         ),
       },
       {
         status: "pending",
         component: (
-          <button
-            className="bg-yellow-300 hover:bg-yellow-700	text-white font-bold text-xs rounded-md inline-block p-3"
+          <Button
+            label={t("profile.cancelRequest")}
+            variant="secondary"
             onClick={async () => {
               const res = await axios.put(
                 `/friends/response/${statusFriends?.id}`,
@@ -166,31 +227,25 @@ const UserProfile: React.FC<IProps> = ({
                   status: res.data.status,
                 });
               }
-            }}>
-            Cancel
-          </button>
+            }}
+          />
         ),
       },
       {
         status: "accepted",
         component: (
-          <div className="flex flex-row justify-center space-x-4">
-            <Link
-              href="/messenger"
-              className="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50">
-              Messages
-            </Link>
-            <button className="px-4 py-2 text-blue-500 bg-white border border-blue-500 rounded hover:text-white hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50">
-              Friends
-            </button>
-          </div>
+          <HStack gap={2} hAlign="center">
+            <Button label={t("profile.messages")} href="/messenger" variant="primary" />
+            <Button label={t("profile.friends")} variant="secondary" />
+          </HStack>
         ),
       },
       {
         status: "declined",
         component: (
-          <button
-            className="bg-rose-700 hover:bg-rose-900	text-white font-bold text-xs p-3 rounded-md"
+          <Button
+            label={t("profile.addFriends")}
+            variant="primary"
             onClick={async () => {
               const res = await axios.put(
                 `/friends/response/${statusFriends?.id}`,
@@ -204,16 +259,16 @@ const UserProfile: React.FC<IProps> = ({
                   status: res.data.status,
                 });
               }
-            }}>
-            Add Friends
-          </button>
+            }}
+          />
         ),
       },
       {
         status: "waiting-for-current-user-response",
         component: (
-          <button
-            className="bg-green-300 hover:bg-green-700	text-white font-bold text-xs p-3 rounded-md "
+          <Button
+            label={t("profile.acceptRequests")}
+            variant="primary"
             onClick={async () => {
               const res = await axios.put(
                 `/friends/response/${statusFriends?.id}`,
@@ -227,9 +282,8 @@ const UserProfile: React.FC<IProps> = ({
                   status: res.data.status,
                 });
               }
-            }}>
-            Accept requests
-          </button>
+            }}
+          />
         ),
       },
     ];
@@ -239,6 +293,71 @@ const UserProfile: React.FC<IProps> = ({
         ?.component || null
     );
   };
+
+  // Ảnh bìa: seed user có coverImage trùng y hệt URL avatar nên ảnh bìa
+  // cũ render thành "mặt khổng lồ" và avatar chìm hẳn vào bìa. Chỉ coi
+  // là bìa thật khi có URL khác avatar; còn lại hiện placeholder phẳng
+  // (không gradient trang trí, theo Mono).
+  const hasRealCover =
+    !!userData?.coverImage && userData.coverImage !== userData.avatar;
+  // Số bài viết lấy từ dữ liệu bài đã tải (backend không trả total).
+  // Chỉ thêm "+" khi trang cuối tải đủ 1 trang (có thể còn trang sau);
+  // trang cuối thiếu nghĩa là đã hết bài.
+  const postCount =
+    data?.pages.reduce((n, p) => n + (p?.posts?.length ?? 0), 0) ?? 0;
+  const lastPageSize =
+    data?.pages[data.pages.length - 1]?.posts?.length ?? 0;
+  const postCountLabel =
+    lastPageSize === POSTS_PAGE_SIZE ? `${postCount}+` : `${postCount}`;
+
+  const renderAboutCard = (width: number | string) => (
+    <Card padding={5} width={width}>
+      <Stack gap={4}>
+        <Heading level={2}>{t("profile.about")}</Heading>
+        <List hasDividers>
+          {profileData?.education ? (
+            <ListItem
+              label={t("profile.wentTo", { place: profileData.education })}
+              startContent={<i className="fa-solid fa-graduation-cap" />}
+            />
+          ) : null}
+
+          {profileData?.city ? (
+            <ListItem
+              label={t("profile.livesIn", { place: profileData.city })}
+              startContent={<i className="fa-solid fa-house-chimney" />}
+            />
+          ) : null}
+          {profileData?.from ? (
+            <ListItem
+              label={t("profile.from", { place: profileData.from })}
+              startContent={<i className="fa-solid fa-location-dot" />}
+            />
+          ) : null}
+          {profileData?.relationship ? (
+            <ListItem
+              label={profileData.relationship}
+              startContent={<i className="fa-solid fa-heart" />}
+            />
+          ) : null}
+
+          <ListItem
+            label={t("profile.joined", { time: moment(user.createAt).fromNow() })}
+            startContent={<i className="fa-solid fa-clock" />}
+          />
+        </List>
+        {userData?.id === user.id ? (
+          <Button
+            label={t("profile.editDetails")}
+            variant="secondary"
+            width="100%"
+            onClick={() => setOpenDetailsModal(true)}
+          />
+        ) : null}
+      </Stack>
+    </Card>
+  );
+
   return (
     <>
       <Head>
@@ -250,155 +369,270 @@ const UserProfile: React.FC<IProps> = ({
           referrerPolicy="no-referrer"
         />
       </Head>
-      <div className="drop-shadow-sm p-5 bg-white dark:bg-black rounded-2xl">
-        <div className="">
-          <Image
-            className="rounded-2xl object-content"
-            src={userData?.coverImage || "/images/user-avatar.png"}
-            width={1000}
-            objectFit="cover"
-            height={300}
-            alt={userData.fullName}
-          />
-        </div>
-        <div className="flex justify-between pt-2 pb-5">
-          <div className=" flex ">
-            <div className="-mt-12 ml-5">
-              <Image
-                src={userData?.avatar || "/images/user-avatar.png"}
-                alt={userData.fullName}
-                width={100}
-                height={100}
-                objectFit="cover"
-                className="rounded-full"
-              />
-            </div>
-            <div className="ml-6">
-              <div className="font-bold text-lg text-center flex items-center justify-center mr-11">
-                {userData?.fullName}&ensp;
-                {/* <a className="group relative inline-block">
-                  <TiTick className="text-[20px] text-white rounded-full bg-sky-500" />
-                  <span className="absolute hidden group-hover:flex -top-2 -right-3 translate-x-full w-48 px-2 py-1 bg-gray-700 rounded-lg text-center text-white text-sm before:content-[''] before:absolute before:top-1/2  before:right-[100%] before:-translate-y-1/2 before:border-8 before:border-y-transparent before:border-l-transparent before:border-r-gray-700">
-                    day la tich xanh ne
-                  </span>
-                </a> */}
-              </div>
-
-              <div className="text-xs font-medium	text-gray-400 ">
-                <a href={`mailto:${userData?.email}`}>{userData?.email}</a>
-              </div>
-            </div>
-          </div>
-          <div className="">
-            {userData?.id === user.id ? (
-              <button
-                className="bg-green-500 hover:bg-green-700	text-white font-bold text-xs p-3 rounded-md "
-                onClick={() => setOpenProfileModal(true)}>
-                Edit profile
-              </button>
-            ) : (
-              renderFriendsButton()
-            )}
-          </div>
-        </div>
-        <div className="flex">
-          <button>
-            <Link href="/friends" className="pr-8 pt-3 font-semibold">
-              Post
-            </Link>
-          </button>
-          <button>
-            <Link href="/friends" className="pr-8 pt-3 font-semibold">
-              Friends
-            </Link>
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-12 gap-4 bg-gray-100 dark:bg-zinc-900 pt-3">
-        <div className="md:col-span-4 sm:col-span-12 col-span-12 ">
-          <div className="drop-shadow-sm bg-white dark:bg-black p-5 rounded-xl">
-            <h2 className="text-lg font-semibold pb-3">About</h2>
-            {profileData?.education ? (
-              <div className="flex items-center py-3">
-                <i className="fa-solid fa-graduation-cap"></i>
-                <span className="ml-3">Went to {profileData.education}</span>
-              </div>
-            ) : null}
-
-            {profileData?.city ? (
-              <div className="flex items-center py-3">
-                <i className="fa-solid fa-house-chimney"></i>
-                <span className="ml-3">Lives in {profileData.city}</span>
-              </div>
-            ) : null}
-            {profileData?.from ? (
-              <div className="flex items-center py-3">
-                <i className="fa-solid fa-location-dot" />
-                <span className="ml-3">From {profileData.from}</span>
-              </div>
-            ) : null}
-            {profileData?.relationship ? (
-              <div className="flex items-center py-3">
-                <i className="fa-solid fa-heart"></i>
-                <span className="ml-3">{profileData.relationship}</span>
-              </div>
-            ) : null}
-
-            <div className="flex items-center py-3">
-              <i className="fa-solid fa-clock"></i>
-              <span className="ml-3">
-                Joined {moment(user.createAt).fromNow()}
-              </span>
-            </div>
-            {userData?.id === user.id ? (
-              <button
-                className="w-full bg-gray-200 dark:bg-zinc-800 hover:dark:bg-zinc-700 hover:bg-slate-300 font-semibold rounded-md text-gray-700 dark:text-white mt-3 py-2"
-                onClick={() => setOpenDetailsModal(true)}>
-                Edit Details
-              </button>
-            ) : (
-              <button className="hidden w-full"></button>
-            )}
-          </div>
-        </div>
-        <div className="md:col-span-8 sm:col-span-12 col-span-12 ">
-          {/* create post */}
-          {userData?.id === user.id && <CreatePost setNewPost={setNewPost} />}
-          {data?.pages.map((data) => (
-            <Fragment key={data?.page}>
-              {data?.posts &&
-                data?.posts
-                  .map((post) => (
-                    <SinglePost
-                      loading={false}
-                      bookmarkedPostsId={bookmarkedPostsId || []}
-                      key={post.uuid}
-                      post={post}
-                      deletePost={deletePost}
-                      setDeletePost={setDeletePost}
-                      isBookmarkPage={false}
+      <Card padding={0} elevation="low">
+        {/* Ảnh bìa tràn viền trên của card, bo góc trên khớp card (16px). */}
+        <Stack className="relative h-44 w-full overflow-hidden rounded-t-2xl sm:h-56">
+          {hasRealCover ? (
+            <Image
+              src={userData.coverImage}
+              alt={userData.fullName}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 1000px"
+            />
+          ) : (
+            <Stack
+              hAlign="center"
+              vAlign="center"
+              className="h-full w-full bg-line">
+              <i className="fa-regular fa-image text-4xl text-muted/40" />
+            </Stack>
+          )}
+        </Stack>
+        <Stack gap={4} padding={5} paddingBlockStart={0}>
+          {/* Avatar chồng lên bìa (viền ring-surface tách khỏi bìa) +
+              cụm nút action căn đáy avatar; mobile nút wrap xuống dòng riêng. */}
+          <HStack
+            justify="between"
+            vAlign="end"
+            wrap="wrap"
+            gap={4}>
+            <Stack className="-mt-14 shrink-0 sm:-mt-16">
+              <Stack className="rounded-full shadow-sm ring-4 ring-surface">
+                <Avatar
+                  src={userData?.avatar || "/images/user-avatar.png"}
+                  name={userData?.fullName || userData?.username}
+                  size={128}
+                />
+              </Stack>
+            </Stack>
+            <Stack gap={2} className="w-full sm:w-auto">
+              <HStack gap={2} wrap="wrap" hAlign="end">
+                {userData?.id === user.id ? (
+                  <>
+                    <Button
+                      label={t("profile.editProfile")}
+                      variant="primary"
+                      onClick={() => setOpenProfileModal(true)}
                     />
-                  ))
-                  .reverse()}
-            </Fragment>
-          ))}
+                    {/* P3.4 — xin tick xanh (chưa xác minh và chưa gửi đơn). */}
+                    {!userData?.verified && !verifySent && (
+                      <Button
+                        label={t("profile.requestVerification")}
+                        variant="secondary"
+                        onClick={() => setVerifyOpen((v) => !v)}
+                      />
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {renderFriendsButton()}
+                    {/* P4.1 — theo dõi / bỏ theo dõi. */}
+                    <FollowButton
+                      userId={userData.id}
+                      initialFollowing={followStatus?.following}
+                      className="text-sm"
+                      onChange={(following) =>
+                        setFollowStatus((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                following,
+                                followerCount: Math.max(
+                                  0,
+                                  prev.followerCount + (following ? 1 : -1)
+                                ),
+                              }
+                            : prev
+                        )
+                      }
+                    />
+                    {/* P3.2 — chặn / bỏ chặn user này. */}
+                    <Button
+                      label={blocked ? t("profile.unblock") : t("profile.block")}
+                      variant="secondary"
+                      onClick={async () => {
+                        try {
+                          if (blocked) {
+                            await unblockUser(userData.id);
+                            setBlocked(false);
+                            toast.success(t("settings.unblocked"));
+                          } else {
+                            await blockUser(userData.id);
+                            setBlocked(true);
+                            toast.success(t("profile.blocked"));
+                          }
+                        } catch {
+                          toast.error(t("profile.actionFailed"));
+                        }
+                      }}
+                    />
+                  </>
+                )}
+              </HStack>
+              {verifyOpen && !userData?.verified && (
+                <Card padding={3} width={288}>
+                  <Stack gap={2}>
+                    <TextArea
+                      label={t("profile.verifyReasonLabel")}
+                      isLabelHidden
+                      rows={3}
+                      placeholder={t("profile.verifyReasonPlaceholder")}
+                      value={verifyReason}
+                      onChange={(value) => setVerifyReason(value)}
+                    />
+                    <Button
+                      label={t("profile.submitVerification")}
+                      variant="primary"
+                      onClick={async () => {
+                        try {
+                          await requestVerification(verifyReason);
+                          setVerifySent(true);
+                          setVerifyOpen(false);
+                          toast.success(t("profile.verificationSent"));
+                        } catch {
+                          toast.error(t("profile.verificationFailed"));
+                        }
+                      }}
+                    />
+                  </Stack>
+                </Card>
+              )}
+            </Stack>
+          </HStack>
+          {/* Tên + email. */}
+          <Stack gap={1} className="min-w-0">
+            <HStack gap={2} vAlign="center" wrap="wrap">
+              <Text weight="bold" size="xl">
+                {userData?.fullName}
+              </Text>
+              <VerifiedBadge verified={userData?.verified} />
+            </HStack>
 
-          <div>
-            <button
-              ref={loadMoreRef}
-              onClick={() => fetchNextPage()}
-              disabled={!hasNextPage || isFetchingNextPage}>
-              {isFetchingNextPage
-                ? "Loading more..."
-                : hasNextPage
-                ? "Load More"
-                : "Nothing more to load"}
-            </button>
-          </div>
-          <div>{isFetching && !isFetchingNextPage ? "Fetching..." : null}</div>
-        </div>
-      </div>
+            <Text type="supporting" className="break-all">
+              <Link
+                href={`mailto:${userData?.email}`}
+                color="secondary"
+                type="supporting">
+                {userData?.email}
+              </Link>
+            </Text>
+          </Stack>
+          {/* Stats: số bài (từ dữ liệu đã tải) + follow, bấm để xem danh sách. */}
+          <HStack gap={2} wrap="wrap">
+            {data ? (
+              <Button
+                label={t("profile.postsCount", { count: postCountLabel })}
+                variant="ghost"
+                onClick={() => setTab("posts")}>
+                <Text weight="bold" size="lg">
+                  {postCountLabel}
+                </Text>{" "}
+                <Text type="supporting">{t("profile.posts")}</Text>
+              </Button>
+            ) : null}
+            {/* P4.1 — số người theo dõi / đang theo dõi, bấm để xem danh sách. */}
+            {followStatus && (
+              <>
+                <Button
+                  label={t("follow.followersCount", { count: followStatus.followerCount })}
+                  variant="ghost"
+                  onClick={() => setFollowListKind("followers")}>
+                  <Text weight="bold" size="lg">
+                    {followStatus.followerCount}
+                  </Text>{" "}
+                  <Text type="supporting">{t("profile.followers")}</Text>
+                </Button>
+                <Button
+                  label={t("profile.followingCount", { count: followStatus.followingCount })}
+                  variant="ghost"
+                  onClick={() => setFollowListKind("following")}>
+                  <Text weight="bold" size="lg">
+                    {followStatus.followingCount}
+                  </Text>{" "}
+                  <Text type="supporting">{t("profile.following")}</Text>
+                </Button>
+              </>
+            )}
+          </HStack>
+          {/* Tabs: Bài viết / Giới thiệu đổi nội dung ngay trên trang,
+              Bạn bè sang trang /friends (giữ nguyên đích cũ). */}
+          <SegmentedControl
+            value={tab}
+            onChange={(value) => {
+              if (value === "friends") {
+                router.push("/friends");
+                return;
+              }
+              setTab(value as "posts" | "about");
+            }}
+            label={t("profile.switchView")}
+            layout="fill">
+            <SegmentedControlItem value="posts" label={t("profile.posts")} />
+            <SegmentedControlItem value="about" label={t("profile.about")} />
+            <SegmentedControlItem value="friends" label={t("profile.friends")} />
+          </SegmentedControl>
+        </Stack>
+      </Card>
+
+      {tab === "posts" ? (
+        <HStack wrap="wrap" gap={4} vAlign="start" paddingBlockStart={3}>
+          {/* Sidebar About chỉ hiện từ sm trở lên; mobile xem qua tab Giới thiệu. */}
+          <Stack className="hidden shrink-0 sm:block">
+            {renderAboutCard(300)}
+          </Stack>
+          <StackItem size="fill">
+            <Stack gap={4}>
+              {/* create post */}
+              {userData?.id === user.id && (
+                <CreatePost setNewPost={setNewPost} />
+              )}
+              {data?.pages.map((data) => (
+                <Fragment key={data?.page}>
+                  {data?.posts &&
+                    data?.posts
+                      .map((post) => (
+                        <SinglePost
+                          loading={false}
+                          bookmarkedPostsId={bookmarkedPostsId || []}
+                          key={post.uuid}
+                          post={post}
+                          deletePost={deletePost}
+                          setDeletePost={setDeletePost}
+                          isBookmarkPage={false}
+                        />
+                      ))
+                      .reverse()}
+                </Fragment>
+              ))}
+
+              <Button
+                label={
+                  isFetchingNextPage
+                    ? t("feed.loadingMore")
+                    : hasNextPage
+                      ? t("feed.loadMore")
+                      : t("feed.nothingMore")
+                }
+                variant="ghost"
+                ref={loadMoreRef}
+                onClick={() => fetchNextPage()}
+                isDisabled={!hasNextPage || isFetchingNextPage}
+                isLoading={isFetchingNextPage}
+              />
+              {isFetching && !isFetchingNextPage ? (
+                <Text type="supporting">{t("feed.fetching")}</Text>
+              ) : null}
+            </Stack>
+          </StackItem>
+        </HStack>
+      ) : (
+        <Center axis="horizontal">
+          <Stack width="100%" maxWidth={560} paddingBlockStart={3}>
+            {renderAboutCard("100%")}
+          </Stack>
+        </Center>
+      )}
       {/* Edit Profile Modal */}
       <ProfileModal
         data={user}
@@ -413,6 +647,21 @@ const UserProfile: React.FC<IProps> = ({
         setOpenDetailsModal={setOpenDetailsModal}
         setUpdateUserData={setUpdateUserData}
       />
+      {/* P4.1 — danh sách người theo dõi / đang theo dõi. */}
+      {followListKind && (
+        <FollowListModal
+          userId={userData.id}
+          kind={followListKind}
+          title={
+            followListKind === "followers"
+              ? t("profile.followersTitle")
+              : t("profile.followingTitle")
+          }
+          open={followListKind !== null}
+          onClose={() => setFollowListKind(null)}
+          currentUserId={user.id}
+        />
+      )}
     </>
   );
 };

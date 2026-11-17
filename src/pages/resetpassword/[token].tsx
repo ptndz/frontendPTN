@@ -2,7 +2,7 @@ import { GetServerSideProps } from "next";
 import ResetPassword from "../../components/Auth/ResetPassword";
 import { graphQLServer } from "../../plugins/graphql.plugin";
 import { queryUser } from "../../graphql/user";
-import { getCookies } from "cookies-next";
+import { getCookies } from "cookies-next/server";
 interface IProps {
   token: string;
 }
@@ -16,7 +16,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   try {
     const { token } = context.query;
 
-    const cookie = getCookies({ req: context.req });
+    const cookie = await getCookies({ req: context.req });
     const accessToken = cookie[process.env.NEXT_PUBLIC_COOKIE_NAME as string];
     if (accessToken) {
       const res = await graphQLServer(

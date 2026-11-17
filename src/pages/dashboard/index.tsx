@@ -1,21 +1,169 @@
 import Navigation from "../../components/Share/Navigation";
 import { FaUserCircle, FaUserFriends } from "react-icons/fa";
 import { BsFileEarmarkPost } from "react-icons/bs";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import { GetServerSideProps } from "next";
 import { User } from "../../gql/graphql";
 import { useStoreUser } from "../../store/user";
 
 import { getAuthenticatedUser } from "../../lib/pages-router-auth";
+import { toast } from "react-toastify";
+import { useI18n } from "../../i18n/I18nProvider";
+import {
+  fetchReports,
+  fetchVerificationRequests,
+  hideReportedPost,
+  reviewVerification,
+  suspendUser,
+  updateReportStatus,
+  warnReportedUser,
+  type ReportItem,
+  type VerificationItem,
+} from "../../lib/p3";
+import { Stack } from "@astryxdesign/core/Stack";
+import { HStack } from "@astryxdesign/core/HStack";
+import { Grid } from "@astryxdesign/core/Grid";
+import { Card } from "@astryxdesign/core/Card";
+import { Section } from "@astryxdesign/core/Section";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import { Button } from "@astryxdesign/core/Button";
+import { List, ListItem } from "@astryxdesign/core/List";
+import { Selector } from "@astryxdesign/core/Selector";
+import { ProgressBar } from "@astryxdesign/core/ProgressBar";
+
 interface IProps {
   userData: User;
 }
+
+/** Mũi tên tăng/giảm cho các thẻ số liệu mẫu (thay cho SVG mũi tên cũ). */
+function Delta({
+  pct,
+  up,
+  size,
+}: {
+  pct: number;
+  up: boolean;
+  size?: "sm" | "base";
+}) {
+  return (
+    <Text
+      size={size}
+      weight="semibold"
+      className={up ? "text-success" : "text-danger"}>
+      {up ? "▲" : "▼"} {pct}%
+    </Text>
+  );
+}
+
+interface DemoDelta {
+  pct: number;
+  up: boolean;
+}
+interface DemoRow {
+  label: string;
+  value: number;
+  delta: DemoDelta;
+}
+interface DemoCard {
+  title: string;
+  value: number;
+  delta: DemoDelta;
+  rows: DemoRow[];
+}
+
+/**
+ * Các thẻ số liệu mẫu (nội dung tĩnh, giữ nguyên chữ/số cũ kể cả lỗi
+ * chính tả "Project Reffered" / "Amercia").
+ */
+const DEMO_CARDS: DemoCard[] = [
+  {
+    title: "Project Reffered",
+    value: 12,
+    delta: { pct: 22, up: true },
+    rows: [
+      { label: "Unique URL", value: 34, delta: { pct: 22, up: true } },
+      { label: "Embedded form", value: 13, delta: { pct: 12, up: true } },
+      { label: "New visitor", value: 45, delta: { pct: 41, up: true } },
+    ],
+  },
+  {
+    title: "Project Paid",
+    value: 23,
+    delta: { pct: 12, up: true },
+    rows: [
+      { label: "User paid", value: 21, delta: { pct: 20, up: true } },
+      { label: "Income", value: 10, delta: { pct: 2, up: true } },
+      { label: "Royal tees", value: 434, delta: { pct: 12, up: false } },
+    ],
+  },
+  {
+    title: "New features",
+    value: 12,
+    delta: { pct: 2, up: false },
+    rows: [
+      { label: "Down", value: 34, delta: { pct: 22, up: false } },
+      { label: "Up", value: 13, delta: { pct: 12, up: true } },
+      { label: "No developed", value: 45, delta: { pct: 41, up: false } },
+    ],
+  },
+  {
+    title: "Sign in",
+    value: 16,
+    delta: { pct: 14, up: false },
+    rows: [
+      { label: "Amercia", value: 43, delta: { pct: 12, up: false } },
+      { label: "Europe", value: 133, delta: { pct: 19, up: true } },
+      { label: "Asia", value: 23, delta: { pct: 4, up: false } },
+    ],
+  },
+  {
+    title: "Sales",
+    value: 9,
+    delta: { pct: 34, up: true },
+    rows: [
+      { label: "Templates", value: 345, delta: { pct: 12, up: false } },
+      { label: "Components", value: 139, delta: { pct: 10, up: true } },
+      { label: "Icons", value: 421, delta: { pct: 4, up: false } },
+    ],
+  },
+  {
+    title: "Maintenance",
+    value: 15,
+    delta: { pct: 34, up: true },
+    rows: [
+      { label: "Cloud", value: 123, delta: { pct: 22, up: false } },
+      { label: "Infra", value: 134, delta: { pct: 9, up: true } },
+      { label: "Office", value: 23, delta: { pct: 41, up: true } },
+    ],
+  },
+];
+
 const PageDashboard: React.FC<IProps> = ({ userData }) => {
+  const { t } = useI18n();
   const [numberUser, serNumberUser] = useState<number>(0);
   const [numberPost, serNumberPost] = useState<number>(0);
   const [numberFriend, serNumberFriend] = useState<number>(0);
   const { setUser } = useStoreUser();
+  // P3.1/P3.4 — queue kiểm duyệt + đơn xin xác minh (chỉ admin/mod thấy dữ liệu).
+  const [reports, setReports] = useState<ReportItem[]>([]);
+  const [verifications, setVerifications] = useState<VerificationItem[]>([]);
+  const [reportFilter, setReportFilter] = useState("open");
+
+  const loadModeration = useCallback(async (status = reportFilter) => {
+    try {
+      setReports(await fetchReports(status));
+    } catch {
+      // Không phải admin/mod -> GET /reports trả 403, queue để trống.
+      setReports([]);
+    }
+    try {
+      setVerifications(await fetchVerificationRequests("pending"));
+    } catch {
+      setVerifications([]);
+    }
+  }, [reportFilter]);
 
   useEffect(() => {
     if (userData) {
@@ -33,548 +181,279 @@ const PageDashboard: React.FC<IProps> = ({ userData }) => {
       serNumberFriend(resFriend.data[1] as number);
     };
     fetchData();
-  }, []);
+    loadModeration();
+  }, [loadModeration]);
 
   return (
-    <main className="relative h-screen overflow-hidden bg-gray-100 dark:bg-gray-800">
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col w-full md:space-y-4">
-          <div className="h-screen px-4 pb-24 overflow-auto md:px-6">
-            <Navigation />
+    <main className="relative h-screen overflow-hidden bg-paper">
+      <Stack gap={4} className="h-screen overflow-auto px-4 pb-24 md:px-6">
+        <Navigation />
 
-            <div className="flex flex-col items-center w-full my-6 space-y-4 md:space-x-4 md:space-y-0 md:flex-row">
-              <div className="w-full md:w-6/12">
-                <div className="relative w-full overflow-hidden bg-white shadow-lg dark:bg-gray-700">
-                  <a href="#" className="block w-full h-full">
-                    <div className="flex items-center justify-between px-4 py-6 space-x-4">
-                      <div className="flex items-center">
-                        <FaUserCircle className="w-10 h-10" />
-                        <p className="ml-2 text-sm font-semibold text-gray-700 border-b border-gray-200 dark:text-white">
-                          Registered user
-                        </p>
-                      </div>
-                      <div className="mt-6 text-xl font-bold text-black border-b border-gray-200 md:mt-0 dark:text-white">
-                        {numberUser}
-                        <span className="text-xs text-gray-400">/1000</span>
-                      </div>
-                    </div>
-                    <div className="w-full h-3 bg-gray-100">
-                      <div className="w-1/5 h-full text-xs text-center text-white bg-green-400"></div>
-                    </div>
-                  </a>
-                </div>
-              </div>
-              <div className="flex items-center w-full space-x-4 md:w-1/2">
-                <div className="w-1/2">
-                  <div className="relative w-full px-4 py-6 bg-white shadow-lg dark:bg-gray-700">
-                    <p className="text-2xl font-bold text-black dark:text-white">
-                      {numberPost}
-                    </p>
-                    <p className="text-sm text-gray-400">Posts</p>
-                    <span className="absolute p-4 rounded-full top-2 right-4">
-                      <BsFileEarmarkPost className="w-10 h-10" />
-                    </span>
-                  </div>
-                </div>
-                <div className="w-1/2">
-                  <div className="relative w-full px-4 py-6 bg-white shadow-lg dark:bg-gray-700">
-                    <p className="text-2xl font-bold text-black dark:text-white">
-                      {numberFriend}
-                    </p>
-                    <p className="text-sm text-gray-400">Number of friends</p>
-                    <span className="absolute p-4 rounded-full top-2 right-4">
-                      <FaUserFriends className="w-10 h-10" />
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* Số liệu thật từ API dashboard. */}
+        <Grid columns={{ minWidth: 260, max: 3 }} gap={4}>
+          <Card>
+            <Stack gap={3}>
+              <HStack gap={2} vAlign="center">
+                <FaUserCircle className="h-10 w-10" />
+                <Text weight="semibold">{t("dashboard.registeredUser")}</Text>
+              </HStack>
+              <HStack gap={2} vAlign="end">
+                <Text size="xl" weight="bold" hasTabularNumbers>
+                  {numberUser}
+                </Text>
+                <Text type="supporting">/1000</Text>
+              </HStack>
+              <ProgressBar
+                label={t("dashboard.registeredUser")}
+                isLabelHidden
+                value={numberUser}
+                max={1000}
+                variant="success"
+              />
+            </Stack>
+          </Card>
+          <Card>
+            <HStack gap={3} hAlign="between" vAlign="start">
+              <Stack gap={0}>
+                <Text size="xl" weight="bold" hasTabularNumbers>
+                  {numberPost}
+                </Text>
+                <Text type="supporting">{t("dashboard.posts")}</Text>
+              </Stack>
+              <BsFileEarmarkPost className="h-10 w-10" />
+            </HStack>
+          </Card>
+          <Card>
+            <HStack gap={3} hAlign="between" vAlign="start">
+              <Stack gap={0}>
+                <Text size="xl" weight="bold" hasTabularNumbers>
+                  {numberFriend}
+                </Text>
+                <Text type="supporting">{t("dashboard.numberOfFriends")}</Text>
+              </Stack>
+              <FaUserFriends className="h-10 w-10" />
+            </HStack>
+          </Card>
+        </Grid>
 
-            <div className="grid grid-cols-1 gap-4 my-4 md:grid-cols-2 lg:grid-cols-3">
-              <div className="w-full">
-                <div className="relative w-full px-4 py-6 bg-white shadow-lg dark:bg-gray-700">
-                  <p className="text-sm font-semibold text-gray-700 border-b border-gray-200 w-max dark:text-white">
-                    Project Reffered
-                  </p>
-                  <div className="flex items-end my-6 space-x-2">
-                    <p className="text-5xl font-bold text-black dark:text-white">
-                      12
-                    </p>
-                    <span className="flex items-center text-xl font-bold text-green-500">
-                      <svg
-                        width={20}
-                        fill="currentColor"
-                        height={20}
-                        className="h-3"
-                        viewBox="0 0 1792 1792"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                      </svg>
-                      22%
-                    </span>
-                  </div>
-                  <div className="dark:text-white">
-                    <div className="flex items-center justify-between pb-2 mb-2 text-sm border-b border-gray-200 sm:space-x-12">
-                      <p>Unique URL</p>
-                      <div className="flex items-end text-xs">
-                        34
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-green-500"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          22%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>Embedded form</p>
-                      <div className="flex items-end text-xs">
-                        13
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-green-500"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          12%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between space-x-12 text-sm md:space-x-24">
-                      <p>New visitor</p>
-                      <div className="flex items-end text-xs">
-                        45
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-green-500"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          41%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="w-full">
-                <div className="relative w-full px-4 py-6 bg-white shadow-lg dark:bg-gray-700">
-                  <p className="text-sm font-semibold text-gray-700 border-b border-gray-200 w-max dark:text-white">
-                    Project Paid
-                  </p>
-                  <div className="flex items-end my-6 space-x-2">
-                    <p className="text-5xl font-bold text-black dark:text-white">
-                      23
-                    </p>
-                    <span className="flex items-center text-xl font-bold text-green-500">
-                      <svg
-                        width={20}
-                        fill="currentColor"
-                        height={20}
-                        className="h-3"
-                        viewBox="0 0 1792 1792"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                      </svg>
-                      12%
-                    </span>
-                  </div>
-                  <div className="dark:text-white">
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>User paid</p>
-                      <div className="flex items-end text-xs">
-                        21
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-green-500"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          20%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>Income</p>
-                      <div className="flex items-end text-xs">
-                        10
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-green-500"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          2%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between space-x-12 text-sm md:space-x-24">
-                      <p>Royal tees</p>
-                      <div className="flex items-end text-xs">
-                        434
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-red-500 transform rotate-180"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          12%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="w-full">
-                <div className="relative w-full px-4 py-6 bg-white shadow-lg dark:bg-gray-700">
-                  <p className="text-sm font-semibold text-gray-700 border-b border-gray-200 w-max dark:text-white">
-                    New features
-                  </p>
-                  <div className="flex items-end my-6 space-x-2">
-                    <p className="text-5xl font-bold text-black dark:text-white">
-                      12
-                    </p>
-                    <span className="flex items-center text-xl font-bold text-red-500">
-                      <svg
-                        width={20}
-                        fill="currentColor"
-                        height={20}
-                        className="h-3 transform rotate-180"
-                        viewBox="0 0 1792 1792"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                      </svg>
-                      2%
-                    </span>
-                  </div>
-                  <div className="dark:text-white">
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>Down</p>
-                      <div className="flex items-end text-xs">
-                        34
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-red-500 transform rotate-180"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          22%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>Up</p>
-                      <div className="flex items-end text-xs">
-                        13
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-green-500"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          12%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between space-x-12 text-sm md:space-x-24">
-                      <p>No developed</p>
-                      <div className="flex items-end text-xs">
-                        45
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-red-500 transform rotate-180"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          41%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="w-full">
-                <div className="relative w-full px-4 py-6 bg-white shadow-lg dark:bg-gray-700">
-                  <p className="text-sm font-semibold text-gray-700 border-b border-gray-200 w-max dark:text-white">
-                    Sign in
-                  </p>
-                  <div className="flex items-end my-6 space-x-2">
-                    <p className="text-5xl font-bold text-black dark:text-white">
-                      16
-                    </p>
-                    <span className="flex items-center text-xl font-bold text-red-500">
-                      <svg
-                        width={20}
-                        fill="currentColor"
-                        height={20}
-                        className="h-3 transform rotate-180"
-                        viewBox="0 0 1792 1792"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                      </svg>
-                      14%
-                    </span>
-                  </div>
-                  <div className="dark:text-white">
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>Amercia</p>
-                      <div className="flex items-end text-xs">
-                        43
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-red-500 transform rotate-180"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          12%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>Europe</p>
-                      <div className="flex items-end text-xs">
-                        133
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-green-500"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          19%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between space-x-12 text-sm md:space-x-24">
-                      <p>Asia</p>
-                      <div className="flex items-end text-xs">
-                        23
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-red-500 transform rotate-180"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          4%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="w-full">
-                <div className="relative w-full px-4 py-6 bg-white shadow-lg dark:bg-gray-700">
-                  <p className="text-sm font-semibold text-gray-700 border-b border-gray-200 w-max dark:text-white">
-                    Sales
-                  </p>
-                  <div className="flex items-end my-6 space-x-2">
-                    <p className="text-5xl font-bold text-black dark:text-white">
-                      9
-                    </p>
-                    <span className="flex items-center text-xl font-bold text-green-500">
-                      <svg
-                        width={20}
-                        fill="currentColor"
-                        height={20}
-                        className="h-3"
-                        viewBox="0 0 1792 1792"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                      </svg>
-                      34%
-                    </span>
-                  </div>
-                  <div className="dark:text-white">
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>Templates</p>
-                      <div className="flex items-end text-xs">
-                        345
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-red-500 transform rotate-180"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          12%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>Components</p>
-                      <div className="flex items-end text-xs">
-                        139
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-green-500"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          10%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between space-x-12 text-sm md:space-x-24">
-                      <p>Icons</p>
-                      <div className="flex items-end text-xs">
-                        421
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-red-500 transform rotate-180"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          4%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="w-full">
-                <div className="relative w-full px-4 py-6 bg-white shadow-lg dark:bg-gray-700">
-                  <p className="text-sm font-semibold text-gray-700 border-b border-gray-200 w-max dark:text-white">
-                    Maintenance
-                  </p>
-                  <div className="flex items-end my-6 space-x-2">
-                    <p className="text-5xl font-bold text-black dark:text-white">
-                      15
-                    </p>
-                    <span className="flex items-center text-xl font-bold text-green-500">
-                      <svg
-                        width={20}
-                        fill="currentColor"
-                        height={20}
-                        className="h-3"
-                        viewBox="0 0 1792 1792"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                      </svg>
-                      34%
-                    </span>
-                  </div>
-                  <div className="dark:text-white">
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>Cloud</p>
-                      <div className="flex items-end text-xs">
-                        123
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-red-500 transform rotate-180"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          22%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pb-2 mb-2 space-x-12 text-sm border-b border-gray-200 md:space-x-24">
-                      <p>Infra</p>
-                      <div className="flex items-end text-xs">
-                        134
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-green-500"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          9%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between space-x-12 text-sm md:space-x-24">
-                      <p>Office</p>
-                      <div className="flex items-end text-xs">
-                        23
-                        <span className="flex items-center">
-                          <svg
-                            width={20}
-                            fill="currentColor"
-                            height={20}
-                            className="h-3 text-green-500"
-                            viewBox="0 0 1792 1792"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1675 971q0 51-37 90l-75 75q-38 38-91 38-54 0-90-38l-294-293v704q0 52-37.5 84.5t-90.5 32.5h-128q-53 0-90.5-32.5t-37.5-84.5v-704l-294 293q-36 38-90 38t-90-38l-75-75q-38-38-38-90 0-53 38-91l651-651q35-37 90-37 54 0 91 37l651 651q37 39 37 91z"></path>
-                          </svg>
-                          41%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        {/* Thẻ số liệu mẫu (tĩnh). */}
+        <Grid columns={{ minWidth: 280, max: 3 }} gap={4}>
+          {DEMO_CARDS.map((card) => (
+            <Card key={card.title}>
+              <Stack gap={3}>
+                <Text weight="semibold">{card.title}</Text>
+                <HStack gap={2} vAlign="end">
+                  <Text size="4xl" weight="bold" hasTabularNumbers>
+                    {card.value}
+                  </Text>
+                  <Delta pct={card.delta.pct} up={card.delta.up} />
+                </HStack>
+                <List hasDividers>
+                  {card.rows.map((row) => (
+                    <ListItem
+                      key={row.label}
+                      label={row.label}
+                      endContent={
+                        <HStack gap={2} vAlign="center">
+                          <Text size="sm" hasTabularNumbers>
+                            {row.value}
+                          </Text>
+                          <Delta
+                            pct={row.delta.pct}
+                            up={row.delta.up}
+                            size="sm"
+                          />
+                        </HStack>
+                      }
+                    />
+                  ))}
+                </List>
+              </Stack>
+            </Card>
+          ))}
+        </Grid>
+
+        {/* ------------------- P3.1 — Queue kiểm duyệt ------------------- */}
+        <Section>
+          <Stack gap={3}>
+            <HStack gap={3} hAlign="between" vAlign="center" wrap="wrap">
+              <Heading level={2}>{t("dashboard.moderationTitle")}</Heading>
+              <Selector
+                label={t("dashboard.reportStatus")}
+                isLabelHidden
+                value={reportFilter}
+                onChange={(value) => {
+                  setReportFilter(value);
+                  loadModeration(value);
+                }}
+                options={[
+                  { value: "open", label: t("dashboard.statusOpen") },
+                  { value: "resolved", label: t("dashboard.statusResolved") },
+                  { value: "dismissed", label: t("dashboard.statusDismissed") },
+                ]}
+              />
+            </HStack>
+            {reports.length === 0 ? (
+              <Text type="supporting">
+                {t("dashboard.noReports")}
+              </Text>
+            ) : (
+              <List hasDividers>
+                {reports.map((r) => (
+                  <ListItem
+                    key={r.id}
+                    label={
+                      <Text maxLines={2}>
+                        #{r.id} [{r.targetType}] {r.targetId} — {r.reason}
+                      </Text>
+                    }
+                    description={`${t("dashboard.reporter", {
+                      name:
+                        r.reporter?.fullName ||
+                        r.reporter?.username ||
+                        (r.reporterId ?? ""),
+                    })} · ${r.createdAt?.slice(0, 10) ?? ""} · ${r.status}`}
+                    endContent={
+                      r.status === "open" ? (
+                        <HStack gap={2} wrap="wrap">
+                          {r.targetType === "post" && (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              label={t("dashboard.hidePost")}
+                              onClick={async () => {
+                                try {
+                                  await hideReportedPost(r.id);
+                                  toast.success(t("dashboard.postHidden"));
+                                  loadModeration();
+                                } catch {
+                                  toast.error(t("dashboard.hideFailed"));
+                                }
+                              }}
+                            />
+                          )}
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            label={t("dashboard.warnUser")}
+                            onClick={async () => {
+                              try {
+                                await warnReportedUser(r.id);
+                                toast.success(t("dashboard.warnSent"));
+                                loadModeration();
+                              } catch {
+                                toast.error(t("dashboard.warnFailed"));
+                              }
+                            }}
+                          />
+                          {r.targetType === "user" && (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              label={t("dashboard.suspendUser")}
+                              onClick={async () => {
+                                try {
+                                  await suspendUser(r.targetId);
+                                  toast.success(t("dashboard.suspended"));
+                                  loadModeration();
+                                } catch {
+                                  toast.error(t("dashboard.suspendFailed"));
+                                }
+                              }}
+                            />
+                          )}
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            label={t("dashboard.markResolved")}
+                            onClick={async () => {
+                              try {
+                                await updateReportStatus(r.id, "resolved");
+                                loadModeration();
+                              } catch {
+                                toast.error(t("dashboard.updateFailed"));
+                              }
+                            }}
+                          />
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            label={t("dashboard.dismiss")}
+                            onClick={async () => {
+                              try {
+                                await updateReportStatus(r.id, "dismissed");
+                                loadModeration();
+                              } catch {
+                                toast.error(t("dashboard.updateFailed"));
+                              }
+                            }}
+                          />
+                        </HStack>
+                      ) : undefined
+                    }
+                  />
+                ))}
+              </List>
+            )}
+          </Stack>
+        </Section>
+
+        {/* ---------------- P3.4 — Đơn xin xác minh ---------------- */}
+        <Section>
+          <Stack gap={3}>
+            <Heading level={2}>{t("dashboard.verificationsTitle")}</Heading>
+            {verifications.length === 0 ? (
+              <Text type="supporting">{t("dashboard.noVerifications")}</Text>
+            ) : (
+              <List hasDividers>
+                {verifications.map((v) => (
+                  <ListItem
+                    key={v.id}
+                    label={
+                      <Text maxLines={2}>
+                        {v.user?.fullName || v.user?.username || v.userId} —{" "}
+                        {v.reason}
+                      </Text>
+                    }
+                    description={`#${v.id} · ${v.createdAt?.slice(0, 10) ?? ""}`}
+                    endContent={
+                      <HStack gap={2} wrap="wrap">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          label={t("dashboard.approve")}
+                          onClick={async () => {
+                            try {
+                              await reviewVerification(v.id, true);
+                              toast.success(t("dashboard.verifyApproved"));
+                              loadModeration();
+                            } catch {
+                              toast.error(t("dashboard.approveFailed"));
+                            }
+                          }}
+                        />
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          label={t("dashboard.reject")}
+                          onClick={async () => {
+                            try {
+                              await reviewVerification(v.id, false);
+                              loadModeration();
+                            } catch {
+                              toast.error(t("dashboard.rejectFailed"));
+                            }
+                          }}
+                        />
+                      </HStack>
+                    }
+                  />
+                ))}
+              </List>
+            )}
+          </Stack>
+        </Section>
+      </Stack>
     </main>
   );
 };

@@ -15,10 +15,10 @@
   width: 70px;
   height: 40px;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
-  background-color: teal;
-  color: white;
+  background-color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .chatOnline {

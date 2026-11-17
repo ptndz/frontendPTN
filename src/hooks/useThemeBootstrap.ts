@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { setCookie } from "cookies-next";
+import { setCookie } from "cookies-next/client";
 import { getThemeC, setThemeC } from "../plugins/theme";
 
 type UseThemeBootstrapParams = {

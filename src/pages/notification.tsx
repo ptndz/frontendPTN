@@ -1,155 +1,294 @@
-import Image from "next/image";
+import React, { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import moment from "moment";
+import { GetServerSideProps } from "next";
+import { User } from "../gql/graphql";
+import { getAuthenticatedUser } from "../lib/pages-router-auth";
+import Navigation from "../components/Share/Navigation";
+import { useStoreUser } from "../store/user";
+import { toast } from "react-toastify";
+import dynamic from "next/dynamic";
+import {
+  AppNotification,
+  fetchNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+  notificationTarget,
+  notificationText,
+} from "../lib/notifications";
+import { useI18n } from "../i18n/I18nProvider";
+import { Stack } from "@astryxdesign/core/Stack";
+import { HStack } from "@astryxdesign/core/HStack";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import { EmptyState } from "@astryxdesign/core/EmptyState";
+import { Skeleton } from "@astryxdesign/core/Skeleton";
+import { Button } from "@astryxdesign/core/Button";
+import { Badge } from "@astryxdesign/core/Badge";
+import {
+  SegmentedControl,
+  SegmentedControlItem,
+} from "@astryxdesign/core/SegmentedControl";
+import { List, ListItem } from "@astryxdesign/core/List";
+import { Avatar } from "@astryxdesign/core/Avatar";
+import { StatusDot } from "@astryxdesign/core/StatusDot";
 
-const Notification = () => {
+const DynamicWidgetMessage = dynamic(
+  () => import("../components/Messages/WidgetMessage"),
+  {
+    ssr: false,
+  }
+);
+
+interface IProps {
+  userData: User;
+}
+
+const PAGE_SIZE = 20;
+
+const Notification: React.FC<IProps> = ({ userData }) => {
+  const { setUser } = useStoreUser();
+  const { t, locale } = useI18n();
+  const router = useRouter();
+
+  const [items, setItems] = useState<AppNotification[]>([]);
+  const [filter, setFilter] = useState<"all" | "unread">("all");
+  const [total, setTotal] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (userData) {
+      setUser(userData);
+    }
+  }, [setUser, userData]);
+
+  const load = useCallback(
+    async (nextPage: number, nextFilter: "all" | "unread") => {
+      if (nextPage === 1) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+      setError(false);
+      try {
+        const res = await fetchNotifications({
+          page: nextPage,
+          limit: PAGE_SIZE,
+          filter: nextFilter,
+        });
+        setItems((prev) =>
+          nextPage === 1 ? res.items : [...prev, ...res.items]
+        );
+        setTotal(res.total);
+        setUnreadCount(res.unreadCount);
+        setPage(nextPage);
+      } catch (err) {
+        setError(true);
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    load(1, filter);
+  }, [filter, load]);
+
+  const handleFilter = (next: "all" | "unread") => {
+    if (next !== filter) {
+      setFilter(next);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllNotificationsRead();
+      setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+      setUnreadCount(0);
+      toast.success(t("notifications.markedAllRead"));
+    } catch (err) {
+      toast.error(t("notifications.markFailed"));
+    }
+  };
+
+  const handleClickItem = async (item: AppNotification) => {
+    if (!item.read) {
+      try {
+        await markNotificationRead(item.id);
+      } catch (err) {
+        // Điều hướng vẫn diễn ra dù đánh dấu đọc lỗi.
+      }
+      setItems((prev) =>
+        prev.map((n) => (n.id === item.id ? { ...n, read: true } : n))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    }
+    const target = notificationTarget(item);
+    if (target) {
+      router.push(target);
+    }
+  };
+
+  const hasMore = items.length < total;
+
+  if (!userData) {
+    return null;
+  }
+
   return (
-    <div className="bg-slate-50 m-10 rounded pb-8 pt-5">
-      <div className="container m-5 rounded bg-white  mx-auto">
-        <div className="p-5">
-          {/* header-icon-section */}
-          <div className="flex justify-between">
-            <div className="">
-              <h3 className="text-2xl font-bold">
-                Notification{" "}
-                <span className="bg-orange-600 m-0  px-4 py-1 rounded font-normal text-white text-base">
-                  23
-                </span>
-              </h3>
-            </div>
-            <div className="flex gap-6">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-9 w-9 bg-gray-100 p-2"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
-                />
-              </svg>
+    <>
+      <Navigation />
+      <Stack gap={4} className="mx-auto w-full max-w-3xl bg-paper px-2 pt-2">
+        <HStack gap={3} hAlign="between" vAlign="center" wrap="wrap">
+          <HStack gap={2} vAlign="center">
+            <Heading level={2}>{t("notifications.title")}</Heading>
+            {unreadCount > 0 && (
+              <Badge label={unreadCount} variant="error" />
+            )}
+          </HStack>
+          <Button
+            variant="ghost"
+            label={t("notifications.markAllRead")}
+            isDisabled={unreadCount === 0}
+            onClick={handleMarkAllRead}
+          />
+        </HStack>
 
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-9 w-9 bg-gray-100 p-2"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+        <SegmentedControl
+          value={filter}
+          onChange={(value) => handleFilter(value as "all" | "unread")}
+          label={t("notifications.title")}>
+          <SegmentedControlItem
+            value="all"
+            label={t("notifications.all")}
+          />
+          <SegmentedControlItem
+            value="unread"
+            label={
+              unreadCount > 0
+                ? `${t("notifications.unread")} (${unreadCount})`
+                : t("notifications.unread")
+            }
+          />
+        </SegmentedControl>
 
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-9 w-9 bg-gray-100 p-2"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+        {loading ? (
+          <Stack gap={3}>
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} height={64} />
+            ))}
+          </Stack>
+        ) : error ? (
+          <EmptyState
+            title={t("notifications.loadFailed")}
+            description={t("notifications.loadFailedHint")}
+            actions={
+              <Button
+                variant="primary"
+                label={t("notifications.retry")}
+                onClick={() => load(1, filter)}
+              />
+            }
+          />
+        ) : items.length === 0 ? (
+          <EmptyState
+            title={
+              filter === "unread"
+                ? t("notifications.noUnread")
+                : t("notifications.noNotifications")
+            }
+            description={t("notifications.emptyHint")}
+          />
+        ) : (
+          <List hasDividers>
+            {items.map((item) => {
+              const actor = item.actor;
+              return (
+                <ListItem
+                  key={item.id}
+                  align="start"
+                  onClick={() => handleClickItem(item)}
+                  label={
+                    <Text
+                      maxLines={2}
+                      color={item.read ? "secondary" : "primary"}
+                      weight={item.read ? "normal" : "semibold"}>
+                      {notificationText(item, locale)}
+                    </Text>
+                  }
+                  description={
+                    item.createdAt ? moment(item.createdAt).fromNow() : ""
+                  }
+                  startContent={
+                    <Avatar
+                      src={actor?.avatar || "/images/user-avatar.png"}
+                      name={
+                        actor?.fullName || t("notifications.userFallback")
+                      }
+                      size={48}
+                      tooltip={false}
+                    />
+                  }
+                  endContent={
+                    !item.read ? (
+                      <StatusDot
+                        variant="accent"
+                        label={t("notifications.unread")}
+                      />
+                    ) : undefined
+                  }
                 />
-              </svg>
-            </div>
-          </div>
-          {/* main-Notification-items */}
-          <div className=" mt-8 flex transition duration-500 ease-in-out hover:bg-slate-300 rounded">
-            <div className="w-10/12  flex p-2 ">
-              <div style={{ height: "50px" }} className="relative">
-                <Image
-                  className="relative"
-                  src="/images/user-avatar.png"
-                  height={50}
-                  width={50}
-                  alt="Pham Thanh Nam"
-                />
-                <span className="bg-orange-600 m-0  font-normal text-white text-base rounded-full h-7 w-7 absolute bottom-0 right-0 p-1">
-                  23
-                </span>
-              </div>
-              <div className="pl-5">
-                <p className="font-sans font-light">
-                  Lorem ipsum dolor sit, amet consectetur adipisicing elit. Vel
-                  rem reiciendis veritatis culpa officiis non blanditiis
-                  consectetur odit! Quia, facilis!
-                </p>
-                <p className="font-bold text-gray-400">12 minutes ago</p>
-              </div>
-            </div>
-            <div className="w-2/12 flex items-center justify-end pr-5">
-              <div className="bg-white rounded-full p-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
+              );
+            })}
+          </List>
+        )}
 
-          {/* second-Notification
-           */}
-          <div className=" mt-2 flex transition duration-500 ease-in-out hover:bg-slate-300 ">
-            <div className="w-10/12  flex p-2 ">
-              <div style={{ height: "50px" }} className="relative h-25">
-                <Image
-                  className="relative"
-                  src="/images/user-avatar.png"
-                  height={50}
-                  width={50}
-                  alt="Pham Thanh Nam"
-                />
-                <span className="bg-orange-600 m-0  font-normal text-white text-base rounded-full h-7 w-7 absolute bottom-0 right-0 p-1">
-                  23
-                </span>
-              </div>
-
-              <div className="pl-5">
-                <p className="font-sans font-light">
-                  Lorem ipsum dolor sit, amet consectetur adipisicing elit. Vel
-                  rem reiciendis veritatis culpa officiis non blanditiis
-                  consectetur odit! Quia, facilis!
-                </p>
-                <p className="font-bold text-gray-400">12 minutes ago</p>
-              </div>
-            </div>
-            <div className="w-2/12 flex items-center justify-end pr-5">
-              <div className="bg-white rounded-full p-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+        {hasMore && !loading && (
+          <HStack hAlign="center">
+            <Button
+              variant="secondary"
+              isLoading={loadingMore}
+              label={
+                loadingMore
+                  ? t("common.loading")
+                  : t("notifications.loadMore")
+              }
+              onClick={() => load(page + 1, filter)}
+              className="w-full sm:w-auto"
+            />
+          </HStack>
+        )}
+        <DynamicWidgetMessage />
+      </Stack>
+    </>
   );
 };
 
 export default Notification;
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  try {
+    const user = await getAuthenticatedUser(context);
+
+    if (user) {
+      return {
+        props: {
+          userData: user,
+        },
+      };
+    }
+  } catch (error) {}
+
+  return {
+    redirect: {
+      destination: "/login",
+      permanent: false,
+    },
+  };
+};

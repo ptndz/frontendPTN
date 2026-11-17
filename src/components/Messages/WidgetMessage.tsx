@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import React from "react";
 import socket from "../../plugins/socket";
 import { IUser } from "../../gql/graphql";
 import AvatarWidget from "./AvatarWidget";
 import ChatWindow from "./ChatWindow";
 import { useStoreChatWindow } from "../../store/widgetChat";
+import { Stack } from "@astryxdesign/core/Stack";
+import { HStack } from "@astryxdesign/core/HStack";
 export interface IStateOpen {
   isOpen: boolean;
   id: number;
@@ -54,28 +56,24 @@ const WidgetMessage = () => {
   if (chatWindows) {
     return (
       <>
-        <div className="fixed bottom-0 right-0 mb-14 mr-4">
-          <div className="flex flex-col space-y-4 p-4">
-            {chatWindows.map((chat) => (
-              <AvatarWidget
-                key={chat.id}
-                userData={chat.user}
-                onClick={() => handleAvatarClick(chat.id)}
-              />
-            ))}
-          </div>
-        </div>
-        <div className="fixed bottom-0 right-0 mb-14 mr-32">
-          <div className="flex items-center space-x-4">
-            {chatWindows.map((chat) => (
-              <ChatWindow
-                key={chat.id}
-                chat={chat}
-                onClick={() => handleCloseChat(chat.id)}
-              />
-            ))}
-          </div>
-        </div>
+        <Stack gap={4} className="fixed bottom-0 right-0 mb-14 mr-4 p-4 max-lg:mb-[calc(5rem+env(safe-area-inset-bottom))]">
+          {chatWindows.map((chat) => (
+            <AvatarWidget
+              key={chat.id}
+              userData={chat.user}
+              onClick={() => handleAvatarClick(chat.id)}
+            />
+          ))}
+        </Stack>
+        <HStack gap={4} className="fixed bottom-0 right-0 mb-14 mr-32 max-lg:mb-[calc(5rem+env(safe-area-inset-bottom))]">
+          {chatWindows.map((chat) => (
+            <ChatWindow
+              key={chat.id}
+              chat={chat}
+              onClick={() => handleCloseChat(chat.id)}
+            />
+          ))}
+        </HStack>
       </>
     );
   }

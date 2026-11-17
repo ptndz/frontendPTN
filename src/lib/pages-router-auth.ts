@@ -1,4 +1,4 @@
-import { getCookies } from "cookies-next";
+import { getCookies } from "cookies-next/server";
 import { GetServerSidePropsContext } from "next";
 import { queryUser } from "../graphql/user";
 import { User } from "../gql/graphql";
@@ -7,7 +7,7 @@ import { graphQLServer } from "../plugins/graphql.plugin";
 export const getAuthenticatedUser = async (
   context: GetServerSidePropsContext
 ): Promise<User | null> => {
-  const cookie = getCookies({ req: context.req });
+  const cookie = await getCookies({ req: context.req });
   const accessToken = cookie[process.env.NEXT_PUBLIC_COOKIE_NAME as string];
 
   if (!accessToken) {

@@ -1,4 +1,4 @@
-import { deleteCookie, getCookie, setCookie } from "cookies-next";
+import { deleteCookie, getCookie, setCookie } from "cookies-next/client";
 
 const ACCESS_TOKEN_COOKIE_FALLBACK = "accessToken";
 const REFRESH_TOKEN_COOKIE_FALLBACK = "refreshToken";

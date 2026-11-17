@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import autosize from "autosize";
 import { BsX } from "react-icons/bs";
 import { BiMessageSquareEdit } from "react-icons/bi";
+import { FaGlobe, FaLock, FaUserFriends, FaPoll } from "react-icons/fa";
 import { MdOutlinePhotoSizeSelectActual } from "react-icons/md";
 import Image from "next/image";
 import { useForm } from "react-hook-form";
@@ -9,56 +10,102 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import jsonP from "@ptndev/json";
 import { useStoreUser } from "../../store/user";
-import { graphql } from "../../gql";
 import {
-  graphQLClient,
   graphQLClientErrorCheck,
 } from "../../plugins/graphql.plugin";
+import { createPostWithExtras } from "../../graphql/post";
+import type { Audience } from "../../types/social";
+import { useI18n } from "../../i18n/I18nProvider";
+import { isVideoUrl } from "../../lib/social";
+import MentionTextarea from "./MentionTextarea";
+import PollCreator, { PollDraft } from "./PollCreator";
+import { Card } from "@astryxdesign/core/Card";
+import { Avatar } from "@astryxdesign/core/Avatar";
+import { Button } from "@astryxdesign/core/Button";
+import { ButtonGroup } from "@astryxdesign/core/ButtonGroup";
+import { IconButton } from "@astryxdesign/core/IconButton";
+import { HStack } from "@astryxdesign/core/HStack";
+import { VStack } from "@astryxdesign/core/VStack";
+import { StackItem } from "@astryxdesign/core/Stack";
+import { Text } from "@astryxdesign/core/Text";
 
 interface IProps {
   setNewPost: (newPost: boolean) => void;
+  /** P1.4 — đăng vào nhóm: bài sẽ mang groupId này. */
+  groupId?: string;
+  /** P1.4 — tên nhóm hiển thị trong composer khi đăng vào nhóm. */
+  groupName?: string;
 }
 
-const CreatePost: React.FC<IProps> = ({ setNewPost }) => {
-  const [postImages, setPostImages] = useState<File[]>();
-  const [postImagePreview, setPostImagePreview] = useState<string[]>();
+const AUDIENCE_ICONS: Record<Audience, React.ReactNode> = {
+  public: <FaGlobe className="text-sm" />,
+  friends: <FaUserFriends className="text-sm" />,
+  "only-me": <FaLock className="text-sm" />,
+};
+
+const CreatePost: React.FC<IProps> = ({ setNewPost, groupId, groupName }) => {
+  const [postFiles, setPostFiles] = useState<File[]>([]);
+  const [postMediaPreview, setPostMediaPreview] = useState<
+    { url: string; isVideo: boolean }[]
+  >([]);
   const [postContents, setPostContents] = useState("");
+  const [audience, setAudience] = useState<Audience>("public");
+  const [pollEnabled, setPollEnabled] = useState(false);
+  const [pollDraft, setPollDraft] = useState<PollDraft>({
+    question: "",
+    options: ["", ""],
+    multiple: false,
+  });
 
   const textareaRef = useRef<any>(null);
   const filePickerRef = useRef<any>(null);
   const { user } = useStoreUser();
+  const { t } = useI18n();
+  const audienceOptions: { value: Audience; label: string }[] = [
+    { value: "public", label: t("feed.audience.public") },
+    { value: "friends", label: t("feed.audience.friends") },
+    { value: "only-me", label: t("feed.audience.onlyMe") },
+  ];
 
   useEffect(() => {
     autosize(textareaRef.current);
   }, [postContents]);
-  const queryPost = graphql(`
-    mutation createPost($content: String!, $images: [String!]!) {
-      createPost(createPostInput: { content: $content, images: $images }) {
-        code
-        success
-        message
-        post {
-          uuid
-          content
-          createAt
-          updateAt
-          images
-        }
-        errors {
-          field
-          message
-        }
+
+  const { register, handleSubmit } = useForm();
+
+  const clearMedia = () => {
+    postMediaPreview.forEach((m) => URL.revokeObjectURL(m.url));
+    setPostMediaPreview([]);
+    setPostFiles([]);
+  };
+
+  const onSubmit = async () => {
+    const poll =
+      pollEnabled && pollDraft.question.trim()
+        ? {
+            question: pollDraft.question.trim(),
+            options: pollDraft.options
+              .map((o) => o.trim())
+              .filter((o) => o.length > 0),
+            multiple: pollDraft.multiple,
+          }
+        : null;
+    if (pollEnabled && poll) {
+      if (poll.options.length < 2) {
+        toast.error(t("feed.create.pollNeedOptions"));
+        return;
       }
     }
-  `);
-  const { register, handleSubmit } = useForm();
-  const onSubmit = async (data: any) => {
-    toast("🦄 Posting....");
+    if (!postContents.trim() && postFiles.length === 0 && !poll) {
+      toast.error(t("feed.create.emptyPost"));
+      return;
+    }
+    toast(t("feed.create.posting"));
     const formData = new FormData();
     let imagesData: string[] = [];
-    if (postImages) {
-      postImages.map((image: File) => {
-        formData.append("images", image);
+    if (postFiles.length > 0) {
+      postFiles.forEach((file: File) => {
+        formData.append("images", file);
       });
 
       const resImages = await axios.post("/image", formData);
@@ -68,146 +115,202 @@ const CreatePost: React.FC<IProps> = ({ setNewPost }) => {
         }
       }
     }
-    const resPost = await graphQLClient.request(queryPost, {
-      content: jsonP.stringify(postContents),
-      images: imagesData ? imagesData : [],
-    });
-    if (resPost.createPost.code !== 200) {
-      toast(resPost.createPost.message);
-      return;
-    }
-    if (graphQLClientErrorCheck(resPost)) {
-      toast.success(resPost.createPost.message);
-      setPostContents("");
-      setPostImages(undefined);
-      setPostImagePreview(undefined);
+    try {
+      const resPost = await createPostWithExtras({
+        content: jsonP.stringify(postContents),
+        images: imagesData ? imagesData : [],
+        audience,
+        groupId,
+        poll,
+      });
+      if (resPost.createPost.code !== 200) {
+        toast(resPost.createPost.message);
+        return;
+      }
+      if (graphQLClientErrorCheck(resPost)) {
+        toast.success(resPost.createPost.message);
+        setPostContents("");
+        clearMedia();
+        setAudience("public");
+        setPollEnabled(false);
+        setPollDraft({ question: "", options: ["", ""], multiple: false });
 
-      setNewPost(true);
+        setNewPost(true);
+      }
+    } catch {
+      toast.error(t("feed.create.postFailed"));
     }
   };
 
+  const canSubmit =
+    postContents.trim() !== "" ||
+    postFiles.length > 0 ||
+    (pollEnabled && pollDraft.question.trim() !== "");
+
   return (
-    <div>
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="sm:rounded-lg bg-white dark:bg-black overflow-hidden">
-        <div className="px-2 sm:px-4 pb-2 pt-5 sm:pb-6">
-          <div className="flex gap-1 items-start">
-            <div className="flex-shrink-0 relative mx-auto sm:h-14 sm:w-14 h-12 w-12 rounded-full overflow-hidden bg-gray-300 dark:bg-zinc-800">
-              {user?.avatar && (
-                <Image
-                  src={user.avatar || "/images/user-avatar.png"}
-                  alt={user.fullName}
-                  layout="fill"
-                  objectFit="cover"
-                />
-              )}
-            </div>
-            <div className="flex flex-col w-full space-y-2">
-              <div className="pl-3">
-                <h1 className="font-medium sm:text-lg leading-6">
-                  {user?.fullName}
-                </h1>
-              </div>
-              <textarea
-                {...register("postContent")}
-                id="postContent"
-                ref={textareaRef}
-                value={postContents}
-                onChange={(e) => setPostContents(e.target.value)}
-                placeholder="What's on your mind?"
-                rows={2}
-                className="w-full placeholder:text-sm dark:text-zinc-200 resize-none max-h-40 focus:outline-none focus:border-none focus:ring-0 bg-transparent border-none scrollbar-hide overflow-y-scroll scrollbar scroll-ml-5"></textarea>
-            </div>
-          </div>
-        </div>
-        {/* image preview */}
-        {postImagePreview ? (
-          <div className="relative w-full">
-            {postImagePreview.map((image, index: number) => (
-              <div className="sm:p-2" key={index}>
-                <div className="relative h-72 w-full sm:rounded-lg overflow-hidden border border-gray-300 dark:border-zinc-600">
-                  <Image
-                    src={image}
-                    alt="Pham Thanh Nam"
-                    layout="fill"
-                    objectFit="cover"
-                  />
-                </div>
-              </div>
-            ))}
-
-            <button
-              className="absolute top-3 right-1 mr-2.5"
-              type="button"
-              onClick={() => {
-                setPostImagePreview(undefined);
-                setPostImages(undefined);
-              }}>
-              <BsX className="h-5 w-5 box-content p-2 rounded-full bg-white border dark:border-zinc-600 dark:bg-zinc-700" />
-            </button>
-          </div>
-        ) : (
-          ""
-        )}
-
-        <div className="border m-2 rounded-lg overflow-hidden border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-black grid divide-gray-200 dark:divide-zinc-700 grid-cols-2 divide-y-0 divide-x">
-          <button
-            type="button"
-            onClick={() => filePickerRef.current.click()}
-            className="py-2.5 text-sm font-medium flex gap-2 items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-800">
-            <MdOutlinePhotoSizeSelectActual className="text-green-400 w-7 h-7" />
-            <span className="hidden sm:block text-gray-600 dark:text-zinc-200">
-              Image
-            </span>
-            <input
-              ref={filePickerRef}
-              accept="image/*"
-              type="file"
-              name="file"
-              id="file"
-              onChange={(e) => {
-                const files = e.target.files;
-                const images: any = [];
-                if (files) {
-                  for (let i = 0; i < files.length; i++) {
-                    images.push(URL.createObjectURL(files[i]));
-                  }
-
-                  if (postImagePreview === undefined) {
-                    setPostImagePreview([...images]);
-                  }
-                  if (postImagePreview) {
-                    setPostImagePreview((result: any) => [
-                      ...result,
-                      ...images,
-                    ]);
-                  }
-                  if (postImages === undefined) {
-                    setPostImages([files[0]]);
-                  }
-                  if (postImages) {
-                    setPostImages((result: any) => [...result, files[0]]);
-                  }
-                }
-              }}
-              className="hidden"
+    <Card>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <VStack gap={3}>
+          <HStack gap={2} vAlign="start">
+            <Avatar
+              src={user?.avatar || "/images/user-avatar.png"}
+              name={user?.fullName}
+              size={48}
+              tooltip={false}
             />
-          </button>
-          <button
-            disabled={
-              !postContents && postImagePreview && postImagePreview.length > 0
-            }
-            type="submit"
-            className="py-2.5 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:dark:hover:bg-transparent text-sm font-medium flex gap-2 items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-800">
-            <BiMessageSquareEdit className="text-red-500 w-7 h-7" />
-            <span className="hidden sm:block text-gray-600 dark:text-zinc-200">
-              Post
-            </span>
-          </button>
-        </div>
+            <StackItem size="fill">
+              <VStack gap={2}>
+                <HStack gap={2} vAlign="center" className="flex-wrap">
+                  <Text weight="medium" size="lg">
+                    {user?.fullName}
+                  </Text>
+                  {groupName && (
+                    <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent-bright">
+                      {t("feed.create.groupBadge", { group: groupName })}
+                    </span>
+                  )}
+                  {/* P1.5 — chọn audience lúc đăng */}
+                  <label className="flex items-center gap-1 text-xs text-muted">
+                    {AUDIENCE_ICONS[audience]}
+                    <select
+                      value={audience}
+                      onChange={(e) =>
+                        setAudience(e.target.value as Audience)
+                      }
+                      className="max-w-full rounded-md border border-line bg-paper py-1 pl-1 pr-5 text-xs text-ink">
+                      {audienceOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </HStack>
+                <MentionTextarea
+                  {...register("postContent")}
+                  textareaRef={textareaRef}
+                  value={postContents}
+                  onChange={setPostContents}
+                  placeholder={
+                    groupName
+                      ? t("feed.create.groupPlaceholder", { group: groupName })
+                      : t("feed.create.placeholder")
+                  }
+                  rows={2}
+                  className="w-full placeholder:text-sm text-ink resize-none max-h-40 focus:outline-none focus:border-none focus:ring-0 bg-transparent border-none scrollbar-hide overflow-y-scroll scrollbar scroll-ml-5"
+                />
+              </VStack>
+            </StackItem>
+          </HStack>
+          {/* P1.3 — tạo poll */}
+          {pollEnabled && (
+            <HStack gap={0} vAlign="start">
+              <StackItem size="fill">
+                <PollCreator value={pollDraft} onChange={setPollDraft} />
+              </StackItem>
+              <IconButton
+                label={t("feed.create.poll")}
+                icon={<BsX />}
+                variant="ghost"
+                size="sm"
+                type="button"
+                onClick={() => setPollEnabled(false)}
+              />
+            </HStack>
+          )}
+          {/* media preview: ảnh + video */}
+          {postMediaPreview.length > 0 ? (
+            <VStack gap={2} className="relative w-full">
+              {postMediaPreview.map((media, index: number) => (
+                <div className="sm:p-2" key={index}>
+                  <div className="relative h-72 w-full sm:rounded-lg overflow-hidden border border-line">
+                    {media.isVideo ? (
+                      <video
+                        src={media.url}
+                        controls
+                        preload="metadata"
+                        className="h-full w-full object-contain bg-ink"
+                      />
+                    ) : (
+                      <Image
+                        src={media.url}
+                        alt="Pham Thanh Nam"
+                        layout="fill"
+                        objectFit="cover"
+                      />
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              <IconButton
+                label={t("common.cancel")}
+                icon={<BsX />}
+                variant="ghost"
+                size="sm"
+                type="button"
+                onClick={clearMedia}
+                className="absolute top-3 right-1"
+              />
+            </VStack>
+          ) : (
+            ""
+          )}
+
+          <input
+            ref={filePickerRef}
+            accept="image/*,video/*"
+            type="file"
+            name="file"
+            id="file"
+            multiple
+            onChange={(e) => {
+              const files = e.target.files;
+              if (!files || files.length === 0) return;
+              const picked = Array.from(files);
+              const oversized = picked.find(
+                (f) => f.type.startsWith("video/") && f.size > 100 * 1024 * 1024
+              );
+              if (oversized) {
+                toast.error(t("feed.create.videoMax"));
+                return;
+              }
+              const previews = picked.map((file) => ({
+                url: URL.createObjectURL(file),
+                isVideo:
+                  file.type.startsWith("video/") || isVideoUrl(file.name),
+              }));
+              setPostMediaPreview((prev) => [...prev, ...previews]);
+              setPostFiles((prev) => [...prev, ...picked]);
+            }}
+            className="hidden"
+          />
+          <ButtonGroup label={t("feed.create.post")}>
+            <Button
+              label={t("feed.create.imageVideo")}
+              icon={<MdOutlinePhotoSizeSelectActual />}
+              variant="ghost"
+              type="button"
+              onClick={() => filePickerRef.current.click()}
+            />
+            <Button
+              label={t("feed.create.poll")}
+              icon={<FaPoll />}
+              variant="ghost"
+              type="button"
+              onClick={() => setPollEnabled(!pollEnabled)}
+            />
+            <Button
+              label={t("feed.create.post")}
+              icon={<BiMessageSquareEdit />}
+              variant="primary"
+              type="submit"
+              isDisabled={!canSubmit}
+            />
+          </ButtonGroup>
+        </VStack>
       </form>
-    </div>
+    </Card>
   );
 };
 

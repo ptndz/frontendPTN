@@ -1,46 +1,231 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@layer reset, theme, base, astryx-base, astryx-theme, components, utilities;
+
+/* Fonts (Onest + JetBrains Mono) are loaded by the Mono
+   theme's fonts.css (src/themes/mono/mono.fonts.css),
+   imported via src/astryx-themes.ts — not here. */
+@import "tailwindcss";
+/* Astryx (existing-Tailwind recipe): @layer line above, stylesheets below.
+   tailwind-theme.css deliberately LEFT OUT — it remaps the app's own
+   Tailwind utilities (rounded-lg, shadow-md, …) to Astryx tokens. */
+@import "@astryxdesign/core/reset.css";
+@import "@astryxdesign/core/astryx.css";
+/* Theme tokens come from the built Mono theme
+   (src/themes/mono/mono.css), imported via
+   src/astryx-themes.ts — not from @astryxdesign/theme-neutral/theme.css. */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ------------------------------------------------------------------
+   Mono — monochrome palette (see DESIGN.md)
+   Light: paper #ffffff / surface #fafafa / ink #111111 / muted #6b7280
+   Dark:  paper #111111 / surface #1f1f1f / ink #fafafa / muted #a3a3a3
+   Accent #111111 light / #ffffff dark — black primary buttons in light
+   mode, white in dark mode; accent-as-text uses the same black/white
+   (there is no separate bright shade — the accent IS the ink).
+------------------------------------------------------------------- */
+:root {
+  --paper: #ffffff;
+  --surface: #fafafa;
+  --ink: #111111;
+  --muted: #6b7280;
+  --line: #e5e5e5;
+  --accent: #111111;
+  --accent-ink: #ffffff;
+  --accent-bright: #111111;
+  --danger: #db2424;
+  --danger-ink: #fdf0f0;
+  --success: #16a34a;
+  --warning: #d97706;
+  --presence: #10b981;
+}
+
+.dark {
+  --paper: #111111;
+  --surface: #1f1f1f;
+  --ink: #fafafa;
+  --muted: #a3a3a3;
+  --line: #2e2e2e;
+  --accent: #ffffff;
+  --accent-ink: #111111;
+  --accent-bright: #ffffff;
+  --danger: #ef4343;
+  --danger-ink: #fdf0f0;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --presence: #10b981;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-bright: var(--accent-bright);
+  --color-danger: var(--danger);
+  --color-danger-ink: var(--danger-ink);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-presence: var(--presence);
+  --color-regal-blue: #243c5a;
+
+  --font-sans: "Onest", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --breakpoint-xs: 460px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 840px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+
+  --transition-property-right: right;
+  --transition-property-left: left;
+}
+
+@plugin "@tailwindcss/forms";
+@plugin "tailwind-scrollbar-hide";
 
 @layer base {
+  html,
+  body,
+  p {
+    padding: 0;
+    margin: 0;
+  }
+
   body {
-    @apply bg-gray-100 text-black dark:bg-zinc-900 dark:text-white;
+    @apply bg-paper font-sans text-ink antialiased;
+  }
+
+  /* Chừa chỗ cho bottom nav DOCKED (mobile, dưới lg): thanh cao 4rem
+     + safe-area (iPhone home indicator), chừa 4.5rem + safe-area cho
+     thoáng. Class `has-bottom-nav` do Navigation thêm khi mount (chỉ
+     trang đã đăng nhập mới có Navigation) và gỡ khi unmount, nên trang
+     auth không bị thừa khoảng trống. `lg` của app là 1024px
+     (xem --breakpoint-lg). */
+  @media (max-width: 1023px) {
+    body.has-bottom-nav {
+      padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+    }
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.02em;
+  }
+
+  /* Browser surfaces carry the design too (craft floor). */
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  input,
+  textarea {
+    caret-color: var(--accent);
+  }
+
+  /* Themed scrollbars: thin, line-colored thumb on transparent track. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 0.4rem;
+    height: 0.5rem;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--line);
+    border-radius: 1rem;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* NProgress bar in accent. */
+  #nprogress .bar {
+    background: var(--accent);
+  }
+  #nprogress .peg {
+    box-shadow:
+      0 0 10px var(--accent),
+      0 0 5px var(--accent);
+  }
+  #nprogress .spinner-icon {
+    display: none;
   }
 }
 
-html,
-body,
-p {
-  padding: 0;
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+/* Shared component classes — one button/input/card language for the app. */
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-ink shadow-sm transition-colors hover:bg-accent/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-ink px-4 py-2 text-sm font-medium text-paper shadow-sm transition-colors hover:bg-ink/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-danger px-4 py-2 text-sm font-medium text-danger-ink shadow-sm transition-colors hover:bg-danger/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger disabled:pointer-events-none disabled:opacity-50;
+  }
+  .icon-btn {
+    @apply inline-flex h-11 w-11 items-center justify-center rounded-full border border-line text-ink transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50;
+  }
+  /* Pill for single-line fields (input/select); multi-line textareas
+     keep a modest 16px — a capsule textarea would look broken. (The
+     comment boxes already add their own `rounded-full`.) */
+  .field {
+    @apply h-10 w-full rounded-2xl border border-line bg-paper px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  input.field,
+  select.field {
+    border-radius: 9999px;
+  }
+  textarea.field {
+    border-radius: 16px;
+  }
+  .card {
+    @apply rounded-2xl border border-line bg-surface p-4 shadow-sm;
+  }
+  /* Auth headings used `font-title` (previously undefined). */
+  .font-title {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
 }
 
 @layer utilities {
-  /* Scroll thumb styles */
+  /* Scroll thumb styles (legacy .scrollbar helper, kept for feed columns). */
   .scrollbar::-webkit-scrollbar {
     width: 0.4rem;
     height: 0.5rem;
   }
   .scrollbar::-webkit-scrollbar-thumb {
-    background: #717171;
+    background: var(--line);
     border-radius: 1rem;
   }
-  .scrollbar::-webkit-scrollbar-thumb:active {
-    background-color: #131314;
-  }
-  .scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #717171;
-  }
-  /* Scroll track styles (Background) */
   .scrollbar::-webkit-scrollbar-track {
-    background: #e5e7eb;
+    background: transparent;
     border-radius: 4px;
-  }
-  .scrollbar::-webkit-scrollbar-track:hover,
-  .scrollbar::-webkit-scrollbar-track:active {
-    background: #e5e7eb;
   }
 }
 .customModal {
@@ -79,7 +264,7 @@ ul.left-sidebar li:hover {
   width: 40px;
   height: 40px;
   font-size: 20px;
-  color: #e37326;
+  color: var(--accent);
   transition-duration: 0.5s;
 }
 .left-second-sidebar li {
@@ -88,13 +273,13 @@ ul.left-sidebar li:hover {
   transition-duration: 0.5s;
 }
 .left-second-sidebar li:hover {
-  background: #e37326;
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-ink);
   border-radius: 4px;
   cursor: pointer;
 }
 .left-second-sidebar li:hover i {
-  color: #fff;
+  color: var(--accent-ink);
 }
 .right-side-group li a span:first-child {
   width: 37px;
@@ -109,13 +294,13 @@ ul.left-sidebar li:hover {
 .chat-box-container {
   width: 50%;
   margin: auto;
-  font-family: tahoma !important;
+  font-family: var(--font-sans);
 }
 
 /* conversation */
 .conversation:hover {
-  background-color: rgb(245, 243, 243);
-  color: black;
+  background-color: var(--surface);
+  color: var(--ink);
 }
 
 @media screen and (max-width: 768px) {
@@ -131,11 +316,27 @@ ul.left-sidebar li:hover {
   }
 }
 
-#nprogress .spinner-icon {
-  display: none;
+.bg-pattern-login {
+  background-image: url("../../public/images/background-login.png");
 }
 
-.bg-pattern-login {
-  /* background: #3b3b3b; */
-  background-image: url("../../public/images/background-login.png");
+/* react-toastify: mono surfaces, accent progress. */
+.Toastify__toast {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow:
+    0 1px 3px rgb(0 0 0 / 0.1),
+    0 4px 12px rgb(0 0 0 / 0.08);
+  font-family: var(--font-sans);
+}
+.Toastify__toast-body {
+  color: var(--ink);
+}
+.Toastify__close-button {
+  color: var(--muted);
+}
+.Toastify__progress-bar {
+  background: var(--accent);
 }

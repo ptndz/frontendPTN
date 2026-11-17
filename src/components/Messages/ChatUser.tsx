@@ -1,18 +1,26 @@
 import { useEffect, useState } from "react";
-import { RiUserSmileLine } from "react-icons/ri";
-import Image from "next/image";
+import moment from "moment";
 import {
   graphQLClient,
   graphQLClientErrorCheck,
 } from "../../plugins/graphql.plugin";
 import { queryGetUserByUsername } from "../../graphql/user";
 import { User } from "../../gql/graphql";
+import { useI18n } from "../../i18n/I18nProvider";
+import { ListItem } from "@astryxdesign/core/List";
+import { Avatar, AvatarStatusDot } from "@astryxdesign/core/Avatar";
+import { AvatarGroup } from "@astryxdesign/core/AvatarGroup";
+import { Text } from "@astryxdesign/core/Text";
+import { Stack } from "@astryxdesign/core/Stack";
 
 interface IProps {
   conversation: any;
   currentUser: User;
   currentChat: any;
   onlineUsers: any;
+  /** "X đang nhập..." trong đoạn này (P2.2a) — null nếu không ai nhập. */
+  typingText?: string | null;
+  onSelect?: () => void;
 }
 
 const ChatUser: React.FC<IProps> = ({
@@ -20,13 +28,18 @@ const ChatUser: React.FC<IProps> = ({
   currentUser,
   currentChat,
   onlineUsers,
+  typingText,
+  onSelect,
 }) => {
+  const { t } = useI18n();
   const [userData, setUserData] = useState<User>();
-  const friend: User = conversation.users.find(
-    (u: User) => u.id !== currentUser.id
-  );
+  const isGroup = !!conversation.isGroup;
+  const friend: User | undefined = isGroup
+    ? undefined
+    : conversation.users.find((u: User) => u.id !== currentUser.id);
   const [isOnline, setIsOnline] = useState(false);
   useEffect(() => {
+    if (!friend) return;
     const getUser = async () => {
       try {
         const res = await graphQLClient.request(queryGetUserByUsername, {
@@ -47,46 +60,120 @@ const ChatUser: React.FC<IProps> = ({
       setIsOnline(!!Array.from(onlineUsers).find((u) => u === userData?.id));
     }
   }, [onlineUsers, userData?.id]);
-  return (
-    <>
-      <div
-        className={`relative lg:px-4 px-2 py-2 rounded-lg flex items-center space-x-3 focus-within:ring-1 focus-within:ring-inset focus-within:ring-white hover:bg-gray-200 dark:hover:bg-zinc-800 ${
-          currentChat?.id === conversation.id
-            ? "bg-gray-200 dark:bg-zinc-800"
-            : ""
-        }`}>
-        <div className="flex-shrink-0 relative md:w-14 md:h-14 w-9 h-9">
-          {userData?.avatar ? (
-            <Image
-              layout="fill"
-              objectFit="cover"
-              className="h-full w-full rounded-full object-cover mr-2"
-              src={userData?.avatar || "/images/user-avatar.png"}
-              alt={userData?.fullName}
-            />
-          ) : (
-            <div className="md:w-14 md:h-14 w-9 h-9 rounded-full object-cover mr-2 bg-gray-300 dark:bg-zinc-900">
-              <RiUserSmileLine className="w-full h-full object-cover p-2" />
-            </div>
-          )}
 
-          {isOnline ? (
-            <div className="absolute w-3 h-3 rounded-full bg-green-600 ring-2 ring-white dark:ring-black bottom-0 right-0"></div>
+  const displayName = isGroup
+    ? conversation.name || t("messenger.preview.groupFallback")
+    : userData?.fullName || friend?.fullName || friend?.username || "";
+  const avatar = isGroup ? null : userData?.avatar || friend?.avatar;
+  const lastMessage = conversation.lastMessage;
+  // Chưa đọc: tin cuối không phải của mình và mình chưa có trong readBy.
+  // API không trả unreadCount nên chỉ có trạng thái có/không (chấm đen),
+  // không có số lượng. Ẩn khi đang mở chính hội thoại này.
+  const isUnread =
+    !!lastMessage &&
+    lastMessage.user?.id !== currentUser.id &&
+    !(lastMessage.readBy || []).includes(currentUser.id) &&
+    currentChat?.id !== conversation.id;
+  const lastTime = lastMessage?.createAt ?? lastMessage?.createdAt;
+  const lastPreview = lastMessage
+    ? lastMessage.isDeleted
+      ? t("messenger.preview.recalled")
+      : lastMessage.type === "IMAGE"
+        ? t("messenger.preview.sentPhoto")
+        : lastMessage.type === "VIDEO"
+          ? t("messenger.preview.sentVideo")
+          : lastMessage.type === "AUDIO"
+            ? t("messenger.preview.sentAudio")
+            : lastMessage.type === "FILE"
+              ? t("messenger.preview.sentFile")
+              : lastMessage.type === "LOCATION"
+                ? t("messenger.preview.sentLocation")
+                : lastMessage.type === "STICKER"
+                  ? `${lastMessage.message}${t("messenger.preview.stickerSuffix")}`
+                  : lastMessage.type === "CONTACT"
+                    ? t("messenger.preview.sentContact")
+                    : lastMessage.message
+    : "";
+
+  return (
+    <ListItem
+      align="first-line"
+      label={
+        <>
+          {isUnread ? (
+            <Text size="sm" weight="semibold">
+              {displayName}
+            </Text>
           ) : (
-            <div className="absolute w-3 h-3 rounded-full bg-zinc-600 ring-2 ring-white dark:ring-black bottom-0 right-0"></div>
+            displayName
           )}
-        </div>
-        <div className="flex-1 min-w-0 lg:block">
-          <a className="focus:outline-none">
-            <span className="absolute inset-0" aria-hidden="true"></span>
-            <p className="truncate text-base font-medium">
-              {userData?.fullName}
-            </p>
-          </a>
-        </div>
-      </div>
-      <div className="absolute -bottom-[1px] lg:-bottom-[1px] dark:bg-white bg-black w-1/2 lg:w-3/4 h-1 left-1/2 -translate-x-1/2 rounded"></div>
-    </>
+          {isGroup ? (
+            <Text size="sm" color="secondary">
+              {" "}
+              ({conversation.users?.length || 0})
+            </Text>
+          ) : null}
+        </>
+      }
+      description={
+        typingText ? (
+          <Text size="sm" className="text-accent italic">
+            {typingText}
+          </Text>
+        ) : isUnread ? (
+          <Text size="sm" weight="medium">
+            {lastPreview}
+          </Text>
+        ) : (
+          lastPreview || undefined
+        )
+      }
+      endContent={
+        <Stack gap={1} hAlign="end" className="shrink-0">
+          {lastTime ? (
+            <Text size="sm" color="secondary">
+              {moment(lastTime).fromNow()}
+            </Text>
+          ) : null}
+          {isUnread ? (
+            <Text aria-label={t("messenger.main.unread")} className="h-2.5 w-2.5 rounded-full bg-accent">
+              {""}
+            </Text>
+          ) : null}
+        </Stack>
+      }
+      startContent={
+        isGroup ? (
+          <AvatarGroup size={40}>
+            {(conversation.users || []).slice(0, 2).map((u: any) => (
+              <Avatar
+                key={u.id}
+                src={u.avatar}
+                fallbackSrc="/images/user-avatar.png"
+                name={u.fullName || ""}
+                tooltip={false}
+              />
+            ))}
+          </AvatarGroup>
+        ) : (
+          <Avatar
+            src={avatar || undefined}
+            fallbackSrc="/images/user-avatar.png"
+            name={displayName}
+            size={40}
+            tooltip={false}
+            status={
+              <AvatarStatusDot
+                variant={isOnline ? "success" : "neutral"}
+                label={isOnline ? t("messenger.main.online") : t("messenger.main.offline")}
+              />
+            }
+          />
+        )
+      }
+      isSelected={currentChat?.id === conversation.id}
+      onClick={onSelect}
+    />
   );
 };
 

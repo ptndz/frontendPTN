@@ -22,6 +22,7 @@ export const useStoreUser = create<UserState>((set) => ({
     coverImage: "",
     role: "",
     statusEmail: "",
+    verified: false,
   },
   setUser: (userValue: User) => {
     set((state) => ({
