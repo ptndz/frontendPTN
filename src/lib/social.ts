@@ -337,6 +337,15 @@ export async function removeGroupMember(
   await axios.post(`/groups/${groupId}/members/${userId}/remove`);
 }
 
+/** #18c — doi role member nhom (admin | member). */
+export async function changeGroupMemberRole(
+  groupId: string,
+  userId: string,
+  role: "admin" | "member"
+): Promise<void> {
+  await axios.patch(`/groups/${groupId}/members/${userId}/role`, { role });
+}
+
 export async function fetchGroupPosts(
   groupId: string,
   page = 1,

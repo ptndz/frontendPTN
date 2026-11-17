@@ -1,4 +1,5 @@
 import Navigation from "../../components/Share/Navigation";
+import Link from "next/link";
 import { FaUserCircle, FaUserFriends } from "react-icons/fa";
 import { BsFileEarmarkPost } from "react-icons/bs";
 import { useCallback, useEffect, useState } from "react";
@@ -188,6 +189,13 @@ const PageDashboard: React.FC<IProps> = ({ userData }) => {
     <main className="relative h-screen overflow-hidden bg-paper">
       <Stack gap={4} className="h-screen overflow-auto px-4 pb-24 md:px-6">
         <Navigation />
+
+        {/* #18c — lien ket sang trang quan ly user. */}
+        <HStack gap={2} vAlign="center">
+          <Link href="/dashboard/users" className="text-sm text-accent underline">
+            {t("dashboard.usersTitle")}
+          </Link>
+        </HStack>
 
         {/* Số liệu thật từ API dashboard. */}
         <Grid columns={{ minWidth: 260, max: 3 }} gap={4}>

@@ -23,6 +23,7 @@ interface IProps {
   onRename: (name: string) => Promise<void>;
   onAddMember: (userId: string) => Promise<void>;
   onRemoveMember: (userId: string) => Promise<void>;
+  onTransferAdmin: (userId: string) => Promise<void>;
   onLeave: () => Promise<void>;
 }
 
@@ -76,6 +77,7 @@ const GroupMembersPanel: React.FC<IProps> = ({
   onRename,
   onAddMember,
   onRemoveMember,
+  onTransferAdmin,
   onLeave,
 }) => {
   const { t, locale } = useI18n();
@@ -285,6 +287,18 @@ const GroupMembersPanel: React.FC<IProps> = ({
                   isDisabled={busy}
                   onClick={() => run(() => onRemoveMember(u.id))}
                 />
+              ) : null}
+              {isAdmin &&
+              u.id !== currentUserId &&
+              u.id !== conversation.adminId ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  label={t("messenger.members.transferAdmin")}
+                  isDisabled={busy}
+                  onClick={() => run(() => onTransferAdmin(u.id))}>
+                  {t("messenger.members.transferAdmin")}
+                </Button>
               ) : null}
             </HStack>
           ))}

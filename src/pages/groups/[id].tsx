@@ -14,6 +14,7 @@ import SinglePost from "../../components/Home/SinglePost";
 import {
   approveGroupMember,
   fetchGroup,
+  changeGroupMemberRole,
   fetchGroupMembers,
   fetchGroupPosts,
   joinGroup,
@@ -141,6 +142,24 @@ const GroupDetailPage: React.FC<IProps> = ({ userData }) => {
       loadGroup();
     } catch {
       toast.error(t("groups.approveFailed"));
+    }
+  };
+
+  const handleChangeRole = async (
+    member: GroupMember,
+    role: "admin" | "member"
+  ) => {
+    try {
+      await changeGroupMemberRole(groupId, member.user.id, role);
+      toast.success(t("groups.roleChanged"));
+      setMembers((prev) =>
+        prev.map((m) =>
+          m.user.id === member.user.id ? { ...m, role } : m
+        )
+      );
+      loadGroup();
+    } catch {
+      toast.error(t("groups.roleChangeFailed"));
     }
   };
 
@@ -343,15 +362,34 @@ const GroupDetailPage: React.FC<IProps> = ({ userData }) => {
                           }
                           description={`@${member.user.username}`}
                           endContent={
-                            isAdmin &&
-                            member.user.id !== user.id &&
-                            member.role !== "admin" ? (
-                              <Button
-                                label={t("groups.remove")}
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemove(member)}
-                              />
+                            isAdmin && member.user.id !== user.id ? (
+                              <HStack gap={1} vAlign="center">
+                                <Button
+                                  label={
+                                    member.role === "admin"
+                                      ? t("groups.demote")
+                                      : t("groups.promote")
+                                  }
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleChangeRole(
+                                      member,
+                                      member.role === "admin"
+                                        ? "member"
+                                        : "admin"
+                                    )
+                                  }
+                                />
+                                {member.role !== "admin" ? (
+                                  <Button
+                                    label={t("groups.remove")}
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleRemove(member)}
+                                  />
+                                ) : null}
+                              </HStack>
                             ) : undefined
                           }
                         />

@@ -707,6 +707,14 @@ const MessagingMain = () => {
     if (res.data?.conversation) setCurrentChat(res.data.conversation);
     else throw new Error("add member failed");
   };
+  const handleTransferAdmin = async (userId: string) => {
+    const res = await axios.post(
+      `/messenger/conversations/${currentChat.id}/transfer`,
+      { toUserId: userId }
+    );
+    if (res.data?.conversation) setCurrentChat(res.data.conversation);
+    else throw new Error("transfer admin failed");
+  };
   const handleRemoveMember = async (userId: string) => {
     const res = await axios.delete(`/messenger/conversations/${currentChat.id}/members/${userId}`);
     if (res.data?.conversation) setCurrentChat(res.data.conversation);
@@ -1579,6 +1587,7 @@ const MessagingMain = () => {
                       onRename={handleRenameGroup}
                       onAddMember={handleAddMember}
                       onRemoveMember={handleRemoveMember}
+                      onTransferAdmin={handleTransferAdmin}
                       onLeave={handleLeaveGroup}
                     />
                   ) : null}
