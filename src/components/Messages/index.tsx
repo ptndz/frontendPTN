@@ -27,6 +27,8 @@ import { User } from "../../gql/graphql";
 
 import socket from "../../plugins/socket";
 import Image from "next/image";
+import Link from "next/link";
+import { BsPinAngleFill } from "react-icons/bs";
 import { ChatLayout, ChatMessageList, ChatComposer, ChatComposerInput, type ChatComposerTrigger } from "@astryxdesign/core/Chat";
 import { createStaticSource } from "@astryxdesign/core/Typeahead";
 import { Stack } from "@astryxdesign/core/Stack";
@@ -88,6 +90,10 @@ const MessagingMain = () => {
   const [showAttach, setShowAttach] = useState(false);
   const [showStickers, setShowStickers] = useState(false);
   const [showContacts, setShowContacts] = useState(false);
+  const [showChatSearch, setShowChatSearch] = useState(false);
+  const [chatSearchQuery, setChatSearchQuery] = useState("");
+  const [chatSearchResults, setChatSearchResults] = useState<any[]>([]);
+  const [chatSearching, setChatSearching] = useState(false);
   const [sending, setSending] = useState(false);
   const currentChatRef = useRef<any>(null);
   const lastTypingAt = useRef(0);
@@ -384,6 +390,9 @@ const MessagingMain = () => {
     setReplyTo(null);
     setShowMembers(false);
     setShowGallery(false);
+    setShowChatSearch(false);
+    setChatSearchQuery("");
+    setChatSearchResults([]);
     markRead(currentChat.id);
     const onFocus = () => markRead(currentChat.id);
     window.addEventListener("focus", onFocus);
@@ -574,6 +583,109 @@ const MessagingMain = () => {
       setTimeout(() => el.classList.remove("ring-2", "ring-accent", "rounded-2xl"), 1500);
     }
   };
+
+  // #18h — Pin / Unpin message in conversation
+  const applyPinnedState = (convId: number, pinnedId: number | null, pinnedMsg: any = null) => {
+    setCurrentChat((prev: any) =>
+      prev && prev.id === convId
+        ? { ...prev, pinnedMessageId: pinnedId, pinnedMessage: pinnedMsg }
+        : prev
+    );
+    setConversations((prev: any[]) =>
+      (prev || []).map((c: any) =>
+        c.id === convId
+          ? { ...c, pinnedMessageId: pinnedId, pinnedMessage: pinnedMsg }
+          : c
+      )
+    );
+  };
+
+  const handleUnpinMessage = async () => {
+    if (!currentChat?.id) return;
+    const convId = currentChat.id;
+    try {
+      try {
+        await axios.delete(`/messenger/conversations/${convId}/pin`);
+      } catch {
+        try {
+          await axios.post(`/messenger/conversations/${convId}/pin`, { messageId: null });
+        } catch {
+          await axios.patch(`/messenger/conversations/${convId}`, { pinnedMessageId: null });
+        }
+      }
+      applyPinnedState(convId, null, null);
+      toast.info(locale === "en" ? "Message unpinned." : "Đã bỏ ghim tin nhắn.");
+    } catch {
+      toast.error(locale === "en" ? "Couldn't unpin message." : "Không thể bỏ ghim tin nhắn.");
+    }
+  };
+
+  const handlePinMessage = async (msg: any) => {
+    if (!currentChat?.id || !msg?.id) return;
+    const convId = currentChat.id;
+    if (Number(currentChat.pinnedMessageId) === Number(msg.id)) {
+      await handleUnpinMessage();
+      return;
+    }
+    try {
+      try {
+        await axios.post(`/messenger/conversations/${convId}/pin`, { messageId: msg.id });
+      } catch {
+        await axios.patch(`/messenger/conversations/${convId}`, { pinnedMessageId: msg.id });
+      }
+      applyPinnedState(convId, msg.id, msg);
+      toast.success(locale === "en" ? "Message pinned." : "Đã ghim tin nhắn.");
+    } catch {
+      toast.error(locale === "en" ? "Couldn't pin message." : "Không thể ghim tin nhắn.");
+    }
+  };
+
+  // #18h — Search messages inside current conversation
+  useEffect(() => {
+    if (!showChatSearch || !currentChat?.id) {
+      setChatSearchResults([]);
+      return;
+    }
+    const q = chatSearchQuery.trim();
+    if (!q) {
+      setChatSearchResults([]);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setChatSearching(true);
+      try {
+        const res = await axios.get(
+          `/messenger/conversations/${currentChat.id}/messages/search`,
+          { params: { q, limit: 20 } }
+        );
+        const list = Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res.data?.messages)
+            ? res.data.messages
+            : Array.isArray(res.data?.data)
+              ? res.data.data
+              : [];
+        if (!cancelled) setChatSearchResults(list);
+      } catch {
+        // Fallback: filter currently loaded messages client-side
+        const lower = q.toLowerCase();
+        const localMatches = (messagesRef.current || []).filter(
+          (m: any) =>
+            !m?.isDeleted &&
+            typeof m?.message === "string" &&
+            m.message.toLowerCase().includes(lower)
+        );
+        if (!cancelled) setChatSearchResults(localMatches.slice(-20).reverse());
+      } finally {
+        if (!cancelled) setChatSearching(false);
+      }
+    }, 280);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [showChatSearch, chatSearchQuery, currentChat?.id]);
 
   // P2.1 — tạo nhóm / đổi tên / thêm / xóa / rời nhóm.
   const handleCreateGroup = async (name: string, memberIds: string[]) => {
@@ -901,6 +1013,54 @@ const MessagingMain = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [locale, mentionMembers]
   );
+
+  const pinnedMessageId = currentChat?.pinnedMessageId ?? null;
+  const pinnedMessageObj = useMemo(() => {
+    if (!pinnedMessageId) return null;
+    if (currentChat?.pinnedMessage) return currentChat.pinnedMessage;
+    return (
+      messages.find((m: any) => Number(m?.id) === Number(pinnedMessageId)) ||
+      null
+    );
+  }, [currentChat?.pinnedMessage, messages, pinnedMessageId]);
+
+  const hasBotsInChat = useMemo(
+    () => Boolean((currentChat?.users || []).some((u: any) => isBotUser(u))),
+    [currentChat]
+  );
+
+  const commandHelperPills = hasBotsInChat ? (
+    <HStack gap={2} wrap="wrap" vAlign="center" className="px-1">
+      {(
+        [
+          { label: "/task", insert: "/task " },
+          { label: "/tasks", insert: "/tasks" },
+          { label: "/info", insert: "/info" },
+          { label: "/help", insert: "/help" },
+        ] as const
+      ).map((cmd) => (
+        <button
+          key={cmd.label}
+          type="button"
+          onClick={() => setNewMessage(cmd.insert)}
+          className="text-xs font-mono px-2.5 py-1 rounded-full bg-surface hover:bg-accent/15 border border-line text-accent transition-colors cursor-pointer">
+          {cmd.label}
+        </button>
+      ))}
+      {currentChat?.isGroup ? (
+        <Link
+          href={`/projects/${currentChat.id}/tasks`}
+          className="text-xs px-2.5 py-1 rounded-full bg-surface hover:bg-accent/15 border border-line text-muted hover:text-ink transition-colors">
+          📋 Kanban
+        </Link>
+      ) : null}
+      <Link
+        href="/files"
+        className="text-xs px-2.5 py-1 rounded-full bg-surface hover:bg-accent/15 border border-line text-muted hover:text-ink transition-colors">
+        📂 Files
+      </Link>
+    </HStack>
+  ) : null;
 
   // ChatComposer KHÔNG có API đổi input: khi đang chọn ảnh để gửi,
   // composer text được thay bằng khối preview + nút gửi ảnh (như cũ).
@@ -1238,7 +1398,105 @@ const MessagingMain = () => {
                       setShowMembers(false);
                     }}
                   />
+                  <IconButton
+                    variant={showChatSearch ? "primary" : "secondary"}
+                    label={locale === "en" ? "Search in chat" : "Tìm trong hội thoại"}
+                    icon={<FiSearch className="h-4 w-4" />}
+                    className="shrink-0"
+                    onClick={() => setShowChatSearch((v) => !v)}
+                  />
                 </HStack>
+
+                {/* #18h — Pinned Message Banner */}
+                {pinnedMessageId ? (
+                  <HStack
+                    gap={2}
+                    vAlign="center"
+                    className="bg-surface/90 border-b border-line px-3 sm:px-4 py-1.5 text-sm">
+                    <BsPinAngleFill className="h-4 w-4 text-accent shrink-0" />
+                    <button
+                      type="button"
+                      onClick={() => handleQuoteClick(Number(pinnedMessageId))}
+                      className="flex-1 min-w-0 text-left truncate cursor-pointer hover:underline">
+                      <span className="font-semibold mr-1.5">
+                        {locale === "en" ? "Pinned:" : "Tin đã ghim:"}
+                      </span>
+                      <span className="text-muted">
+                        {pinnedMessageObj?.message || `#${pinnedMessageId}`}
+                      </span>
+                    </button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      label={locale === "en" ? "Unpin" : "Bỏ ghim"}
+                      onClick={() => void handleUnpinMessage()}
+                    />
+                  </HStack>
+                ) : null}
+
+                {/* #18h — Search-in-Chat Bar & Results */}
+                {showChatSearch ? (
+                  <Stack gap={2} className="bg-surface border-b border-line px-3 sm:px-4 py-2">
+                    <HStack gap={2} vAlign="center">
+                      <FiSearch className="h-4 w-4 text-muted shrink-0" />
+                      <input
+                        type="search"
+                        autoFocus
+                        value={chatSearchQuery}
+                        onChange={(e) => setChatSearchQuery(e.target.value)}
+                        placeholder={
+                          locale === "en"
+                            ? "Search messages in this chat..."
+                            : "Tìm nội dung tin nhắn trong cuộc trò chuyện này..."
+                        }
+                        className="flex-1 min-w-0 bg-paper rounded-lg border border-line text-sm outline-none py-1 px-2.5"
+                      />
+                      <IconButton
+                        size="sm"
+                        variant="ghost"
+                        label={t("common.close")}
+                        icon={<Icon icon="close" />}
+                        onClick={() => {
+                          setShowChatSearch(false);
+                          setChatSearchQuery("");
+                        }}
+                      />
+                    </HStack>
+                    {chatSearching ? (
+                      <Text size="sm" color="secondary" className="text-xs px-1">
+                        {locale === "en" ? "Searching..." : "Đang tìm..."}
+                      </Text>
+                    ) : chatSearchQuery.trim() && chatSearchResults.length === 0 ? (
+                      <Text size="sm" color="secondary" className="text-xs px-1">
+                        {locale === "en" ? "No messages found." : "Không tìm thấy tin nhắn nào."}
+                      </Text>
+                    ) : chatSearchResults.length > 0 ? (
+                      <Stack gap={1} className="max-h-44 overflow-y-auto">
+                        {chatSearchResults.map((hit: any) => (
+                          <button
+                            key={hit.id}
+                            type="button"
+                            onClick={() => {
+                              const el = document.getElementById(`msg-${hit.id}`);
+                              if (el) {
+                                handleQuoteClick(Number(hit.id));
+                              } else {
+                                toast.info(
+                                  `${hit.user?.fullName || hit.user?.username || ""}: ${hit.message}`
+                                );
+                              }
+                            }}
+                            className="w-full text-left text-xs px-2.5 py-1.5 rounded-lg hover:bg-paper border border-transparent hover:border-line truncate cursor-pointer">
+                            <strong className="mr-1.5">
+                              {hit.user?.fullName || hit.user?.username || "User"}:
+                            </strong>
+                            <span className="text-muted">{hit.message}</span>
+                          </button>
+                        ))}
+                      </Stack>
+                    ) : null}
+                  </Stack>
+                ) : null}
                 <HStack className="flex-1 min-h-0 relative">
                   {/* chat body */}
                   <ChatLayout
@@ -1251,6 +1509,7 @@ const MessagingMain = () => {
                         {attachMenu}
                         {stickerPanel}
                         {contactPanel}
+                        {commandHelperPills}
                         {composerBody}
                       </Stack>
                     }>
@@ -1299,6 +1558,8 @@ const MessagingMain = () => {
                             onReply={setReplyTo}
                             onEdit={handleEdit}
                             onDelete={handleDelete}
+                            onPin={handlePinMessage}
+                            isPinned={Boolean(pinnedMessageId && Number(pinnedMessageId) === Number(m.id))}
                           />
                         );
                       })}

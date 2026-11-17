@@ -40,7 +40,18 @@ import {
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import dynamic from "next/dynamic";
+
+const ReactQueryDevtools =
+  process.env.NODE_ENV === "development"
+    ? dynamic(
+        () =>
+          import("@tanstack/react-query-devtools").then(
+            (m) => m.ReactQueryDevtools
+          ),
+        { ssr: false }
+      )
+    : () => null;
 import { generateDefaultSeo } from "next-seo/pages";
 import "../plugins/axios.plugin";
 import SEO from "../../next-seo.config";
@@ -93,7 +104,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         <CallProvider />
       </HydrationBoundary>
 
-      <ReactQueryDevtools />
+      {process.env.NODE_ENV === "development" && <ReactQueryDevtools />}
     </QueryClientProvider>
     </I18nProvider>
     </LinkProvider>

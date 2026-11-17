@@ -20,6 +20,8 @@ interface IProps {
   onReply?: (message: any) => void;
   onEdit?: (message: any, text: string) => void;
   onDelete?: (messageId: number) => void;
+  onPin?: (message: any) => void;
+  isPinned?: boolean;
   /** Tin đầu nhóm tin liên tiếp cùng người gửi: hiện avatar + tên. */
   isFirstInGroup?: boolean;
   /** Tin cuối nhóm: hiện thời gian (chỉ 1 lần / nhóm). */
@@ -51,6 +53,8 @@ const Chat: React.FC<IProps> = ({
   onReply,
   onEdit,
   onDelete,
+  onPin,
+  isPinned,
   isFirstInGroup = true,
   isLastInGroup = true,
   showSenderName = false,
@@ -130,6 +134,8 @@ const Chat: React.FC<IProps> = ({
           onReply={onReply}
           onEdit={onEdit}
           onDelete={onDelete}
+          onPin={onPin}
+          isPinned={isPinned}
         />
       </ChatMessageBubble>
     </ChatMessage>

@@ -13,7 +13,7 @@ import {
 } from "react-icons/bs";
 import { VscListSelection } from "react-icons/vsc";
 import { FiUsers, FiLogOut, FiCompass } from "react-icons/fi";
-import { FaCalendarAlt, FaFlag, FaStore, FaTasks } from "react-icons/fa";
+import { FaCalendarAlt, FaFlag, FaFolderOpen, FaStore, FaTasks } from "react-icons/fa";
 import { MdOutlineNotificationsNone } from "react-icons/md";
 import { useStoreUser } from "../../store/user";
 import { useStoreTheme } from "../../store/state";
@@ -76,6 +76,11 @@ const topCenterNavlinks = [
     href: "/projects",
     icon: <FaTasks />,
     label: "nav.projects",
+  },
+  {
+    href: "/files",
+    icon: <FaFolderOpen />,
+    label: "nav.files",
   },
   {
     href: "/explore",
@@ -463,6 +468,13 @@ const Navigation = () => {
                   label: t("nav.messenger"),
                   icon: <BsChatSquare />,
                   href: "/messenger",
+                  endContent: <BsChevronRight />,
+                },
+                {
+                  id: "files",
+                  label: t("nav.files"),
+                  icon: <FaFolderOpen />,
+                  href: "/files",
                   endContent: <BsChevronRight />,
                 },
                 {

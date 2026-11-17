@@ -16,7 +16,7 @@ import { toast } from "react-toastify";
 import { useStoreUser } from "../../store/user";
 import { useI18n } from "../../i18n/I18nProvider";
 import { useRouter } from "next/router";
-import { setCookie } from "cookies-next/client";
+import { setAuthCookies } from "../../lib/auth/session";
 
 import { FormLayout } from "@astryxdesign/core/FormLayout";
 import { InputGroup } from "@astryxdesign/core/InputGroup";
@@ -68,19 +68,11 @@ const Login = () => {
       return;
     }
     try {
-      setCookie("uuid", res.user.id, {
-        maxAge: 60 * 60 * 24 * 30,
-      });
-      setCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string, accessToken, {
-        maxAge: 60 * 60 * 24 * 30,
-      });
-      setCookie(
-        process.env.NEXT_PUBLIC_REFRESH_TOKEN_COOKIE_NAME as string,
+      setAuthCookies({
+        accessToken,
         refreshToken,
-        {
-          maxAge: 60 * 60 * 24 * 30,
-        }
-      );
+        userId: res.user.id,
+      });
     } catch (error) {
       console.log(error);
     }

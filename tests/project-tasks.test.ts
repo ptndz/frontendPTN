@@ -168,3 +168,26 @@ describe("projectGroupDisplayName", () => {
     expect(projectGroupDisplayName(empty)).toBe("");
   });
 });
+
+describe("normalizeProjectTask (#18b priority, dueDate, description, ack)", () => {
+  it("normalizes priority, dueDate/dueAt, description, labels, ackedAt, ackedBy", () => {
+    const t = normalizeProjectTask({
+      id: 42,
+      conversationId: 503,
+      title: "Deploy SSE",
+      status: "doing",
+      priority: "urgent",
+      description: "Stream task.acked",
+      dueAt: "2026-11-20T00:00:00.000Z",
+      labels: ["backend", "sse"],
+      ackedAt: "2026-11-17T15:00:00.000Z",
+      ackedBy: "ai_muse002",
+    });
+    expect(t?.priority).toBe("urgent");
+    expect(t?.description).toBe("Stream task.acked");
+    expect(t?.dueDate).toBe("2026-11-20T00:00:00.000Z");
+    expect(t?.labels).toBe("backend, sse");
+    expect(t?.ackedAt).toBe("2026-11-17T15:00:00.000Z");
+    expect(t?.ackedBy).toBe("ai_muse002");
+  });
+});

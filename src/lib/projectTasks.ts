@@ -1,22 +1,28 @@
 /**
- * Board task MXH (thiết kế mục 4.5 — MXH × code/web).
+ * Board task MXH (thiết kế mục 4.5 + #18b nâng cấp).
  *
- * API contract (backend làm song song, item 7 — CHƯA verify với backend live):
- * - GET   /messenger/projects/:conversationId/tasks     -> danh sách task của group
- * - PATCH /messenger/projects/:conversationId/tasks/:id -> { status?, assignee? }
- * (router messenger mount ở /messenger — mọi endpoint messenger trong repo
- * đều có prefix này, vd /messenger/conversations/:id/messages.)
- * `[id]` trên route board là conversationId. Response được normalize
- * phòng thủ như src/lib/social.ts (bọc { tasks } / { task } / trả thẳng).
+ * API contract:
+ * - GET    /messenger/projects/:conversationId/tasks     -> danh sách task của group
+ * - POST   /messenger/projects/:conversationId/tasks     -> tạo task
+ * - PATCH  /messenger/projects/:conversationId/tasks/:id -> sửa task
+ * - DELETE /messenger/projects/:conversationId/tasks/:id -> xóa task
  */
 import axios from "axios";
 
 export type ProjectTaskStatus = "todo" | "doing" | "done";
+export type ProjectTaskPriority = "low" | "medium" | "high" | "urgent";
 
 export const PROJECT_TASK_STATUSES: ProjectTaskStatus[] = [
   "todo",
   "doing",
   "done",
+];
+
+export const PROJECT_TASK_PRIORITIES: ProjectTaskPriority[] = [
+  "urgent",
+  "high",
+  "medium",
+  "low",
 ];
 
 export interface ProjectTask {
@@ -25,6 +31,12 @@ export interface ProjectTask {
   title: string;
   status: ProjectTaskStatus;
   assignee?: string | null;
+  description?: string | null;
+  priority?: ProjectTaskPriority;
+  dueDate?: string | null;
+  labels?: string | null;
+  ackedAt?: string | null;
+  ackedBy?: string | null;
   createdById?: string | null;
   mxhMessageId?: number | null;
   otterTaskId?: string | null;
@@ -45,12 +57,17 @@ function isStatus(v: unknown): v is ProjectTaskStatus {
   return v === "todo" || v === "doing" || v === "done";
 }
 
+function isPriority(v: unknown): v is ProjectTaskPriority {
+  return v === "low" || v === "medium" || v === "high" || v === "urgent";
+}
+
 /** Normalize 1 task thô; trả null khi thiếu id (không render được). */
 export function normalizeProjectTask(raw: unknown): ProjectTask | null {
   if (!isRecord(raw)) return null;
   const id = toStringId(raw.id);
   if (!id) return null;
-  return {
+
+  const base: ProjectTask = {
     id,
     conversationId: toStringId(raw.conversationId) ?? "",
     title: typeof raw.title === "string" ? raw.title : "",
@@ -61,9 +78,48 @@ export function normalizeProjectTask(raw: unknown): ProjectTask | null {
       typeof raw.mxhMessageId === "number" ? raw.mxhMessageId : null,
     otterTaskId:
       typeof raw.otterTaskId === "string" ? raw.otterTaskId : null,
-    createdAt: typeof raw.createdAt === "string" ? raw.createdAt : null,
-    updatedAt: typeof raw.updatedAt === "string" ? raw.updatedAt : null,
+    createdAt:
+      typeof raw.createdAt === "string"
+        ? raw.createdAt
+        : typeof raw.createAt === "string"
+          ? raw.createAt
+          : null,
+    updatedAt:
+      typeof raw.updatedAt === "string"
+        ? raw.updatedAt
+        : typeof raw.updateAt === "string"
+          ? raw.updateAt
+          : null,
   };
+
+  if ("description" in raw) {
+    base.description =
+      typeof raw.description === "string" ? raw.description : null;
+  }
+  if ("priority" in raw && isPriority(raw.priority)) {
+    base.priority = raw.priority;
+  }
+  const rawDue = raw.dueDate ?? raw.dueAt;
+  if ("dueDate" in raw || "dueAt" in raw) {
+    base.dueDate = typeof rawDue === "string" && rawDue ? rawDue : null;
+  }
+  if ("labels" in raw) {
+    if (typeof raw.labels === "string") {
+      base.labels = raw.labels;
+    } else if (Array.isArray(raw.labels)) {
+      base.labels = raw.labels.filter((x) => typeof x === "string").join(", ");
+    } else {
+      base.labels = null;
+    }
+  }
+  if ("ackedAt" in raw) {
+    base.ackedAt = typeof raw.ackedAt === "string" ? raw.ackedAt : null;
+  }
+  if ("ackedBy" in raw) {
+    base.ackedBy = typeof raw.ackedBy === "string" ? raw.ackedBy : null;
+  }
+
+  return base;
 }
 
 function pickArray(payload: unknown, keys: string[]): unknown[] {
@@ -117,7 +173,6 @@ export interface ProjectGroupConversation {
   id: string;
   name: string | null;
   isGroup: boolean;
-  /** id admin nhóm (backend toConversation trả về) — đổi tên chỉ admin được. */
   adminId?: string | null;
   users: ProjectGroupUser[];
   updateAt?: string | null;
@@ -178,11 +233,6 @@ export function parseProjectGroupConversationList(
     .filter((c): c is ProjectGroupConversation => c !== null);
 }
 
-/**
- * Lấy các đoạn group chat của user hiện tại (lọc isGroup từ
- * GET /messenger/getConversations). Chỉ gọi 1 request cho danh sách;
- * số task từng nhóm do trang /projects tự đếm song song.
- */
 export async function fetchGroupConversations(): Promise<
   ProjectGroupConversation[]
 > {
@@ -193,10 +243,12 @@ export async function fetchGroupConversations(): Promise<
 }
 
 export async function fetchProjectTasks(
-  conversationId: string
+  conversationId: string,
+  params?: { q?: string; priority?: string; assignee?: string; status?: string }
 ): Promise<ProjectTask[]> {
   const res = await axios.get(
-    `/messenger/projects/${encodeURIComponent(conversationId)}/tasks`
+    `/messenger/projects/${encodeURIComponent(conversationId)}/tasks`,
+    params ? { params } : undefined
   );
   return parseProjectTaskList(res.data ?? {});
 }
@@ -208,6 +260,10 @@ export async function patchProjectTask(
     status?: ProjectTaskStatus;
     assignee?: string | null;
     title?: string;
+    description?: string | null;
+    priority?: ProjectTaskPriority;
+    dueDate?: string | null;
+    labels?: string | null;
   }
 ): Promise<ProjectTask | null> {
   const res = await axios.patch(
@@ -223,6 +279,16 @@ export async function patchProjectTask(
   return normalizeProjectTask(raw);
 }
 
+export async function deleteProjectTask(
+  conversationId: string,
+  taskId: string
+): Promise<boolean> {
+  await axios.delete(
+    `/messenger/projects/${encodeURIComponent(conversationId)}/tasks/${encodeURIComponent(taskId)}`
+  );
+  return true;
+}
+
 /** Parse 1 conversation: bọc { conversation } / { data } hoặc trả thẳng. */
 export function parseProjectGroupConversationSingle(
   payload: unknown
@@ -236,10 +302,6 @@ export function parseProjectGroupConversationSingle(
   return normalizeProjectGroupConversation(raw);
 }
 
-/**
- * Lấy 1 đoạn group chat kèm thành viên + adminId
- * (GET /messenger/conversations/:id — dùng cho dropdown giao task).
- */
 export async function fetchProjectGroupConversation(
   conversationId: string
 ): Promise<ProjectGroupConversation | null> {
@@ -249,13 +311,17 @@ export async function fetchProjectGroupConversation(
   return parseProjectGroupConversationSingle(res.data ?? {});
 }
 
-/**
- * Tạo task tay trên board (POST /messenger/projects/:id/tasks).
- * Backend: title bắt buộc, assignee mặc định "unassigned", status "todo".
- */
 export async function createProjectTask(
   conversationId: string,
-  input: { title: string; assignee?: string; status?: ProjectTaskStatus }
+  input: {
+    title: string;
+    assignee?: string;
+    status?: ProjectTaskStatus;
+    description?: string | null;
+    priority?: ProjectTaskPriority;
+    dueDate?: string | null;
+    labels?: string | null;
+  }
 ): Promise<ProjectTask | null> {
   const res = await axios.post(
     `/messenger/projects/${encodeURIComponent(conversationId)}/tasks`,
@@ -270,11 +336,6 @@ export async function createProjectTask(
   return normalizeProjectTask(raw);
 }
 
-/**
- * Tạo dự án = tạo nhóm chat mới (POST /messenger/groups).
- * Backend: cần ít nhất 2 thành viên khác ngoài người tạo.
- * Trả về conversation đã normalize; throw khi backend báo lỗi.
- */
 export async function createProjectGroup(
   name: string,
   memberIds: string[]
@@ -285,10 +346,6 @@ export async function createProjectGroup(
   return conv;
 }
 
-/**
- * Đổi tên dự án (PATCH /messenger/conversations/:id — admin nhóm only).
- * Trả về conversation đã normalize; throw khi backend báo lỗi (403/404).
- */
 export async function renameProjectGroup(
   conversationId: string,
   name: string

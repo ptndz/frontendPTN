@@ -1,4 +1,4 @@
-import { FaUsers, FaUserAlt, FaUserFriends, FaTasks } from "react-icons/fa";
+import { FaUsers, FaUserAlt, FaUserFriends, FaTasks, FaFolderOpen } from "react-icons/fa";
 import {
   BsChatLeftFill,
   BsFillBookmarkFill,
@@ -64,6 +64,11 @@ const LeftSideBar = () => {
       href: "/projects",
       icon: <FaTasks className="bg-accent p-2 w-9 h-9 text-accent-ink rounded-md" />,
       label: t("sidebar.projects"),
+    },
+    {
+      href: "/files",
+      icon: <FaFolderOpen className="bg-accent p-2 w-9 h-9 text-accent-ink rounded-md" />,
+      label: t("sidebar.files"),
     },
     {
       href: "/explore",

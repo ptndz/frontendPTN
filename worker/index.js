@@ -1,12 +1,17 @@
 import { defaultCache } from "@serwist/next/worker";
-import { Serwist } from "serwist";
+import { NetworkOnly, Serwist } from "serwist";
+
+const authNetworkOnlyRule = {
+  matcher: /^\/api\/auth\/.*/i,
+  handler: new NetworkOnly(),
+};
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: defaultCache,
+  runtimeCaching: [authNetworkOnlyRule, ...defaultCache],
 });
 
 serwist.addEventListeners();

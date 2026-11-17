@@ -1,4 +1,4 @@
-import { setCookie } from "cookies-next/client";
+import { setAuthCookies } from "../../lib/auth/session";
 import Link from "next/link";
 import Logo from "../Share/Logo";
 import LanguageSwitcher from "../Share/LanguageSwitcher";
@@ -91,19 +91,11 @@ const Register = () => {
         setIsLoading(false);
         return;
       }
-      setCookie("uuid", res.register.user.id, {
-        maxAge: 60 * 60 * 24 * 30,
-      });
-      setCookie(process.env.NEXT_PUBLIC_COOKIE_NAME as string, accessToken, {
-        maxAge: 60 * 60 * 24 * 30,
-      });
-      setCookie(
-        process.env.NEXT_PUBLIC_REFRESH_TOKEN_COOKIE_NAME as string,
+      setAuthCookies({
+        accessToken,
         refreshToken,
-        {
-          maxAge: 60 * 60 * 24 * 30,
-        }
-      );
+        userId: res.register.user.id,
+      });
       setUser(res.register.user);
       // P3.5 — backend đã gửi email xác nhận tài khoản.
       toast.success(t("auth.registerSuccess"));
