@@ -20,6 +20,10 @@ export const SLASH_COMMANDS: readonly SlashCommandDef[] = [
   { id: "nodes", label: "/nodes", insert: "/nodes", descKey: "messenger.commands.nodesDesc" },
   { id: "plan", label: "/plan", insert: "/plan ", descKey: "messenger.commands.planDesc" },
   { id: "status", label: "/status", insert: "/status", descKey: "messenger.commands.statusDesc" },
+  { id: "fb", label: "/fb", insert: "/fb ", descKey: "messenger.commands.fbDesc" },
+  { id: "ig", label: "/ig", insert: "/ig ", descKey: "messenger.commands.igDesc" },
+  { id: "th", label: "/th", insert: "/th ", descKey: "messenger.commands.thDesc" },
+  { id: "ads", label: "/ads", insert: "/ads ", descKey: "messenger.commands.adsDesc" },
   { id: "help", label: "/help", insert: "/help", descKey: "messenger.commands.helpDesc" },
   { id: "info", label: "/info", insert: "/info", descKey: "messenger.commands.infoDesc" },
 ] as const;

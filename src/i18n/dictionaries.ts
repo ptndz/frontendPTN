@@ -354,6 +354,10 @@ export const vi = {
       nodesDesc: "Kiểm tra tình trạng các node Otter Mesh",
       planDesc: "Lập kế hoạch tác tử A2A: /plan <mục tiêu>",
       statusDesc: "Kiểm tra trạng thái hệ thống & bot",
+      fbDesc: "Gọi Facebook CLI qua Otter Gateway: /fb <cmd>",
+      igDesc: "Gọi Instagram CLI qua Otter Gateway: /ig <cmd>",
+      thDesc: "Gọi Threads CLI qua Otter Gateway: /th <cmd>",
+      adsDesc: "Gọi Meta Ads CLI qua Otter Gateway: /ads <cmd>",
     },
     mentions: {
       menuLabel: "Nhắc đến",
@@ -1374,6 +1378,10 @@ export const en: Dictionary = {
       nodesDesc: "Check Otter Mesh node status",
       planDesc: "Plan multi-agent task via A2A: /plan <goal>",
       statusDesc: "Check system & bot status",
+      fbDesc: "Call Facebook CLI via Otter Gateway: /fb <cmd>",
+      igDesc: "Call Instagram CLI via Otter Gateway: /ig <cmd>",
+      thDesc: "Call Threads CLI via Otter Gateway: /th <cmd>",
+      adsDesc: "Call Meta Ads CLI via Otter Gateway: /ads <cmd>",
     },
     mentions: {
       menuLabel: "Mention",
