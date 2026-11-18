@@ -16,6 +16,7 @@ import { REACTION_EMOJIS } from "./stickers";
 import { useI18n } from "../../i18n/I18nProvider";
 import { isBotUser } from "../../lib/botUsers";
 import { tokenizeRichChatText } from "../../lib/chatFormat";
+import ActionCard, { parseActionCardData } from "./ActionCard";
 import { Badge } from "@astryxdesign/core/Badge";
 import { HStack } from "@astryxdesign/core/HStack";
 import { Stack } from "@astryxdesign/core/Stack";
@@ -338,6 +339,12 @@ const MessageContent: React.FC<MessageContentProps> = ({
       default: {
         const rawText =
           typeof message.message === "string" ? message.message : "";
+
+        // Task #21b: Detect Action Card metadata or structured header
+        const actionData = parseActionCardData(rawText);
+        if (actionData) {
+          return <ActionCard data={actionData} />;
+        }
         if (rawText.includes("```")) {
           return (
             <div className="text-sm whitespace-pre-wrap break-words">

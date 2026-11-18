@@ -17,6 +17,7 @@ import WorkflowPanel from "./WorkflowPanel";
 import { useI18n } from "../../i18n/I18nProvider";
 import GroupMembersPanel from "./GroupMembersPanel";
 import { conversationUsersToMentionItems, mentionItemKeywords } from "../../lib/mentions";
+import { createSlashCommandTrigger } from "../../lib/slashCommands";
 import { isBotUser } from "../../lib/botUsers";
 import { buildTypingText, TYPING_REEMIT_MS, typingDisplayName } from "../../lib/typing";
 import MediaGallery from "./MediaGallery";
@@ -920,44 +921,7 @@ const MessagingMain = () => {
   // gửi đi như tin thường — Bot Client ở daemon parse + xử lý (không
   // xử lý lệnh ở frontend).
   const slashTrigger: ChatComposerTrigger = useMemo(
-    () => ({
-      character: "/",
-      searchSource: createStaticSource(
-        (
-          [
-            { id: "task", label: "/task", insert: "/task ", descKey: "messenger.commands.taskDesc" },
-            { id: "tasks", label: "/tasks", insert: "/tasks", descKey: "messenger.commands.tasksDesc" },
-            { id: "done", label: "/done", insert: "/done ", descKey: "messenger.commands.doneDesc" },
-            { id: "help", label: "/help", insert: "/help", descKey: "messenger.commands.helpDesc" },
-            { id: "info", label: "/info", insert: "/info", descKey: "messenger.commands.infoDesc" },
-          ] as const
-        ).map((c) => ({
-          id: c.id,
-          label: c.label,
-          auxiliaryData: { description: t(c.descKey), insert: c.insert },
-        }))
-      ),
-      renderItem: (item) => {
-        const aux = item.auxiliaryData as
-          | { description?: string; insert?: string }
-          | undefined;
-        return (
-          <Stack gap={0}>
-            <Text weight="semibold" size="sm">
-              {item.label}
-            </Text>
-            <Text size="sm" color="secondary">
-              {aux?.description}
-            </Text>
-          </Stack>
-        );
-      },
-      onSelect: (item) =>
-        (item.auxiliaryData as { insert?: string } | undefined)?.insert ??
-        item.label,
-      menuLabel: t("messenger.commands.menuLabel"),
-      emptySearchText: t("messenger.commands.noResults"),
-    }),
+    () => createSlashCommandTrigger(t),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [locale]
   );
@@ -1043,7 +1007,9 @@ const MessagingMain = () => {
         [
           { label: "/task", insert: "/task " },
           { label: "/tasks", insert: "/tasks" },
-          { label: "/info", insert: "/info" },
+          { label: "/run", insert: "/run " },
+          { label: "/status", insert: "/status" },
+          { label: "/screen", insert: "/screen" },
           { label: "/help", insert: "/help" },
         ] as const
       ).map((cmd) => (

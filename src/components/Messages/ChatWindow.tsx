@@ -1,4 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { type ChatComposerTrigger } from "@astryxdesign/core/Chat";
+import { createSlashCommandTrigger } from "../../lib/slashCommands";
+import { conversationUsersToMentionItems, mentionItemKeywords } from "../../lib/mentions";
+import { createStaticSource } from "@astryxdesign/core/Typeahead";
+import { Badge } from "@astryxdesign/core/Badge";
 import { useStoreUser } from "../../store/user";
 import { useCallStore } from "../../store/call";
 import socket from "../../plugins/socket";
@@ -36,6 +41,64 @@ const ChatWindow: React.FC<IProps> = ({ chat, onClick }) => {
   const [typingText, setTypingText] = useState<string | null>(null);
   const [replyTo, setReplyTo] = useState<any>(null);
   const lastTypingAt = useRef(0);
+
+  // Task #21a: Slash command & @mention autocomplete trong ChatWindow popup
+  const slashTrigger: ChatComposerTrigger = useMemo(
+    () => createSlashCommandTrigger(t),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t]
+  );
+
+  const mentionMembers = useMemo(() => {
+    const rawUsers = (chat as any).users || (chat.user ? [chat.user] : []);
+    return conversationUsersToMentionItems(rawUsers, user?.id || "");
+  }, [chat, user?.id]);
+
+  const mentionTrigger: ChatComposerTrigger = useMemo(
+    () => ({
+      character: "@",
+      searchSource: createStaticSource(mentionMembers, {
+        keywords: mentionItemKeywords,
+      }),
+      renderItem: (item) => {
+        const aux = item.auxiliaryData as
+          | { username?: string; avatar?: string | null; isBot?: boolean }
+          | undefined;
+        return (
+          <HStack gap={2} vAlign="center">
+            <Avatar
+              src={aux?.avatar ?? undefined}
+              fallbackSrc="/images/user-avatar.png"
+              name={item.label}
+              size={32}
+              tooltip={false}
+            />
+            <Stack gap={0} className="min-w-0 flex-1">
+              <Text weight="semibold" size="sm">
+                {item.label}
+              </Text>
+              <Text size="sm" color="secondary">
+                @{aux?.username ?? item.id}
+              </Text>
+            </Stack>
+            {aux?.isBot ? <Badge variant="purple" label="[BOT AI]" /> : null}
+          </HStack>
+        );
+      },
+      onSelect: (item) => {
+        const aux = item.auxiliaryData as { username?: string } | undefined;
+        const username = aux?.username ?? item.id;
+        return {
+          value: `@${username} `,
+          label: `@${username}`,
+          variant: "blue",
+        };
+      },
+      menuLabel: t("messenger.mentions.menuLabel"),
+      emptySearchText: t("messenger.mentions.noResults"),
+    }),
+    [mentionMembers, t]
+  );
 
   // P2.4 — gọi thoại/video từ cửa sổ nổi (đoạn 1-1).
   const callState = useCallStore((s) => s.callState);
@@ -250,7 +313,7 @@ const ChatWindow: React.FC<IProps> = ({ chat, onClick }) => {
               }}
               onSubmit={handleSubmit}
               placeholder="Aa"
-              input={<ChatComposerInput pasteAsToken={false} />}
+              input={<ChatComposerInput pasteAsToken={false} triggers={[slashTrigger, mentionTrigger]} />}
               drawer={
                 replyTo ? (
                   <ChatComposerDrawer>

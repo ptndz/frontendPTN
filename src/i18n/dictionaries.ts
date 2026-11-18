@@ -349,6 +349,11 @@ export const vi = {
       doneDesc: "Đánh dấu task xong: /done <id>",
       helpDesc: "Xem danh sách lệnh",
       infoDesc: "Xem thông tin nhóm",
+      runDesc: "Chạy lệnh terminal qua Otter Gateway: /run <cmd>",
+      screenDesc: "Chụp ảnh màn hình Desktop qua Otter CUA: /screen",
+      nodesDesc: "Kiểm tra tình trạng các node Otter Mesh",
+      planDesc: "Lập kế hoạch tác tử A2A: /plan <mục tiêu>",
+      statusDesc: "Kiểm tra trạng thái hệ thống & bot",
     },
     mentions: {
       menuLabel: "Nhắc đến",
@@ -1364,6 +1369,11 @@ export const en: Dictionary = {
       doneDesc: "Mark a task done: /done <id>",
       helpDesc: "Show the command list",
       infoDesc: "Show group info",
+      runDesc: "Run terminal command via Otter Gateway: /run <cmd>",
+      screenDesc: "Capture desktop screenshot via Otter CUA: /screen",
+      nodesDesc: "Check Otter Mesh node status",
+      planDesc: "Plan multi-agent task via A2A: /plan <goal>",
+      statusDesc: "Check system & bot status",
     },
     mentions: {
       menuLabel: "Mention",
