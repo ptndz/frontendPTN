@@ -63,6 +63,9 @@ const FilesHubPage: React.FC<IProps> = ({ userData }) => {
   const [replaceText, setReplaceText] = useState<string>("");
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [sseConnected, setSseConnected] = useState<boolean>(false);
+  const [runningOtter, setRunningOtter] = useState<boolean>(false);
+  const [otterOutput, setOtterOutput] = useState<string | null>(null);
+  const [showConsole, setShowConsole] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -144,6 +147,42 @@ const FilesHubPage: React.FC<IProps> = ({ userData }) => {
       toast.info(err?.response?.data?.message || "Tệp lớn — vui lòng dùng nút Tải về (Streaming)");
     }
   };
+
+  const runInOtter = useCallback(async () => {
+    if (!activeFilePath) return;
+    setRunningOtter(true);
+    setShowConsole(true);
+    setOtterOutput("⏳ Đang gửi lệnh thực thi tới Otter Daemon...");
+    try {
+      if (dirty) {
+        await saveFile();
+      }
+      const ext = activeFilePath.split(".").pop()?.toLowerCase();
+      let cmd = "";
+      if (ext === "py") cmd = `python3 "${activeFilePath}"`;
+      else if (ext === "ts" || ext === "js") cmd = `bun "${activeFilePath}"`;
+      else if (ext === "sh") cmd = `bash "${activeFilePath}"`;
+      else cmd = `head -n 50 "${activeFilePath}"`;
+
+      const res = await axios.post(
+        `${apiBase}/api/v1/tools/call`,
+        {
+          toolName: "execute_terminal_command",
+          arguments: { command: cmd },
+        },
+        { headers: authHeaders() }
+      );
+      const text = res.data?.data?.result?.content?.[0]?.text || JSON.stringify(res.data, null, 2);
+      setOtterOutput(text);
+      toast.success("Thực thi qua Otter hoàn tất!");
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.message;
+      setOtterOutput(`❌ Lỗi thực thi: ${msg}`);
+      toast.error(`Lỗi thực thi: ${msg}`);
+    } finally {
+      setRunningOtter(false);
+    }
+  }, [activeFilePath, dirty, apiBase, authHeaders]);
 
   const saveFile = useCallback(async () => {
     if (!activeFilePath || isBinaryFile) return;
@@ -640,6 +679,24 @@ const FilesHubPage: React.FC<IProps> = ({ userData }) => {
                           {saving ? "Đang lưu..." : "💾 Lưu (Ctrl+S)"}
                         </button>
                         <button
+                          onClick={runInOtter}
+                          disabled={runningOtter}
+                          style={{
+                            background: "#059669",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 6,
+                            padding: "6px 12px",
+                            cursor: "pointer",
+                            fontWeight: 600,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          {runningOtter ? "⏳ Đang chạy..." : "▶️ Run via Otter"}
+                        </button>
+                        <button
                           onClick={loadHistory}
                           style={{
                             background: "#334155",
@@ -806,6 +863,52 @@ const FilesHubPage: React.FC<IProps> = ({ userData }) => {
                       resize: "vertical",
                     }}
                   />
+                )}
+
+                {showConsole && (
+                  <div
+                    style={{
+                      marginTop: 12,
+                      background: "#020617",
+                      borderRadius: 8,
+                      border: "1px solid #334155",
+                      padding: 12,
+                      fontFamily: "monospace",
+                      fontSize: 13,
+                      color: "#e2e8f0",
+                      maxHeight: 250,
+                      overflowY: "auto",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        paddingBottom: 6,
+                        marginBottom: 6,
+                        borderBottom: "1px solid #1e293b",
+                        color: "#94a3b8",
+                        fontSize: 12,
+                      }}
+                    >
+                      <span>📟 Otter Terminal Output</span>
+                      <button
+                        onClick={() => setShowConsole(false)}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "#94a3b8",
+                          cursor: "pointer",
+                        }}
+                      >
+                        ✕ Đóng
+                      </button>
+                    </div>
+                    <pre style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                      {otterOutput}
+                    </pre>
+                  </div>
                 )}
               </>
             )}
