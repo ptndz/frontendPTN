@@ -8,11 +8,13 @@ vi.mock("axios", () => ({
   default: {
     get: vi.fn(),
     patch: vi.fn(),
+    delete: vi.fn(),
   },
 }));
 
 import axios from "axios";
 import {
+  deleteUser,
   listAdminUsers,
   listRoles,
   patchUserRole,
@@ -21,6 +23,7 @@ import {
 
 const mockedGet = axios.get as unknown as ReturnType<typeof vi.fn>;
 const mockedPatch = axios.patch as unknown as ReturnType<typeof vi.fn>;
+const mockedDelete = axios.delete as unknown as ReturnType<typeof vi.fn>;
 
 describe("adminUsers lib (#18c)", () => {
   beforeEach(() => {
@@ -82,5 +85,11 @@ describe("adminUsers lib (#18c)", () => {
     expect(mockedPatch).toHaveBeenCalledWith("/users/u2/status", {
       status: "Banned",
     });
+  });
+
+  it("DELETE /users/:id goi dung endpoint xoa mem", async () => {
+    mockedDelete.mockResolvedValueOnce({ data: { code: 200, success: true } });
+    await deleteUser("u2");
+    expect(mockedDelete).toHaveBeenCalledWith("/users/u2");
   });
 });

@@ -2,7 +2,8 @@ import axios from "axios";
 
 /**
  * Admin user management (#18c): dung lai API backend
- * GET /users, GET /roles, PATCH /users/:id/role, PATCH /users/:id/status.
+ * GET /users, GET /roles, PATCH /users/:id/role, PATCH /users/:id/status,
+ * DELETE /users/:id (xoa mem).
  */
 
 export interface AdminUserRow {
@@ -54,6 +55,14 @@ export async function listRoles(): Promise<AdminRole[]> {
 
 export async function patchUserRole(id: string, roleId: string): Promise<void> {
   await axios.patch(`/users/${id}/role`, { roleId });
+}
+
+/**
+ * Xoa mem user (#18c — tin 306): DELETE /users/:id, backend set status
+ * Banned + thu hoi phien + roi nhom + an bai. Khong xoa cung.
+ */
+export async function deleteUser(id: string): Promise<void> {
+  await axios.delete(`/users/${id}`);
 }
 
 export async function patchUserStatus(

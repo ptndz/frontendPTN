@@ -4,6 +4,12 @@ import { FiSearch, FiUserPlus } from "react-icons/fi";
 import { useI18n } from "../../i18n/I18nProvider";
 import { isBotUser } from "../../lib/botUsers";
 import { searchUsersForMention } from "../../lib/social";
+import {
+  createGroupInvite,
+  listGroupInvites,
+  revokeGroupInvite,
+  type GroupInviteRow,
+} from "../../lib/groupInvites";
 import { Stack } from "@astryxdesign/core/Stack";
 import { HStack } from "@astryxdesign/core/HStack";
 import { Text } from "@astryxdesign/core/Text";
@@ -87,6 +93,11 @@ const GroupMembersPanel: React.FC<IProps> = ({
   const [searching, setSearching] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // Invite link (#18c — tin 306): admin tao link moi, ai co link deu vao duoc.
+  const [invites, setInvites] = useState<GroupInviteRow[]>([]);
+  const [inviteLink, setInviteLink] = useState("");
+  const [inviteBusy, setInviteBusy] = useState(false);
+  const [inviteCopied, setInviteCopied] = useState(false);
   const isAdmin = conversation.adminId === currentUserId;
 
   const memberIds = useMemo(
@@ -128,6 +139,64 @@ const GroupMembersPanel: React.FC<IProps> = ({
       clearTimeout(timer);
     };
   }, [isAdmin, searchQuery]);
+
+  // Load cac link moi dang hoat dong cua nhom (admin only).
+  useEffect(() => {
+    if (!isAdmin || !conversation?.id) return;
+    let cancelled = false;
+    void listGroupInvites(Number(conversation.id))
+      .then((rows) => {
+        if (!cancelled) setInvites(rows.filter((r) => !r.revoked));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin, conversation?.id]);
+
+  const createInvite = async () => {
+    setInviteBusy(true);
+    setError("");
+    try {
+      const inv = await createGroupInvite(Number(conversation.id), {
+        expiresInHours: 24,
+      });
+      const url =
+        typeof window !== "undefined"
+          ? `${window.location.origin}${inv.inviteUrl}`
+          : inv.inviteUrl;
+      setInviteLink(url);
+      setInvites((prev) => [inv, ...prev]);
+    } catch {
+      setError(t("messenger.members.actionFailed"));
+    } finally {
+      setInviteBusy(false);
+    }
+  };
+
+  const copyInviteLink = async () => {
+    if (!inviteLink) return;
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setInviteCopied(true);
+      setTimeout(() => setInviteCopied(false), 2000);
+    } catch {
+      setError(t("messenger.members.actionFailed"));
+    }
+  };
+
+  const revokeInvite = async (inviteId: number) => {
+    setInviteBusy(true);
+    setError("");
+    try {
+      await revokeGroupInvite(Number(conversation.id), inviteId);
+      setInvites((prev) => prev.filter((r) => r.id !== inviteId));
+    } catch {
+      setError(t("messenger.members.actionFailed"));
+    } finally {
+      setInviteBusy(false);
+    }
+  };
 
   // Merge directory results with matching friends, deduplicate, and exclude existing members
   const addableCandidates = useMemo(() => {
@@ -381,6 +450,69 @@ const GroupMembersPanel: React.FC<IProps> = ({
               ))}
             </Stack>
           )}
+        </Stack>
+      ) : null}
+
+      {isAdmin ? (
+        <Stack gap={2} className="pt-2 border-t border-line">
+          <Text size="sm" weight="semibold">
+            Link mời vào nhóm
+          </Text>
+          <Text size="sm" color="secondary" className="text-xs">
+            Ai có link đều vào được nhóm, không cần admin thêm tay. Link mới
+            hết hạn sau 24 giờ.
+          </Text>
+          <HStack gap={2} vAlign="center">
+            <Button
+              size="sm"
+              variant="secondary"
+              label="Tạo link mời"
+              isDisabled={inviteBusy}
+              onClick={() => void createInvite()}>
+              Tạo link mời
+            </Button>
+            {inviteLink ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                label="Sao chép link mời"
+                isDisabled={inviteBusy}
+                onClick={() => void copyInviteLink()}>
+                {inviteCopied ? "Đã sao chép" : "Sao chép link"}
+              </Button>
+            ) : null}
+          </HStack>
+          {inviteLink ? (
+            <Text size="sm" color="secondary" className="text-xs break-all">
+              {inviteLink}
+            </Text>
+          ) : null}
+          {invites.length > 0 ? (
+            <Stack gap={1}>
+              {invites.map((inv) => (
+                <HStack key={inv.id} gap={2} vAlign="center">
+                  <Text
+                    size="sm"
+                    color="secondary"
+                    className="text-xs flex-1 min-w-0">
+                    Link #{inv.id} · đã dùng {inv.usedCount}
+                    {inv.maxUses > 0 ? `/${inv.maxUses}` : ""}
+                    {inv.expiresAt
+                      ? ` · hết hạn ${new Date(inv.expiresAt).toLocaleString(locale)}`
+                      : ""}
+                  </Text>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    label="Thu hồi link mời"
+                    isDisabled={inviteBusy}
+                    onClick={() => void revokeInvite(inv.id)}>
+                    Thu hồi
+                  </Button>
+                </HStack>
+              ))}
+            </Stack>
+          ) : null}
         </Stack>
       ) : null}
 

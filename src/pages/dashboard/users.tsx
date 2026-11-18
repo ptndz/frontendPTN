@@ -6,6 +6,7 @@ import { getAuthenticatedUser } from "../../lib/pages-router-auth";
 import { toast } from "react-toastify";
 import { useI18n } from "../../i18n/I18nProvider";
 import {
+  deleteUser,
   listAdminUsers,
   listRoles,
   patchUserRole,
@@ -29,7 +30,8 @@ const PAGE_SIZE = 20;
 const STATUSES = ["Active", "Suspended", "Banned"] as const;
 
 /**
- * Trang quan ly user cho admin (#18c): list + tim kiem + doi role/status.
+ * Trang quan ly user cho admin (#18c): list + tim kiem + doi role/status
+ * + xoa mem (DELETE /users/:id -> Banned, tin 306).
  * Dung lai API backend GET /users, GET /roles, PATCH /users/:id/role,
  * PATCH /users/:id/status (RBAC + phan cap o backend; chi root duoc gan
  * role dac quyen). Khong co quyen user:list thi hien thong bao.
@@ -96,6 +98,32 @@ export default function AdminUsersPage({ userData }: IProps) {
     }
   };
 
+  // Xoa mem (#18c — tin 306): DELETE /users/:id -> Banned + thu hoi
+  // phien + roi nhom + an bai. Chi xac nhan bang confirm cua trinh duyet.
+  const removeUser = async (u: AdminUserRow) => {
+    if (u.status === "Banned") return;
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm(
+        `Xóa mềm @${u.username}? Tài khoản bị khóa (Banned), rời khỏi các nhóm và bài viết bị ẩn. Không xóa cứng dữ liệu.`
+      )
+    ) {
+      return;
+    }
+    setBusyId(u.id);
+    try {
+      await deleteUser(u.id);
+      setUsers((prev) =>
+        prev.map((x) => (x.id === u.id ? { ...x, status: "Banned" } : x))
+      );
+      toast.success(t("dashboard.usersUpdated"));
+    } catch {
+      toast.error(t("dashboard.usersUpdateFailed"));
+    } finally {
+      setBusyId("");
+    }
+  };
+
   const changeStatus = async (u: AdminUserRow, status: string) => {
     if (!status || status === (u.status ?? "")) return;
     setBusyId(u.id);
@@ -150,6 +178,7 @@ export default function AdminUsersPage({ userData }: IProps) {
                       <th className="py-2 pr-2">{t("dashboard.usersUser")}</th>
                       <th className="py-2 pr-2">{t("dashboard.usersStatus")}</th>
                       <th className="py-2 pr-2">{t("dashboard.usersRole")}</th>
+                      <th className="py-2 pr-2">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -191,6 +220,18 @@ export default function AdminUsersPage({ userData }: IProps) {
                               </option>
                             ))}
                           </select>
+                        </td>
+                        <td className="py-2 pr-2">
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            label="Xóa mềm"
+                            isDisabled={
+                              busyId === u.id || u.status === "Banned"
+                            }
+                            onClick={() => void removeUser(u)}>
+                            Xóa
+                          </Button>
                         </td>
                       </tr>
                     ))}
